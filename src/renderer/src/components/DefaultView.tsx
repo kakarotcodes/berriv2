@@ -7,14 +7,13 @@ import React from 'react'
  */
 const DefaultView: React.FC = () => {
   return (
-    <div className="flex items-center justify-center w-[512px] h-[512px]">
+    <div className="w-screen h-screen flex flex-col items-center justify-center">
       <div
         className="w-full h-full flex flex-col items-center justify-center
-                  bg-white/80 rounded-2xl shadow-2xl border border-gray-200
-                  transform-gpu will-change-transform"
+                  rounded-2xl shadow-2xl transform-gpu will-change-transform"
       >
-        <h1 className="text-xl font-semibold text-gray-800">Default View</h1>
-        <p className="mt-2 text-sm text-gray-500">Main workspace area</p>
+        <h1 className="text-xl text-slate-300 font-semibold">Default View</h1>
+        <p className="mt-2 text-sm text-slate-300">Main workspace area</p>
       </div>
     </div>
   )

@@ -6,16 +6,18 @@ function createWindow(): void {
   // Get the primary display's work area
   const primaryDisplay = screen.getPrimaryDisplay()
   const { bounds, workArea } = primaryDisplay
-  
+
   // Calculate position (20px from right and bottom edges)
   const x = bounds.x + workArea.width - 512 - 20
-  const y = bounds.y + workArea.height - 288 - 10
+  const y = bounds.y + workArea.height - 288
 
   const mainWindow = new BrowserWindow({
+    backgroundColor: '#00000000',
     width: 512,
     height: 288,
     minWidth: 512,
     minHeight: 288,
+    vibrancy: 'under-window',
     x,
     y,
     frame: false,
