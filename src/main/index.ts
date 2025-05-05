@@ -1,6 +1,9 @@
-import { app, BrowserWindow, ipcMain, screen } from 'electron'
+import { app, BrowserWindow, screen } from 'electron'
 import path from 'path'
 import { electronApp, optimizer } from '@electron-toolkit/utils'
+import { registerIpcHandlers } from './utils/ipcHandlers'
+
+let mainWindow: BrowserWindow | null = null
 
 function createWindow(): void {
   // Get the primary display's work area
@@ -11,7 +14,7 @@ function createWindow(): void {
   const x = bounds.x + workArea.width - 512 - 20
   const y = bounds.y + workArea.height - 288
 
-  const mainWindow = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     backgroundColor: '#00000000',
     width: 512,
     height: 288,
@@ -38,14 +41,8 @@ function createWindow(): void {
   // Make window visible on all workspaces
   mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
 
-  // IPC for window actions
-  ipcMain.handle('windowAction', (_, action) => {
-    if (action === 'minimize') {
-      mainWindow.minimize()
-    } else if (action === 'close') {
-      mainWindow.close()
-    }
-  })
+  // Register IPC handlers
+  registerIpcHandlers(mainWindow)
 }
 
 // This method will be called when Electron has finished
