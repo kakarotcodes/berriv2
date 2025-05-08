@@ -5,16 +5,28 @@ import { useViewStore } from '@/globalStore'
 
 const PillView = memo(() => {
   const { resizeWindow } = useElectron()
-  const { dimensions } = useViewStore()
+  const { dimensions, setView } = useViewStore()
 
-  const { setView } = useViewStore()
-
-  // Keep window size in sync
   useEffect(() => {
-    resizeWindow(dimensions)
+    try {
+      resizeWindow(dimensions)
+    } catch (error) {
+      console.error('Error resizing window:', error)
+    }
   }, [dimensions, resizeWindow])
 
-  return <div className="text-white">I'm the pill view</div>
+  return (
+    <div
+      className="text-white cursor-pointer"
+      onClick={() => {
+        // Add immediate visual feedback
+        useViewStore.setState({ currentView: 'default' })
+        setView('default').catch(console.error)
+      }}
+    >
+      I'm the pill view (Click to return to default)
+    </div>
+  )
 })
 
 export default PillView

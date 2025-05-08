@@ -3,5 +3,10 @@ const { contextBridge, ipcRenderer } = require('electron')
 
 contextBridge.exposeInMainWorld('electronAPI', {
   resizeWindow: (dimensions) => ipcRenderer.send('resize-window', dimensions),
-  animateViewTransition: (view) => ipcRenderer.send('animate-view-transition', view)
+  animateViewTransition: (view) => {
+    if (['default', 'pill', 'hover', 'expanded'].includes(view)) {
+      return ipcRenderer.invoke('animate-view-transition', view)
+    }
+    return Promise.reject('Invalid view type')
+  }
 })

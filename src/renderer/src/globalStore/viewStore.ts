@@ -1,5 +1,6 @@
 // stores/viewStore.ts
 import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
 
 type ViewType = 'default' | 'pill' | 'hover' | 'expanded'
 
@@ -17,14 +18,33 @@ const viewDimensions: Record<ViewType, { width: number; height: number }> = {
   expanded: { width: 800, height: 600 }
 }
 
-export const useViewStore = create<ViewState>((set) => ({
-  currentView: 'default',
-  targetView: null,
-  dimensions: viewDimensions.default,
-  setView: async (view) => {
-    set({ targetView: view })
-    // Send IPC message to main process
-    await window.electronAPI.animateViewTransition(view)
-    set({ currentView: view, dimensions: viewDimensions[view] })
-  }
-}))
+export const useViewStore = create<ViewState>()(
+  persist(
+    (set) => ({
+      currentView: 'default',
+      targetView: null,
+      dimensions: viewDimensions.default,
+      setView: async (view) => {
+        try {
+          set({ targetView: view })
+          await window.electronAPI.animateViewTransition(view)
+          set({
+            currentView: view,
+            dimensions: viewDimensions[view],
+            targetView: null
+          })
+        } catch (error) {
+          console.error('View transition failed:', error)
+          set({ targetView: null })
+        }
+      }
+    }),
+    {
+      name: 'view-storage',
+      partialize: (state) => ({
+        currentView: state.currentView,
+        dimensions: state.dimensions
+      })
+    }
+  )
+)
