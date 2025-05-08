@@ -1,19 +1,28 @@
+// components/DefaultView.tsx
 import React from 'react'
+import { useElectron } from '@/hooks/useElectron' // Create this hook
 
-/**
- * DefaultView - The primary view component for the overlay application.
- * Provides a centered, visually appealing container with GPU acceleration
- * to display content in an always-on-top Electron window.
- */
-const DefaultView: React.FC = () => {
+const DefaultView = () => {
+  const { resizeWindow } = useElectron()
+  const [isExpanded, setIsExpanded] = React.useState(false)
+
+  const handleWorkspaceClick = () => {
+    const dimensions = isExpanded
+      ? { width: 512, height: 288 } // Default size
+      : { width: 200, height: 48 } // Expanded size
+
+    resizeWindow(dimensions)
+    setIsExpanded(!isExpanded)
+  }
+
   return (
-    <div className="w-screen h-screen flex flex-col items-center justify-center">
-      <div
-        className="w-full h-full flex flex-col items-center justify-center
-                  rounded-2xl shadow-2xl transform-gpu will-change-transform"
-      >
-        <h1 className="text-xl text-slate-300 font-semibold">Default View</h1>
-        <p className="mt-2 text-sm text-slate-300">Main workspace area</p>
+    <div
+      className="w-full h-full cursor-pointer bg-gray-800/50 p-4 transition-all rounded-[1000px] transform-gpu will-change-transform"
+      onClick={handleWorkspaceClick}
+    >
+      {/* Your existing workspace content */}
+      <div className="text-white text-center">
+        <p>Click anywhere in this workspace to {isExpanded ? 'collapse' : 'expand'}</p>
       </div>
     </div>
   )

@@ -18,9 +18,11 @@ function createWindow(): void {
     backgroundColor: '#00000000',
     width: 512,
     height: 288,
-    minWidth: 512,
-    minHeight: 288,
+    minWidth: 100,
+    minHeight: 48,
     vibrancy: 'under-window',
+    visualEffectState: 'active',
+    roundedCorners: true,
     x,
     y,
     frame: false,
@@ -31,7 +33,8 @@ function createWindow(): void {
     webPreferences: {
       contextIsolation: true,
       sandbox: true,
-      preload: path.join(__dirname, '../preload/index.js')
+      preload: path.join(__dirname, '../preload/index.js'),
+      backgroundThrottling: false
     }
   })
 
