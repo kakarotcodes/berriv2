@@ -2,6 +2,7 @@ import { app, BrowserWindow, screen } from 'electron'
 import path from 'path'
 import { electronApp, optimizer } from '@electron-toolkit/utils'
 import { registerIpcHandlers } from './utils/ipcHandlers'
+import { registerViewHandlers } from './utils/animateViewTransition'
 
 let mainWindow: BrowserWindow | null = null
 
@@ -46,6 +47,7 @@ function createWindow(): void {
 
   // Register IPC handlers
   registerIpcHandlers(mainWindow)
+  registerViewHandlers(mainWindow)
 }
 
 // This method will be called when Electron has finished

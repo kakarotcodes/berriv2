@@ -24,6 +24,7 @@
     "@electron-toolkit/preload": "^3.0.1",
     "@electron-toolkit/utils": "^4.0.0",
     "electron-updater": "^6.3.9",
+    "framer-motion": "^12.10.4",
     "tailwindcss": "^4.1.5",
     "zustand": "^5.0.4"
   },

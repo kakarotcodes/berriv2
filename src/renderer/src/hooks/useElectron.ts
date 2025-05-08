@@ -5,6 +5,7 @@ declare global {
   interface Window {
     electronAPI: {
       resizeWindow: (dimensions: { width: number; height: number }) => void
+      animateViewTransition: (view: string) => Promise<void>
     }
   }
 }
