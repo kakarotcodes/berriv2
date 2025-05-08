@@ -1,6 +1,6 @@
 import React from 'react'
 import DefaultView from './components/DefaultView'
-import useViewStore from '../globalStore/viewStore'
+import useViewStore from '@/globalStore/viewStore'
 
 /**
  * OverlayContainer - A full-screen container component that properly centers and displays
