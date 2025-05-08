@@ -7,12 +7,14 @@ const PillView = memo(() => {
   const { resizeWindow } = useElectron()
   const { dimensions } = useViewStore()
 
+  const { setView } = useViewStore()
+
   // Keep window size in sync
   useEffect(() => {
     resizeWindow(dimensions)
   }, [dimensions, resizeWindow])
 
-  return <div className="pill-view-container">I'm the pill view</div>
+  return <div className="text-white">I'm the pill view</div>
 })
 
 export default PillView

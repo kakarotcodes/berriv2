@@ -28,6 +28,17 @@ const viewVariants = {
 const OverlayContainer: React.FC = memo(() => {
   const { currentView, targetView } = useViewStore()
 
+  // Memoized view component mapping
+  const viewComponents = React.useMemo(
+    () => ({
+      default: DefaultView,
+      pill: PillView,
+      hover: HoverView,
+      expanded: ExpandedView
+    }),
+    []
+  )
+
   return (
     <div className="w-screen h-screen bg-transparent flex items-center justify-center transform-gpu will-change-transform">
       <AnimatePresence mode="wait">
@@ -42,11 +53,7 @@ const OverlayContainer: React.FC = memo(() => {
             transition={viewTransition}
             className="absolute inset-0 flex items-center justify-center"
           >
-            {currentView === 'default' && <DefaultView />}
-            {currentView === 'pill' && <PillView />}
-            {currentView === 'hover' && <HoverView />}
-            {currentView === 'expanded' && <ExpandedView />}
-            <p>{currentView}</p>
+            {React.createElement(viewComponents[currentView])}
           </motion.div>
 
           {/* Transition Overlay */}
