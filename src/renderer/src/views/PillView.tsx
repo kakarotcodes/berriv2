@@ -16,15 +16,14 @@ const PillView = memo(() => {
   }, [dimensions, resizeWindow])
 
   return (
-    <div
-      className="text-white cursor-pointer"
-      onClick={() => {
-        // Add immediate visual feedback
-        useViewStore.setState({ currentView: 'default' })
-        setView('default').catch(console.error)
-      }}
-    >
-      I'm the pill view (Click to return to default)
+    <div className="w-full h-full bg-red-400 text-white cursor-pointer flex justify-start items-center pl-2">
+      <button
+        onClick={() => {
+          useViewStore.setState({ currentView: 'default' })
+          setView('default').catch(console.error)
+        }}
+        className="bg-green-500 rounded-full w-10 h-10 cursor-pointer"
+      />
     </div>
   )
 })
