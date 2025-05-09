@@ -4,28 +4,28 @@ import { animateWindowResize } from './windowResize'
 
 export function registerViewHandlers(mainWindow: BrowserWindow) {
   ipcMain.handle('animate-view-transition', async (_event, view: string) => {
-    const dimensions = {
+    const viewDimensions = {
       default: { width: 512, height: 288 },
       pill: { width: 100, height: 48 },
       hover: { width: 240, height: 240 },
       expanded: { width: 800, height: 600 }
-    }[view]
+    }
 
+    const dimensions = viewDimensions[view as keyof typeof viewDimensions]
     if (!dimensions || !mainWindow) return
 
-    // Calculate position based on view
-    const display = screen.getDisplayMatching(mainWindow.getBounds())
-    const { workArea } = display
-    let targetX = mainWindow.getPosition()[0]
-    let targetY = mainWindow.getPosition()[1]
+    // Get display metrics
+    const primaryDisplay = screen.getPrimaryDisplay()
+    const { workArea } = primaryDisplay
 
+    // Calculate positions
+    let targetX = workArea.x + workArea.width - dimensions.width // Right edge
+    let targetY = workArea.y + 130 // 130px top margin
+
+    // Special handling for default view (keep original positioning)
     if (view === 'default') {
-      // Position for default view (20px from right, original Y position)
-      targetX = workArea.x + workArea.width - dimensions.width - 20
-      targetY = workArea.y + workArea.height - dimensions.height - 20
-    } else if (view === 'pill') {
-      // Center vertically for pill view
-      targetY = workArea.y + (workArea.height - dimensions.height) / 2
+      targetX = workArea.x + workArea.width - dimensions.width - 20 // 20px right margin
+      targetY = workArea.y + workArea.height - dimensions.height - 20 // 20px bottom margin
     }
 
     return new Promise((resolve) => {
@@ -38,16 +38,37 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
         duration: 300
       })
 
-      // More accurate completion detection
-      const checkCompletion = () => {
-        const [currentWidth, currentHeight] = mainWindow!.getSize()
-        if (currentWidth === dimensions.width && currentHeight === dimensions.height) {
+      // Screen change handler for right-edge sticking
+      const handleScreenChange = () => {
+        const updatedDisplay = screen.getPrimaryDisplay()
+        const newX = updatedDisplay.workArea.x + updatedDisplay.workArea.width - dimensions.width
+        mainWindow.setPosition(newX, targetY)
+      }
+
+      // Add event listeners for display changes
+      screen.on('display-metrics-changed', handleScreenChange)
+      screen.on('display-added', handleScreenChange)
+      screen.on('display-removed', handleScreenChange)
+
+      // Completion check
+      const verifyPosition = () => {
+        const [currentX, currentY] = mainWindow.getPosition()
+        const expectedX =
+          screen.getPrimaryDisplay().workArea.x +
+          screen.getPrimaryDisplay().workArea.width -
+          dimensions.width
+
+        if (Math.abs(currentX - expectedX) <= 2 && currentY === targetY) {
+          screen.off('display-metrics-changed', handleScreenChange)
+          screen.off('display-added', handleScreenChange)
+          screen.off('display-removed', handleScreenChange)
           resolve(true)
         } else {
-          setTimeout(checkCompletion, 50)
+          setTimeout(verifyPosition, 50)
         }
       }
-      checkCompletion()
+
+      verifyPosition()
     })
   })
 }
