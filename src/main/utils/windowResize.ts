@@ -12,6 +12,9 @@ interface WindowResizeOptions {
   duration?: number
 }
 
+const TARGET_FPS = 60
+const FRAME_DURATION = 1000 / TARGET_FPS // ~16.6 ms
+
 export function animateWindowResize(args: WindowResizeOptions): void {
   const { window, targetWidth, targetHeight, targetX = -1, targetY = -1, duration = 150 } = args
 
@@ -65,13 +68,20 @@ export function animateWindowResize(args: WindowResizeOptions): void {
             )
           )
 
-          window.setSize(targetWidth, targetHeight, true)
-          window.setPosition(finalX, finalY, true)
+          window.setBounds(
+            {
+              x: finalX,
+              y: finalY,
+              width: targetWidth,
+              height: targetHeight
+            },
+            true
+          )
           return
         }
 
         const progress = Math.min(elapsed / duration, 1)
-        const easeProgress = progress * (2 - progress)
+        const easeProgress = easeInOutCubic(progress)
 
         const newWidth = Math.round(currentWidth + widthDelta * easeProgress)
         const newHeight = Math.round(currentHeight + heightDelta * easeProgress)
@@ -92,10 +102,19 @@ export function animateWindowResize(args: WindowResizeOptions): void {
           )
         )
 
-        window.setSize(newWidth, newHeight, true)
-        window.setPosition(boundedX, boundedY, true)
+        window.setBounds(
+          {
+            x: boundedX,
+            y: boundedY,
+            width: newWidth,
+            height: newHeight
+          },
+          true
+        )
 
-        const timeoutId = setTimeout(animateStep, 16)
+        // const timeoutId = setTimeout(animateStep, 16)
+        const timeoutId = setTimeout(animateStep, FRAME_DURATION) as unknown as NodeJS.Timeout
+
         timeoutMap.set(window, timeoutId)
       } catch (error) {
         console.error('Animation frame error:', error)
@@ -106,4 +125,8 @@ export function animateWindowResize(args: WindowResizeOptions): void {
   } catch (error) {
     console.error('Animation initialization failed:', error)
   }
+}
+
+export function easeInOutCubic(t: number): number {
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
 }

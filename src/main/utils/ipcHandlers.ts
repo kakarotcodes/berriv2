@@ -8,7 +8,7 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
       window: mainWindow,
       targetWidth: width,
       targetHeight: height,
-      duration: 300
+      duration: 10
     })
   })
 }
