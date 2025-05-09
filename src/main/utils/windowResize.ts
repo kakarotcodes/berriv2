@@ -65,13 +65,6 @@ export function animateWindowResize(args: WindowResizeOptions): void {
         const elapsed = now - startTime
 
         if (now >= endTime) {
-          // const finalX = Math.round(
-          //   Math.max(
-          //     workArea.x,
-          //     Math.min(targetX >= 0 ? targetX : currentX, workArea.x + workArea.width - targetWidth)
-          //   )
-          // )
-
           const finalX = Math.round(Math.max(workArea.x, targetX >= 0 ? targetX : currentX))
 
           const finalY = Math.round(
@@ -97,15 +90,6 @@ export function animateWindowResize(args: WindowResizeOptions): void {
         const newX = targetX >= 0 ? Math.round(currentX + xDelta * easeProgress) : currentX
         const newY = targetY >= 0 ? Math.round(currentY + yDelta * easeProgress) : currentY
 
-        // const boundedX =
-        //   view === 'pill'
-        //     ? newX
-        //     : Math.round(
-        //         Math.max(
-        //           Math.floor(workArea.x),
-        //           Math.min(Math.ceil(newX), Math.floor(workArea.x + workArea.width - newWidth))
-        //         )
-        //       )
         const boundedX = Math.round(
           Math.max(
             Math.floor(workArea.x),
