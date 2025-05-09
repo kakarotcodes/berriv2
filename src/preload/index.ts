@@ -8,5 +8,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
       return ipcRenderer.invoke('animate-view-transition', view)
     }
     return Promise.reject('Invalid view type')
-  }
+  },
+  startVerticalDrag: (mouseY) => ipcRenderer.send('start-vertical-drag', mouseY),
+  updateVerticalDrag: (mouseY) => ipcRenderer.send('update-vertical-drag', mouseY),
+  endVerticalDrag: () => ipcRenderer.send('end-vertical-drag')
 })

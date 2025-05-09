@@ -24,3 +24,62 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+/* Simple drag handle styles */
+#drag-handle {
+  cursor: grab;
+  background-color: #4dabf7;
+  transition: background-color 0.1s ease;
+  position: relative;
+}
+
+/* Visible drag indicator */
+#drag-handle::before {
+  content: "⋮";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 16px;
+}
+
+/* Hover state */
+#drag-handle:hover {
+  background-color: #339af0;
+}
+
+/* Active/dragging state */
+#drag-handle.active,
+.dragging #drag-handle {
+  cursor: grabbing !important;
+  background-color: #228be6 !important;
+}
+
+/* Prevent text selection during drag */
+.dragging {
+  user-select: none !important;
+}
+
+/* Full hardware acceleration and no transitions during dragging */
+.dragging {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  perspective: 1000px;
+  -webkit-perspective: 1000px;
+  transition: none !important;
+}
+
+/* Disable pointer events on other elements during drag */
+.dragging * {
+  pointer-events: none;
+}
+
+/* But keep pointer events on the drag handle */
+.dragging #drag-handle {
+  pointer-events: auto;
+}
