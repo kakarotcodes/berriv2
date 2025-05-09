@@ -1,8 +1,5 @@
 import { BrowserWindow, screen } from 'electron'
 
-// types
-import { ViewType } from '../../types/types'
-
 // Track ongoing animations using timeout IDs
 const timeoutMap = new WeakMap<BrowserWindow, NodeJS.Timeout>()
 
@@ -13,19 +10,10 @@ interface WindowResizeOptions {
   targetX?: number
   targetY?: number
   duration?: number
-  view?: ViewType
 }
 
 export function animateWindowResize(args: WindowResizeOptions): void {
-  const {
-    window,
-    targetWidth,
-    targetHeight,
-    targetX = -1,
-    targetY = -1,
-    duration = 150,
-    view = 'default'
-  } = args
+  const { window, targetWidth, targetHeight, targetX = -1, targetY = -1, duration = 150 } = args
 
   // Validate window instance
   if (!window || window.isDestroyed()) {
@@ -97,15 +85,12 @@ export function animateWindowResize(args: WindowResizeOptions): void {
           )
         )
 
-        const boundedY =
-          view === 'pill'
-            ? newY
-            : Math.round(
-                Math.max(
-                  Math.floor(workArea.y),
-                  Math.min(Math.ceil(newY), Math.floor(workArea.y + workArea.height - newHeight))
-                )
-              )
+        const boundedY = Math.round(
+          Math.max(
+            Math.floor(workArea.y),
+            Math.min(Math.ceil(newY), Math.floor(workArea.y + workArea.height - newHeight))
+          )
+        )
 
         window.setSize(newWidth, newHeight, true)
         window.setPosition(boundedX, boundedY, true)

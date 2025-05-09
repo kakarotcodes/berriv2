@@ -52,8 +52,7 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
         targetHeight: dimensions.height,
         targetX,
         targetY,
-        duration: 300,
-        view
+        duration: 300
       })
 
       // Screen change handler for right-edge sticking
