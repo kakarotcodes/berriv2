@@ -1,4 +1,4 @@
-import { ipcMain, BrowserWindow, screen, Display } from 'electron'
+import { ipcMain, BrowserWindow, screen } from 'electron'
 import { animateWindowResize } from './windowResize'
 import { prefs } from './prefs'
 
@@ -24,16 +24,16 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
 
   ipcMain.on('start-vertical-drag', (_e, mouseY: number) => {
     if (!mainWindow || mainWindow.isDestroyed()) return
-    const bounds = mainWindow.getBounds();
-    dragState.isDragging = true;
-    dragState.startMouseY = mouseY;
-    dragState.startWindowY = bounds.y;
-    dragState.windowWidth = bounds.width;
-    dragState.windowHeight = bounds.height;
-    mainWindow.webContents.executeJavaScript(
-      `document.body.classList.add('is-dragging')`
-    ).catch(console.error);
-  });
+    const bounds = mainWindow.getBounds()
+    dragState.isDragging = true
+    dragState.startMouseY = mouseY
+    dragState.startWindowY = bounds.y
+    dragState.windowWidth = bounds.width
+    dragState.windowHeight = bounds.height
+    mainWindow.webContents
+      .executeJavaScript(`document.body.classList.add('is-dragging')`)
+      .catch(console.error)
+  })
 
   ipcMain.on('update-vertical-drag', (_e, mouseY: number) => {
     if (!dragState.isDragging || !mainWindow) return;
@@ -41,28 +41,35 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
       const cursorPoint = screen.getCursorScreenPoint();
       const currentDisplay = screen.getDisplayNearestPoint(cursorPoint);
       const workArea = currentDisplay.workArea;
-      // Always stick to the right edge
-      const newX = workArea.x + workArea.width - dragState.windowWidth;
+      
+      // Always keep the pill partially embedded (mostly off-screen)
+      // Use the same offset logic as in animateViewTransition.ts
+      const pillOffset = 80; // Same value as in animateViewTransition.ts
+      const newX = workArea.x + workArea.width - pillOffset;
+      
       // Y follows the mouse, but is clamped to the display
       const deltaY = mouseY - dragState.startMouseY;
       const newY = dragState.startWindowY + deltaY;
-      // Clamp Y so the pill is always fully visible
+      
+      // Clamp Y to keep pill within vertical bounds
       const minY = workArea.y;
       const maxY = workArea.y + workArea.height - dragState.windowHeight;
       const boundedY = Math.max(minY, Math.min(maxY, newY));
+      
+      // Apply position
       mainWindow.setPosition(newX, boundedY, false);
     } catch (error) {
       console.error('Error during drag update:', error);
     }
-  });
+  })
 
   ipcMain.on('end-vertical-drag', () => {
-    if (!mainWindow || mainWindow.isDestroyed()) return;
-    const [, y] = mainWindow.getPosition();
-    prefs.set('pillY', y);
-    dragState.isDragging = false;
-    mainWindow.webContents.executeJavaScript(
-      `document.body.classList.remove('is-dragging')`
-    ).catch(console.error);
-  });
+    if (!mainWindow || mainWindow.isDestroyed()) return
+    const [, y] = mainWindow.getPosition()
+    prefs.set('pillY', y)
+    dragState.isDragging = false
+    mainWindow.webContents
+      .executeJavaScript(`document.body.classList.remove('is-dragging')`)
+      .catch(console.error)
+  })
 }

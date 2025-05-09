@@ -44,9 +44,10 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
         targetY = workArea.y + workArea.height - dimensions.height - 20;
       } 
       else if (view === 'pill') {
-        // Pill view: Right edge with slight offset
-        const pillOffset = 20;
-        targetX = workArea.x + workArea.width - dimensions.width + pillOffset;
+        // Pill view: Right edge with significant offset to hide most of it
+        // We want most of the pill to be off-screen, with just a portion visible
+        const pillOffset = 80; // Increase offset so more of pill is off-screen
+        targetX = workArea.x + workArea.width - pillOffset; // This puts most of pill off-screen
         
         // Use saved Y position if available and valid
         const savedY = prefs.get('pillY') as number | undefined;
