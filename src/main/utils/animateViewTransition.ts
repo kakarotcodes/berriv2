@@ -6,7 +6,7 @@ import { animateWindowResize } from './windowResize'
 import { ViewType } from '../../types/types'
 
 export function registerViewHandlers(mainWindow: BrowserWindow) {
-  const PILL_OFFSET = 40
+  const PILL_OFFSET = 20
 
   ipcMain.handle('animate-view-transition', async (_event, view: ViewType) => {
     const viewDimensions = {
@@ -25,8 +25,6 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
 
     let targetX: number
     let targetY: number
-
-    console.log('view inside animateViewTransition', view)
 
     switch (view) {
       case 'pill':
@@ -48,9 +46,6 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
     }
 
     return new Promise((resolve) => {
-      console.log('targetX', targetX)
-      console.log('targetY', targetY)
-
       animateWindowResize({
         window: mainWindow,
         targetWidth: dimensions.width,
