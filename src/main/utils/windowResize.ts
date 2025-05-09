@@ -1,5 +1,8 @@
 import { BrowserWindow, screen } from 'electron'
 
+// types
+import { ViewType } from '../../types/types'
+
 // Track ongoing animations using timeout IDs
 const timeoutMap = new WeakMap<BrowserWindow, NodeJS.Timeout>()
 
@@ -10,10 +13,19 @@ interface WindowResizeOptions {
   targetX?: number
   targetY?: number
   duration?: number
+  view?: ViewType
 }
 
 export function animateWindowResize(args: WindowResizeOptions): void {
-  const { window, targetWidth, targetHeight, targetX = -1, targetY = -1, duration = 150 } = args
+  const {
+    window,
+    targetWidth,
+    targetHeight,
+    targetX = -1,
+    targetY = -1,
+    duration = 150,
+    view = 'default'
+  } = args
 
   // Validate window instance
   if (!window || window.isDestroyed()) {
@@ -53,12 +65,15 @@ export function animateWindowResize(args: WindowResizeOptions): void {
         const elapsed = now - startTime
 
         if (now >= endTime) {
-          const finalX = Math.round(
-            Math.max(
-              workArea.x,
-              Math.min(targetX >= 0 ? targetX : currentX, workArea.x + workArea.width - targetWidth)
-            )
-          )
+          // const finalX = Math.round(
+          //   Math.max(
+          //     workArea.x,
+          //     Math.min(targetX >= 0 ? targetX : currentX, workArea.x + workArea.width - targetWidth)
+          //   )
+          // )
+
+          const finalX = Math.round(Math.max(workArea.x, targetX >= 0 ? targetX : currentX))
+
           const finalY = Math.round(
             Math.max(
               workArea.y,
@@ -82,19 +97,31 @@ export function animateWindowResize(args: WindowResizeOptions): void {
         const newX = targetX >= 0 ? Math.round(currentX + xDelta * easeProgress) : currentX
         const newY = targetY >= 0 ? Math.round(currentY + yDelta * easeProgress) : currentY
 
+        // const boundedX =
+        //   view === 'pill'
+        //     ? newX
+        //     : Math.round(
+        //         Math.max(
+        //           Math.floor(workArea.x),
+        //           Math.min(Math.ceil(newX), Math.floor(workArea.x + workArea.width - newWidth))
+        //         )
+        //       )
         const boundedX = Math.round(
           Math.max(
             Math.floor(workArea.x),
-            Math.min(Math.ceil(newX), Math.floor(workArea.x + workArea.width - newWidth))
+            Math.ceil(newX) // Remove right boundary check
           )
         )
 
-        const boundedY = Math.round(
-          Math.max(
-            Math.floor(workArea.y),
-            Math.min(Math.ceil(newY), Math.floor(workArea.y + workArea.height - newHeight))
-          )
-        )
+        const boundedY =
+          view === 'pill'
+            ? newY
+            : Math.round(
+                Math.max(
+                  Math.floor(workArea.y),
+                  Math.min(Math.ceil(newY), Math.floor(workArea.y + workArea.height - newHeight))
+                )
+              )
 
         window.setSize(newWidth, newHeight, true)
         window.setPosition(boundedX, boundedY, true)

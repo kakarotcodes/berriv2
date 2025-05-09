@@ -2,8 +2,13 @@
 import { BrowserWindow, ipcMain, screen } from 'electron'
 import { animateWindowResize } from './windowResize'
 
+// types
+import { ViewType } from '../../types/types'
+
 export function registerViewHandlers(mainWindow: BrowserWindow) {
-  ipcMain.handle('animate-view-transition', async (_event, view: string) => {
+  const PILL_OFFSET = 40
+
+  ipcMain.handle('animate-view-transition', async (_event, view: ViewType) => {
     const viewDimensions = {
       default: { width: 512, height: 288 },
       pill: { width: 100, height: 48 },
@@ -18,30 +23,51 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
     const primaryDisplay = screen.getPrimaryDisplay()
     const { workArea } = primaryDisplay
 
-    // Calculate positions
-    let targetX = workArea.x + workArea.width - dimensions.width // Right edge
-    let targetY = workArea.y + 130 // 130px top margin
+    let targetX: number
+    let targetY: number
 
-    // Special handling for default view (keep original positioning)
-    if (view === 'default') {
-      targetX = workArea.x + workArea.width - dimensions.width - 20 // 20px right margin
-      targetY = workArea.y + workArea.height - dimensions.height - 20 // 20px bottom margin
+    console.log('view inside animateViewTransition', view)
+
+    switch (view) {
+      case 'pill':
+        const pillWidth = dimensions.width
+        const offset = pillWidth - PILL_OFFSET // Show 40px outside screen
+        targetX = workArea.x + workArea.width - offset
+        targetY = workArea.y + 130
+        break
+
+      case 'default':
+        targetX = workArea.x + workArea.width - dimensions.width - 20 // 20px right margin
+        targetY = workArea.y + workArea.height - dimensions.height - 20 // 20px bottom margin
+        break
+
+      default:
+        targetX = workArea.x + workArea.width - dimensions.width
+        targetY = workArea.y + 130
+        break
     }
 
     return new Promise((resolve) => {
+      console.log('targetX', targetX)
+      console.log('targetY', targetY)
+
       animateWindowResize({
         window: mainWindow,
         targetWidth: dimensions.width,
         targetHeight: dimensions.height,
         targetX,
         targetY,
-        duration: 300
+        duration: 300,
+        view
       })
 
       // Screen change handler for right-edge sticking
       const handleScreenChange = () => {
         const updatedDisplay = screen.getPrimaryDisplay()
-        const newX = updatedDisplay.workArea.x + updatedDisplay.workArea.width - dimensions.width
+        const newX =
+          updatedDisplay.workArea.x +
+          updatedDisplay.workArea.width -
+          (dimensions.width - PILL_OFFSET)
         mainWindow.setPosition(newX, targetY)
       }
 
@@ -56,7 +82,7 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
         const expectedX =
           screen.getPrimaryDisplay().workArea.x +
           screen.getPrimaryDisplay().workArea.width -
-          dimensions.width
+          (dimensions.width - PILL_OFFSET)
 
         if (Math.abs(currentX - expectedX) <= 2 && currentY === targetY) {
           screen.off('display-metrics-changed', handleScreenChange)
