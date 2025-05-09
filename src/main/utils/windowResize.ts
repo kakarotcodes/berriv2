@@ -1,49 +1,113 @@
-import { BrowserWindow } from 'electron'
+import { BrowserWindow, screen } from 'electron'
 
 // Track ongoing animations using timeout IDs
 const timeoutMap = new WeakMap<BrowserWindow, NodeJS.Timeout>()
 
-export function animateWindowResize(
-  window: BrowserWindow,
-  targetWidth: number,
-  targetHeight: number,
-  duration: number = 150
-): void {
-  // Clear any existing animation
-  const existingTimeout = timeoutMap.get(window)
-  if (existingTimeout) {
-    clearTimeout(existingTimeout)
+interface WindowResizeOptions {
+  window: BrowserWindow | null | undefined
+  targetWidth: number
+  targetHeight: number
+  targetX?: number
+  targetY?: number
+  duration?: number
+}
+
+export function animateWindowResize(args: WindowResizeOptions): void {
+  const { window, targetWidth, targetHeight, targetX = -1, targetY = -1, duration = 150 } = args
+
+  // Validate window instance
+  if (!window || window.isDestroyed()) {
+    console.error('Invalid window instance for animation')
+    return
   }
 
-  const [currentWidth, currentHeight] = window.getSize()
-  const widthDelta = targetWidth - currentWidth
-  const heightDelta = targetHeight - currentHeight
-
-  const startTime = Date.now()
-  const endTime = startTime + duration
-
-  const animateStep = () => {
-    const now = Date.now()
-    const elapsed = now - startTime
-
-    if (now >= endTime) {
-      window.setSize(targetWidth, targetHeight, true)
-      return
+  try {
+    // Clear any existing animation
+    const existingTimeout = timeoutMap.get(window)
+    if (existingTimeout) {
+      clearTimeout(existingTimeout)
     }
 
-    const progress = elapsed / duration
-    const easeProgress = progress * (2 - progress)
+    // Get current window state with safety checks
+    const [currentWidth, currentHeight] = window.getSize()
+    const [currentX, currentY] = window.getPosition()
 
-    const newWidth = Math.round(currentWidth + widthDelta * easeProgress)
-    const newHeight = Math.round(currentHeight + heightDelta * easeProgress)
+    // Calculate deltas
+    const widthDelta = targetWidth - currentWidth
+    const heightDelta = targetHeight - currentHeight
+    const xDelta = targetX >= 0 ? targetX - currentX : 0
+    const yDelta = targetY >= 0 ? targetY - currentY : 0
 
-    window.setSize(newWidth, newHeight, true)
+    // Get screen bounds safely
+    const display = screen.getDisplayMatching(window.getBounds())
+    const { workArea } = display ?? screen.getPrimaryDisplay()
 
-    // Schedule next frame using setTimeout
-    const timeoutId = setTimeout(animateStep, 16) // ~60fps
-    timeoutMap.set(window, timeoutId)
+    const startTime = Date.now()
+    const endTime = startTime + duration
+
+    const animateStep = () => {
+      try {
+        if (!window || window.isDestroyed()) return
+
+        const now = Date.now()
+        const elapsed = now - startTime
+
+        if (now >= endTime) {
+          const finalX = Math.round(
+            Math.max(
+              workArea.x,
+              Math.min(targetX >= 0 ? targetX : currentX, workArea.x + workArea.width - targetWidth)
+            )
+          )
+          const finalY = Math.round(
+            Math.max(
+              workArea.y,
+              Math.min(
+                targetY >= 0 ? targetY : currentY,
+                workArea.y + workArea.height - targetHeight
+              )
+            )
+          )
+
+          window.setSize(targetWidth, targetHeight, true)
+          window.setPosition(finalX, finalY, true)
+          return
+        }
+
+        const progress = Math.min(elapsed / duration, 1)
+        const easeProgress = progress * (2 - progress)
+
+        const newWidth = Math.round(currentWidth + widthDelta * easeProgress)
+        const newHeight = Math.round(currentHeight + heightDelta * easeProgress)
+        const newX = targetX >= 0 ? Math.round(currentX + xDelta * easeProgress) : currentX
+        const newY = targetY >= 0 ? Math.round(currentY + yDelta * easeProgress) : currentY
+
+        const boundedX = Math.round(
+          Math.max(
+            Math.floor(workArea.x),
+            Math.min(Math.ceil(newX), Math.floor(workArea.x + workArea.width - newWidth))
+          )
+        )
+
+        const boundedY = Math.round(
+          Math.max(
+            Math.floor(workArea.y),
+            Math.min(Math.ceil(newY), Math.floor(workArea.y + workArea.height - newHeight))
+          )
+        )
+
+        window.setSize(newWidth, newHeight, true)
+        window.setPosition(boundedX, boundedY, true)
+
+        const timeoutId = setTimeout(animateStep, 16)
+        timeoutMap.set(window, timeoutId)
+      } catch (error) {
+        console.error('Animation frame error:', error)
+      }
+    }
+
+    animateStep()
+  } catch (error) {
+    console.error('Animation initialization failed:', error)
   }
-
-  // Start the animation
-  animateStep()
 }
