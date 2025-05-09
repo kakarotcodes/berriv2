@@ -1,5 +1,6 @@
 import { ipcMain, BrowserWindow } from 'electron'
 import { animateWindowResize } from './windowResize'
+import { prefs } from './prefs'
 
 export function registerIpcHandlers(mainWindow: BrowserWindow) {
   ipcMain.on('resize-window', (_event, { width, height }) => {
@@ -18,44 +19,51 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
     startMouseY: 0,
     initialWindowY: 0,
     initialWindowX: 0 // Store X to avoid fetching it repeatedly
-  };
+  }
 
   // Start drag handler - capture everything we need once to avoid re-fetching
   ipcMain.on('start-vertical-drag', (_e, mouseY: number) => {
     // Skip if no window
-    if (!mainWindow || mainWindow.isDestroyed()) return;
-    
+    if (!mainWindow || mainWindow.isDestroyed()) return
+
     // Get current window position once, at the beginning
-    const bounds = mainWindow.getBounds();
-    
+    const bounds = mainWindow.getBounds()
+
     // Store everything we need
-    dragState.isDragging = true;
-    dragState.startMouseY = mouseY;
-    dragState.initialWindowY = bounds.y;
-    dragState.initialWindowX = bounds.x;
-  });
+    dragState.isDragging = true
+    dragState.startMouseY = mouseY
+    dragState.initialWindowY = bounds.y
+    dragState.initialWindowX = bounds.x
+  })
 
   // Absolute bare minimum update handler for zero lag
   ipcMain.on('update-vertical-drag', (_e, mouseY: number) => {
     // Minimal check
-    if (!dragState.isDragging || !mainWindow) return;
-    
+    if (!dragState.isDragging || !mainWindow) return
+
     try {
       // Direct delta calculation with no extra operations
-      const y = dragState.initialWindowY + (mouseY - dragState.startMouseY);
-      
+      const y = dragState.initialWindowY + (mouseY - dragState.startMouseY)
+
       // Direct set with no options or extra calls
-      mainWindow.setPosition(dragState.initialWindowX, y, false);
+      mainWindow.setPosition(dragState.initialWindowX, y, false)
     } catch (e) {
       // Silently fail
     }
-  });
+  })
 
   // End drag handler
   ipcMain.on('end-vertical-drag', () => {
-    dragState.isDragging = false;
-    dragState.startMouseY = 0;
-    dragState.initialWindowY = 0;
-    dragState.initialWindowX = 0;
-  });
+    dragState.isDragging = false
+    dragState.startMouseY = 0
+    dragState.initialWindowY = 0
+    dragState.initialWindowX = 0
+  })
+
+  ipcMain.on('end-vertical-drag', () => {
+    if (!mainWindow || mainWindow.isDestroyed()) return
+    const [, y] = mainWindow.getPosition()
+    prefs.set('pillY', y) // 🔒 remember
+    dragState.isDragging = false
+  })
 }

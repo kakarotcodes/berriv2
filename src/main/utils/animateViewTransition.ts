@@ -4,6 +4,7 @@ import { animateWindowResize } from './windowResize'
 
 // types
 import { ViewType } from '../../types/types'
+import { prefs } from './prefs'
 
 export function registerViewHandlers(mainWindow: BrowserWindow) {
   const PILL_OFFSET = 20
@@ -28,10 +29,20 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
 
     switch (view) {
       case 'pill':
+        // const pillWidth = dimensions.width
+        // const offset = pillWidth - PILL_OFFSET // Show 40px outside screen
+        // targetX = workArea.x + workArea.width - offset
+        // targetY = workArea.y + 130
+        // break
         const pillWidth = dimensions.width
-        const offset = pillWidth - PILL_OFFSET // Show 40px outside screen
+        const offset = pillWidth - PILL_OFFSET
         targetX = workArea.x + workArea.width - offset
-        targetY = workArea.y + 130
+        //  🆕  use saved Y if it’s still within screen bounds
+        const savedY = prefs.get('pillY')
+        targetY = Math.min(
+          workArea.y + workArea.height - dimensions.height,
+          Math.max(workArea.y, savedY)
+        )
         break
 
       case 'default':

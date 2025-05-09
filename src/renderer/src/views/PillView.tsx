@@ -1,11 +1,12 @@
 // views/PillView.tsx
-import { memo, useEffect } from 'react'
+import { memo, useEffect, useRef } from 'react'
 import { useElectron } from '@/hooks/useElectron'
 import { useViewStore } from '@/globalStore'
 
 const PillView = memo(() => {
   const { resizeWindow } = useElectron()
   const { dimensions, setView } = useViewStore()
+  const rafIdRef = useRef<number | null>(null)
 
   useEffect(() => {
     try {
@@ -21,10 +22,12 @@ const PillView = memo(() => {
     
     // Simple drag handler with mouse events only
     let isDragging = false;
+    let lastY = 0;
     
     const onMouseDown = (e) => {
       // Start the drag
       isDragging = true;
+      lastY = e.clientY;
       
       // Prevent default behaviors
       e.preventDefault();
@@ -40,8 +43,17 @@ const PillView = memo(() => {
     const onMouseMove = (e) => {
       if (!isDragging) return;
       
-      // Send the current mouse position to the main process
-      window.electronAPI.updateVerticalDrag(e.clientY);
+      // Store the current Y position
+      lastY = e.clientY;
+      
+      // If we already have an animation frame pending, don't request another
+      if (rafIdRef.current === null) {
+        rafIdRef.current = requestAnimationFrame(() => {
+          // Send the position to the main process
+          window.electronAPI.updateVerticalDrag(lastY);
+          rafIdRef.current = null;
+        });
+      }
     };
     
     const onMouseUp = () => {
@@ -49,6 +61,12 @@ const PillView = memo(() => {
       
       // End the drag
       isDragging = false;
+      
+      // Cancel any pending animation frame
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current);
+        rafIdRef.current = null;
+      }
       
       // Tell the main process we're done
       window.electronAPI.endVerticalDrag();
@@ -68,6 +86,11 @@ const PillView = memo(() => {
       handle.removeEventListener('mousedown', onMouseDown);
       document.removeEventListener('mousemove', onMouseMove);
       document.removeEventListener('mouseup', onMouseUp);
+      
+      // Make sure to cancel any pending animation frame
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current);
+      }
     };
   }, []);
 
