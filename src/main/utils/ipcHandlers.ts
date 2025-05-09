@@ -1,4 +1,4 @@
-import { ipcMain, BrowserWindow } from 'electron'
+import { ipcMain, BrowserWindow, screen, Display } from 'electron'
 import { animateWindowResize } from './windowResize'
 import { prefs } from './prefs'
 
@@ -13,57 +13,56 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
     })
   })
 
-  // Clean, minimal drag state
+  // Drag state
   const dragState = {
     isDragging: false,
     startMouseY: 0,
-    initialWindowY: 0,
-    initialWindowX: 0 // Store X to avoid fetching it repeatedly
+    startWindowY: 0,
+    windowWidth: 0,
+    windowHeight: 0
   }
 
-  // Start drag handler - capture everything we need once to avoid re-fetching
   ipcMain.on('start-vertical-drag', (_e, mouseY: number) => {
-    // Skip if no window
     if (!mainWindow || mainWindow.isDestroyed()) return
+    const bounds = mainWindow.getBounds();
+    dragState.isDragging = true;
+    dragState.startMouseY = mouseY;
+    dragState.startWindowY = bounds.y;
+    dragState.windowWidth = bounds.width;
+    dragState.windowHeight = bounds.height;
+    mainWindow.webContents.executeJavaScript(
+      `document.body.classList.add('is-dragging')`
+    ).catch(console.error);
+  });
 
-    // Get current window position once, at the beginning
-    const bounds = mainWindow.getBounds()
-
-    // Store everything we need
-    dragState.isDragging = true
-    dragState.startMouseY = mouseY
-    dragState.initialWindowY = bounds.y
-    dragState.initialWindowX = bounds.x
-  })
-
-  // Absolute bare minimum update handler for zero lag
   ipcMain.on('update-vertical-drag', (_e, mouseY: number) => {
-    // Minimal check
-    if (!dragState.isDragging || !mainWindow) return
-
+    if (!dragState.isDragging || !mainWindow) return;
     try {
-      // Direct delta calculation with no extra operations
-      const y = dragState.initialWindowY + (mouseY - dragState.startMouseY)
-
-      // Direct set with no options or extra calls
-      mainWindow.setPosition(dragState.initialWindowX, y, false)
-    } catch (e) {
-      // Silently fail
+      const cursorPoint = screen.getCursorScreenPoint();
+      const currentDisplay = screen.getDisplayNearestPoint(cursorPoint);
+      const workArea = currentDisplay.workArea;
+      // Always stick to the right edge
+      const newX = workArea.x + workArea.width - dragState.windowWidth;
+      // Y follows the mouse, but is clamped to the display
+      const deltaY = mouseY - dragState.startMouseY;
+      const newY = dragState.startWindowY + deltaY;
+      // Clamp Y so the pill is always fully visible
+      const minY = workArea.y;
+      const maxY = workArea.y + workArea.height - dragState.windowHeight;
+      const boundedY = Math.max(minY, Math.min(maxY, newY));
+      mainWindow.setPosition(newX, boundedY, false);
+    } catch (error) {
+      console.error('Error during drag update:', error);
     }
-  })
-
-  // End drag handler
-  ipcMain.on('end-vertical-drag', () => {
-    dragState.isDragging = false
-    dragState.startMouseY = 0
-    dragState.initialWindowY = 0
-    dragState.initialWindowX = 0
-  })
+  });
 
   ipcMain.on('end-vertical-drag', () => {
-    if (!mainWindow || mainWindow.isDestroyed()) return
-    const [, y] = mainWindow.getPosition()
-    prefs.set('pillY', y) // 🔒 remember
-    dragState.isDragging = false
-  })
+    if (!mainWindow || mainWindow.isDestroyed()) return;
+    const [, y] = mainWindow.getPosition();
+    prefs.set('pillY', y);
+    dragState.isDragging = false;
+    mainWindow.webContents.executeJavaScript(
+      `document.body.classList.remove('is-dragging')`
+    ).catch(console.error);
+  });
 }
