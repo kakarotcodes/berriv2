@@ -38,25 +38,28 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
   ipcMain.on('update-vertical-drag', (_e, mouseY: number) => {
     if (!dragState.isDragging || !mainWindow) return;
     try {
+      // Get the current cursor position directly from the screen API
+      // This is more accurate than using the mouseY value passed from the renderer
       const cursorPoint = screen.getCursorScreenPoint();
       const currentDisplay = screen.getDisplayNearestPoint(cursorPoint);
       const workArea = currentDisplay.workArea;
       
       // Always keep the pill partially embedded (mostly off-screen)
-      // Use the same offset logic as in animateViewTransition.ts
       const pillOffset = 80; // Same value as in animateViewTransition.ts
       const newX = workArea.x + workArea.width - pillOffset;
       
-      // Y follows the mouse, but is clamped to the display
-      const deltaY = mouseY - dragState.startMouseY;
-      const newY = dragState.startWindowY + deltaY;
+      // Calculate Y position directly based on cursor position, not delta
+      // This creates a direct connection between mouse position and window position
+      // Use absolute positioning instead of relative/delta positioning
+      const dragHandleOffset = 20; // Approximate offset to position drag handle at cursor
+      const newY = cursorPoint.y - dragHandleOffset;
       
       // Clamp Y to keep pill within vertical bounds
       const minY = workArea.y;
       const maxY = workArea.y + workArea.height - dragState.windowHeight;
       const boundedY = Math.max(minY, Math.min(maxY, newY));
       
-      // Apply position
+      // Apply position - use false to disable animation for immediate response
       mainWindow.setPosition(newX, boundedY, false);
     } catch (error) {
       console.error('Error during drag update:', error);

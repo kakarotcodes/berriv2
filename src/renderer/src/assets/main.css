@@ -72,6 +72,19 @@ body {
   perspective: 1000px;
   -webkit-perspective: 1000px;
   transition: none !important;
+  pointer-events: auto !important;
+  touch-action: none;
+}
+
+/* Optimize the pill container for dragging */
+#pill-container {
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  perspective: 1000;
+  -webkit-perspective: 1000;
+  touch-action: none;
 }
 
 /* Disable pointer events on other elements during drag */

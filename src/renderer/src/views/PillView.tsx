@@ -10,15 +10,16 @@ const PillView = () => {
   const [isMouseOver, setIsMouseOver] = useState(false)
   const [isOverDragHandle, setIsOverDragHandle] = useState(false)
   const [isTransitioningToDefault, setIsTransitioningToDefault] = useState(false)
-  // Set hover delay to 300ms (faster than the original 500ms)
-  const HOVER_DELAY = 300
+  // Faster hover delay for better UX
+  const HOVER_DELAY = 250
 
   // When pill view mounts, ensure we have a valid position
   useEffect(() => {
     // Save position of pill on mount to ensure we have a valid position
+    // Reduced delay for faster initial positioning
     setTimeout(() => {
       savePillPosition()
-    }, 200) // Short delay to ensure window is fully positioned
+    }, 100) 
   }, [savePillPosition])
 
   useEffect(() => {
@@ -40,22 +41,21 @@ const PillView = () => {
       isDragging = true
       lastY = e.clientY
       e.preventDefault()
-      window.electronAPI.startVerticalDrag(e.clientY)
-
+      
+      // Immediately add dragging classes for visual feedback
       handle.classList.add('active')
       document.body.classList.add('dragging')
+      
+      // Start the drag operation
+      window.electronAPI.startVerticalDrag(e.clientY)
     }
 
     const onMouseMove = (e: MouseEvent) => {
       if (!isDragging) return
+      
+      // Update the Y position immediately - remove the RAF throttling that was causing lag
       lastY = e.clientY
-
-      if (rafIdRef.current === null) {
-        rafIdRef.current = requestAnimationFrame(() => {
-          window.electronAPI.updateVerticalDrag(lastY)
-          rafIdRef.current = null
-        })
-      }
+      window.electronAPI.updateVerticalDrag(lastY)
     }
 
     const onMouseUp = () => {
