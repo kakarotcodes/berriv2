@@ -29,7 +29,7 @@ function createWindow(): void {
     frame: false,
     transparent: true,
     alwaysOnTop: true,
-    resizable: true,
+    resizable: false,
     skipTaskbar: true,
     webPreferences: {
       contextIsolation: true,

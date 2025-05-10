@@ -11,5 +11,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   startVerticalDrag: (mouseY) => ipcRenderer.send('start-vertical-drag', mouseY),
   updateVerticalDrag: (mouseY) => ipcRenderer.send('update-vertical-drag', mouseY),
-  endVerticalDrag: () => ipcRenderer.send('end-vertical-drag')
+  endVerticalDrag: () => ipcRenderer.send('end-vertical-drag'),
+  setResizable: (resizable) => ipcRenderer.send('set-resizable', resizable)
 })

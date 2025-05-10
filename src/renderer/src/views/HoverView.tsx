@@ -35,7 +35,7 @@ const HoverView = memo(() => {
   
   return (
     <div 
-      className="w-full h-full bg-blue-400 p-4 rounded-lg"
+      className="w-full h-full bg-gray-800 p-4 rounded-lg"
       onMouseLeave={handleMouseLeave}
       onMouseEnter={handleMouseEnter}
     >

@@ -10,6 +10,8 @@ const PillView = () => {
   const [isMouseOver, setIsMouseOver] = useState(false)
   const [isOverDragHandle, setIsOverDragHandle] = useState(false)
   const [isTransitioningToDefault, setIsTransitioningToDefault] = useState(false)
+  // Set hover delay to 300ms (faster than the original 500ms)
+  const HOVER_DELAY = 300
 
   useEffect(() => {
     try {
@@ -101,6 +103,9 @@ const PillView = () => {
     if (!pill) return
 
     const onMouseEnter = () => {
+      // Don't start hover timer if we're already transitioning to default
+      if (isTransitioningToDefault) return
+      
       setIsMouseOver(true)
 
       // Only start hover timer if we're not over the drag handle
@@ -110,10 +115,11 @@ const PillView = () => {
         }
         hoverTimeout.current = setTimeout(() => {
           // Double-check we're still not over the drag handle when the timer fires
-          if (!isOverDragHandle && isMouseOver) {
+          // and that we're not transitioning to default
+          if (!isOverDragHandle && isMouseOver && !isTransitioningToDefault) {
             setView('hover')
           }
-        }, 500)
+        }, HOVER_DELAY)
       }
     }
 
@@ -126,6 +132,9 @@ const PillView = () => {
     }
 
     const handleMouseMove = () => {
+      // Don't restart hover timer if we're already transitioning to default
+      if (isTransitioningToDefault) return
+      
       // Only reset/restart the timer if we're over the pill but not over the drag handle
       if (isMouseOver && !isOverDragHandle) {
         if (hoverTimeout.current) {
@@ -133,10 +142,11 @@ const PillView = () => {
         }
         hoverTimeout.current = setTimeout(() => {
           // Double-check we're still not over the drag handle when the timer fires
-          if (!isOverDragHandle && isMouseOver) {
+          // and that we're not transitioning to default
+          if (!isOverDragHandle && isMouseOver && !isTransitioningToDefault) {
             setView('hover')
           }
-        }, 500)
+        }, HOVER_DELAY)
       }
     }
 
@@ -154,7 +164,7 @@ const PillView = () => {
         hoverTimeout.current = null
       }
     }
-  }, [setView, isMouseOver, isOverDragHandle])
+  }, [setView, isMouseOver, isOverDragHandle, HOVER_DELAY, isTransitioningToDefault])
 
   // Clean up function for component unmount
   useEffect(() => {
@@ -171,7 +181,13 @@ const PillView = () => {
   }, [])
 
   const switchToDefault = async () => {
-    // Set local transition state
+    // Immediately cancel any pending hover timeout
+    if (hoverTimeout.current) {
+      clearTimeout(hoverTimeout.current)
+      hoverTimeout.current = null
+    }
+    
+    // Set local transition state immediately to prevent hover from triggering
     setIsTransitioningToDefault(true)
     
     try {
@@ -179,9 +195,10 @@ const PillView = () => {
       await window.electronAPI.animateViewTransition('default')
       
       // Wait for animation to be well underway before changing view
+      // Increased from 250ms to 300ms to ensure the animation is further along
       setTimeout(() => {
         setView('default')
-      }, 250)
+      }, 300)
     } catch (error) {
       console.error('Failed to transition to default view:', error)
       setIsTransitioningToDefault(false)

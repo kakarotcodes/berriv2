@@ -72,4 +72,17 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
       .executeJavaScript(`document.body.classList.remove('is-dragging')`)
       .catch(console.error)
   })
+  
+  // Handle window resizability
+  ipcMain.on('set-resizable', (_event, resizable) => {
+    if (!mainWindow || mainWindow.isDestroyed()) return
+    
+    try {
+      // Set the window resizability
+      mainWindow.setResizable(resizable)
+      console.log(`Window resizability set to: ${resizable}`)
+    } catch (error) {
+      console.error('Error setting window resizability:', error)
+    }
+  })
 }

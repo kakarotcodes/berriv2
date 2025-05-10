@@ -9,6 +9,7 @@ declare global {
       startVerticalDrag: (mouseY: number) => void;
       updateVerticalDrag: (mouseY: number) => void;
       endVerticalDrag: () => void;
+      setResizable: (resizable: boolean) => void;
     }
   }
 }
@@ -29,11 +30,16 @@ export const useElectron = () => {
   const endVerticalDrag = React.useCallback(() => {
     window.electronAPI.endVerticalDrag()
   }, [])
+  
+  const setResizable = React.useCallback((resizable: boolean) => {
+    window.electronAPI.setResizable(resizable)
+  }, [])
 
   return { 
     resizeWindow, 
     startVerticalDrag, 
     updateVerticalDrag, 
-    endVerticalDrag 
+    endVerticalDrag,
+    setResizable
   }
 }
