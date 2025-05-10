@@ -55,17 +55,17 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
         const pillOffset = 80; // Same offset as pill view
         targetX = workArea.x + workArea.width - pillOffset;
         
-        // Prioritize: 1) Last known position 2) Saved position 3) Default position
+        // Prioritize: 1) Last known position 2) Saved position 3) Default position with 130px top margin
         if (lastKnownPillY !== null) {
           // Coming from hover - use the known position
           targetY = lastKnownPillY;
           console.log("Using last known pill position:", targetY);
         } else {
-          // Normal case - use saved position
+          // Normal case - use saved position or default to 130px from top
           const savedY = prefs.get('pillY') as number | undefined;
           targetY = savedY !== undefined 
             ? savedY 
-            : workArea.y + 130;
+            : workArea.y + 130; // Default is 130px from top of the screen
         }
         
         // Ensure Y is within bounds
