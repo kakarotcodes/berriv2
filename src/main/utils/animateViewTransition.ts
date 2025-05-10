@@ -1,105 +1,84 @@
 // main/utils/animateViewTransition.ts
 import { BrowserWindow, ipcMain, screen } from 'electron'
-import { animateWindowResize } from './windowResize'
+import { prefs } from './prefs'
 
 // types
 import { ViewType } from '../../types/types'
-import { prefs } from './prefs'
 
 export function registerViewHandlers(mainWindow: BrowserWindow) {
-  const PILL_OFFSET = 20
-
+  // View dimensions
+  const viewDimensions = {
+    default: { width: 512, height: 288 },
+    pill: { width: 100, height: 48 },
+    hover: { width: 240, height: 240 },
+    expanded: { width: 800, height: 600 }
+  };
+  
+  // Handle IPC calls for view transitions
   ipcMain.handle('animate-view-transition', async (_event, view: ViewType) => {
-    const viewDimensions = {
-      default: { width: 512, height: 288 },
-      pill: { width: 100, height: 48 },
-      hover: { width: 240, height: 240 },
-      expanded: { width: 800, height: 600 }
+    if (!mainWindow || mainWindow.isDestroyed()) {
+      return false;
     }
-
-    const dimensions = viewDimensions[view as keyof typeof viewDimensions]
-    if (!dimensions || !mainWindow) return
-
-    // Get display metrics
-    const primaryDisplay = screen.getPrimaryDisplay()
-    const { workArea } = primaryDisplay
-
-    let targetX: number
-    let targetY: number
-
-    switch (view) {
-      case 'pill':
-        // const pillWidth = dimensions.width
-        // const offset = pillWidth - PILL_OFFSET // Show 40px outside screen
-        // targetX = workArea.x + workArea.width - offset
-        // targetY = workArea.y + 130
-        // break
-        const pillWidth = dimensions.width
-        const offset = pillWidth - PILL_OFFSET
-        targetX = workArea.x + workArea.width - offset
-        //  🆕  use saved Y if it’s still within screen bounds
-        const savedY = prefs.get('pillY')
-        targetY = Math.min(
-          workArea.y + workArea.height - dimensions.height,
-          Math.max(workArea.y, savedY)
-        )
-        break
-
-      case 'default':
-        targetX = workArea.x + workArea.width - dimensions.width - 20 // 20px right margin
-        targetY = workArea.y + workArea.height - dimensions.height - 20 // 20px bottom margin
-        break
-
-      default:
-        targetX = workArea.x + workArea.width - dimensions.width
-        targetY = workArea.y + 130
-        break
+    
+    try {
+      // 1. Get target dimensions
+      const dimensions = viewDimensions[view];
+      if (!dimensions) {
+        console.error('Invalid view type:', view);
+        return false;
+      }
+      
+      // 2. Get current cursor position to determine current display
+      const cursorPos = screen.getCursorScreenPoint();
+      const currentDisplay = screen.getDisplayNearestPoint(cursorPos);
+      const workArea = currentDisplay.workArea;
+      
+      console.log(`Transitioning to ${view} view on display:`, currentDisplay.id);
+      
+      // 3. Calculate target position based on view type
+      let targetX, targetY;
+      
+      if (view === 'default') {
+        // Default view: Bottom right with 20px margins
+        targetX = workArea.x + workArea.width - dimensions.width - 20;
+        targetY = workArea.y + workArea.height - dimensions.height - 20;
+      } 
+      else if (view === 'pill') {
+        // Pill view: Right edge with significant offset to hide most of it
+        // We want most of the pill to be off-screen, with just a portion visible
+        const pillOffset = 80; // Increase offset so more of pill is off-screen
+        targetX = workArea.x + workArea.width - pillOffset; // This puts most of pill off-screen
+        
+        // Use saved Y position if available and valid
+        const savedY = prefs.get('pillY') as number | undefined;
+        const minY = workArea.y;
+        const maxY = workArea.y + workArea.height - dimensions.height;
+        
+        targetY = savedY !== undefined 
+          ? Math.min(maxY, Math.max(minY, savedY)) 
+          : workArea.y + 130;
+      }
+      else {
+        // Other views: Centered in display
+        targetX = workArea.x + (workArea.width - dimensions.width) / 2;
+        targetY = workArea.y + (workArea.height - dimensions.height) / 2;
+      }
+      
+      console.log(`Target position: x=${targetX}, y=${targetY}, width=${dimensions.width}, height=${dimensions.height}`);
+      
+      // 4. Set the window size and position (animation handled by the OS)
+      mainWindow.setBounds({
+        x: Math.round(targetX),
+        y: Math.round(targetY),
+        width: dimensions.width,
+        height: dimensions.height
+      }, true); // true = animate
+      
+      return true;
     }
-
-    return new Promise((resolve) => {
-      animateWindowResize({
-        window: mainWindow,
-        targetWidth: dimensions.width,
-        targetHeight: dimensions.height,
-        targetX,
-        targetY,
-        duration: 10
-      })
-
-      // Screen change handler for right-edge sticking
-      const handleScreenChange = () => {
-        const updatedDisplay = screen.getPrimaryDisplay()
-        const newX =
-          updatedDisplay.workArea.x +
-          updatedDisplay.workArea.width -
-          (dimensions.width - PILL_OFFSET)
-        mainWindow.setPosition(newX, targetY)
-      }
-
-      // Add event listeners for display changes
-      screen.on('display-metrics-changed', handleScreenChange)
-      screen.on('display-added', handleScreenChange)
-      screen.on('display-removed', handleScreenChange)
-
-      // Completion check
-      const verifyPosition = () => {
-        const [currentX, currentY] = mainWindow.getPosition()
-        const expectedX =
-          screen.getPrimaryDisplay().workArea.x +
-          screen.getPrimaryDisplay().workArea.width -
-          (dimensions.width - PILL_OFFSET)
-
-        if (Math.abs(currentX - expectedX) <= 2 && currentY === targetY) {
-          screen.off('display-metrics-changed', handleScreenChange)
-          screen.off('display-added', handleScreenChange)
-          screen.off('display-removed', handleScreenChange)
-          resolve(true)
-        } else {
-          setTimeout(verifyPosition, 50)
-        }
-      }
-
-      verifyPosition()
-    })
-  })
+    catch (error) {
+      console.error('Error during view transition:', error);
+      return false;
+    }
+  });
 }
