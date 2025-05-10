@@ -58,6 +58,25 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
           ? Math.min(maxY, Math.max(minY, savedY)) 
           : workArea.y + 130;
       }
+      else if (view === 'hover') {
+        // Hover view: Position it so it's fully visible on screen
+        // Starting from the same position as the pill, but adjusted to be fully visible
+        
+        // For X position: Position it so it's fully within the screen
+        // Offset from right edge by its full width
+        targetX = workArea.x + workArea.width - dimensions.width - 20;
+        
+        // Use the same Y position as the pill
+        const savedY = prefs.get('pillY') as number | undefined;
+        const minY = workArea.y;
+        const maxY = workArea.y + workArea.height - dimensions.height;
+        
+        targetY = savedY !== undefined 
+          ? Math.min(maxY, Math.max(minY, savedY)) 
+          : workArea.y + 130;
+          
+        console.log("Hover view positioned fully on screen:", {targetX, targetY});
+      }
       else {
         // Other views: Centered in display
         targetX = workArea.x + (workArea.width - dimensions.width) / 2;
