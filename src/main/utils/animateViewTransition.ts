@@ -8,6 +8,11 @@ import { ViewType } from '../../types/types'
 // Keep track of the last known good pill position
 let lastKnownPillY: number | null = null
 
+// Debug helper
+const logPositionInfo = (message: string, data: any) => {
+  console.log(`[POSITION] ${message}:`, data)
+}
+
 export function registerViewHandlers(mainWindow: BrowserWindow) {
   // View dimensions
   const viewDimensions = {
@@ -15,6 +20,13 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
     pill: { width: 100, height: 48 },
     hover: { width: 350, height: 350 },
     expanded: { width: 800, height: 600 }
+  }
+
+  // At startup, load the saved pill position if it exists
+  const savedPillY = prefs.get('pillY') as number | undefined
+  if (savedPillY !== undefined) {
+    logPositionInfo('Loaded saved pill position at startup', savedPillY)
+    lastKnownPillY = savedPillY
   }
 
   // Handle IPC calls for view transitions
@@ -38,6 +50,15 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
 
       // Get current window position (for transitions)
       const currentBounds = mainWindow.getBounds()
+      
+      // Save current position before any transitions if we're in pill view
+      if (currentBounds.width === viewDimensions.pill.width && 
+          currentBounds.height === viewDimensions.pill.height) {
+        // We're definitely in pill view now, save the position for later use
+        lastKnownPillY = currentBounds.y
+        prefs.set('pillY', currentBounds.y)
+        logPositionInfo('Saved pill position during transition', lastKnownPillY)
+      }
 
       console.log(`Transitioning to ${view} view on display:`, currentDisplay.id)
 
@@ -49,29 +70,36 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
         targetX = workArea.x + workArea.width - dimensions.width - 20
         targetY = workArea.y + workArea.height - dimensions.height - 20
       } else if (view === 'pill') {
-        // If we're coming from hover view, use the lastKnownPillY
-        // Otherwise use the saved position from preferences
+        // Pill view positioning - make sure we maintain position
         const pillOffset = 80 // Same offset as pill view
         targetX = workArea.x + workArea.width - pillOffset
 
-        // Prioritize: 1) Last known position 2) Saved position 3) Default position with 130px top margin
+        // Get the saved position from persistent storage
+        const storedY = prefs.get('pillY') as number | undefined
+        
+        // Determine Y position with better fallbacks
         if (lastKnownPillY !== null) {
-          // Coming from hover - use the known position
+          // First priority: Use the last known position from this session
           targetY = lastKnownPillY
-          console.log('Using last known pill position:', targetY)
+          logPositionInfo('Using last known pill position from memory', targetY)
+        } else if (storedY !== undefined) {
+          // Second priority: Use the persistently stored position
+          targetY = storedY
+          logPositionInfo('Using saved pill position from storage', targetY)
         } else {
-          // Normal case - use saved position or default to 130px from top
-          const savedY = prefs.get('pillY') as number | undefined
-          targetY = savedY !== undefined ? savedY : workArea.y + 130 // Default is 130px from top of the screen
+          // Last resort: Default to 130px from top
+          targetY = workArea.y + 130
+          logPositionInfo('Using default pill position (130px from top)', targetY)
         }
 
         // Ensure Y is within bounds
         const minY = workArea.y
         const maxY = workArea.y + workArea.height - dimensions.height
         targetY = Math.min(maxY, Math.max(minY, targetY))
-
-        // Save this position for future reference
+        
+        // Update the stored position to ensure consistency
         prefs.set('pillY', targetY)
+        lastKnownPillY = targetY
       } else if (view === 'hover') {
         // Hover view: Position it so it's fully visible on screen
         // Starting from the same position as the pill, but adjusted to be fully visible
@@ -80,10 +108,11 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
         // Offset from right edge by its full width
         targetX = workArea.x + workArea.width - dimensions.width - 20
 
-        // If we're coming from pill view, save the current Y position
-        if (mainWindow.getBounds().width === viewDimensions.pill.width) {
+        // If we're coming from pill view, save the current Y position more aggressively
+        if (currentBounds.width === viewDimensions.pill.width) {
           lastKnownPillY = currentBounds.y
-          console.log('Saved pill Y position before hover:', lastKnownPillY)
+          prefs.set('pillY', currentBounds.y)
+          logPositionInfo('Saved pill Y position before hover', lastKnownPillY)
         }
 
         // Use the same Y position as the pill
@@ -94,15 +123,16 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
         const maxY = workArea.y + workArea.height - dimensions.height
         targetY = Math.min(maxY, Math.max(minY, targetY))
 
-        console.log('Hover view positioned fully on screen:', { targetX, targetY })
+        logPositionInfo('Hover view positioned fully on screen', { targetX, targetY })
       } else {
         // Other views: Centered in display
         targetX = workArea.x + (workArea.width - dimensions.width) / 2
         targetY = workArea.y + (workArea.height - dimensions.height) / 2
       }
 
-      console.log(
-        `Target position: x=${targetX}, y=${targetY}, width=${dimensions.width}, height=${dimensions.height}`
+      logPositionInfo(
+        `Target position for ${view} view`,
+        { x: targetX, y: targetY, width: dimensions.width, height: dimensions.height }
       )
 
       // 4. Set the window size and position (animation handled by the OS)
@@ -116,15 +146,31 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
         true
       ) // true = animate
 
+      // IMPORTANT: Only reset the lastKnownPillY when explicitly told to
+      // This ensures we don't lose our position
       // If transitioning to default view, reset the last known pill position
-      if (view === 'default') {
-        lastKnownPillY = null
-      }
+      // if (view === 'default') {
+      //   lastKnownPillY = null
+      // }
 
       return true
     } catch (error) {
       console.error('Error during view transition:', error)
       return false
+    }
+  })
+  
+  // Add an explicit IPC handler for persisting the pill position
+  ipcMain.on('save-pill-position', () => {
+    if (!mainWindow || mainWindow.isDestroyed()) return
+    
+    const bounds = mainWindow.getBounds()
+    // Only save if we're in pill view
+    if (bounds.width === viewDimensions.pill.width && 
+        bounds.height === viewDimensions.pill.height) {
+      prefs.set('pillY', bounds.y)
+      lastKnownPillY = bounds.y
+      logPositionInfo('Explicitly saved pill position', bounds.y)
     }
   })
 }

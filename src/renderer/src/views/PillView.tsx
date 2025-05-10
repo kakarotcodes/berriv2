@@ -3,7 +3,7 @@ import { useElectron } from '@/hooks/useElectron'
 import { useViewStore } from '@/globalStore'
 
 const PillView = () => {
-  const { resizeWindow } = useElectron()
+  const { resizeWindow, savePillPosition } = useElectron()
   const { dimensions, setView, targetView, isTransitioning } = useViewStore()
   const rafIdRef = useRef<number | null>(null)
   const hoverTimeout = useRef<NodeJS.Timeout | null>(null)
@@ -12,6 +12,14 @@ const PillView = () => {
   const [isTransitioningToDefault, setIsTransitioningToDefault] = useState(false)
   // Set hover delay to 300ms (faster than the original 500ms)
   const HOVER_DELAY = 300
+
+  // When pill view mounts, ensure we have a valid position
+  useEffect(() => {
+    // Save position of pill on mount to ensure we have a valid position
+    setTimeout(() => {
+      savePillPosition()
+    }, 200) // Short delay to ensure window is fully positioned
+  }, [savePillPosition])
 
   useEffect(() => {
     try {
@@ -62,6 +70,9 @@ const PillView = () => {
       window.electronAPI.endVerticalDrag()
       handle.classList.remove('active')
       document.body.classList.remove('dragging')
+      
+      // Explicitly save position after drag ends
+      savePillPosition()
     }
 
     handle.addEventListener('mousedown', onMouseDown)
@@ -96,7 +107,7 @@ const PillView = () => {
         cancelAnimationFrame(rafIdRef.current)
       }
     }
-  }, [])
+  }, [savePillPosition])
 
   useEffect(() => {
     const pill = document.getElementById('pill-container')
@@ -117,6 +128,8 @@ const PillView = () => {
           // Double-check we're still not over the drag handle when the timer fires
           // and that we're not transitioning to default
           if (!isOverDragHandle && isMouseOver && !isTransitioningToDefault) {
+            // Before transitioning to hover, save the pill position
+            savePillPosition()
             setView('hover')
           }
         }, HOVER_DELAY)
@@ -144,6 +157,8 @@ const PillView = () => {
           // Double-check we're still not over the drag handle when the timer fires
           // and that we're not transitioning to default
           if (!isOverDragHandle && isMouseOver && !isTransitioningToDefault) {
+            // Before transitioning to hover, save the pill position
+            savePillPosition()
             setView('hover')
           }
         }, HOVER_DELAY)
@@ -164,7 +179,7 @@ const PillView = () => {
         hoverTimeout.current = null
       }
     }
-  }, [setView, isMouseOver, isOverDragHandle, HOVER_DELAY, isTransitioningToDefault])
+  }, [setView, isMouseOver, isOverDragHandle, HOVER_DELAY, isTransitioningToDefault, savePillPosition])
 
   // Clean up function for component unmount
   useEffect(() => {
@@ -186,6 +201,9 @@ const PillView = () => {
       clearTimeout(hoverTimeout.current)
       hoverTimeout.current = null
     }
+    
+    // Save the pill position before transitioning away
+    savePillPosition()
     
     // Set local transition state immediately to prevent hover from triggering
     setIsTransitioningToDefault(true)
