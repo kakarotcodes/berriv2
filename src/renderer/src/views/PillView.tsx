@@ -1,21 +1,14 @@
-// views/PillView.tsx
-import { memo, useEffect, useRef, useCallback } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useElectron } from '@/hooks/useElectron'
 import { useViewStore } from '@/globalStore'
 
-const PillView = memo(() => {
+const PillView = () => {
   const { resizeWindow } = useElectron()
   const { dimensions, setView } = useViewStore()
   const rafIdRef = useRef<number | null>(null)
-  
-  // Refs for hover timers
-  const hoverTimerRef = useRef<number | null>(null)
-  const leaveTimerRef = useRef<number | null>(null)
-  const isDraggingRef = useRef(false)
-
-  // Hover delay in milliseconds
-  const HOVER_DELAY = 500
-  const LEAVE_DELAY = 500
+  const hoverTimeout = useRef<NodeJS.Timeout | null>(null)
+  const [isMouseOver, setIsMouseOver] = useState(false)
+  const [isOverDragHandle, setIsOverDragHandle] = useState(false)
 
   useEffect(() => {
     try {
@@ -25,155 +18,165 @@ const PillView = memo(() => {
     }
   }, [dimensions, resizeWindow])
 
-  // Hover handlers
-  const handleMouseEnter = useCallback((e) => {
-    // Don't trigger hover if we're over the drag handle
-    if (e.target.id === 'drag-handle' || e.target.closest('#drag-handle')) {
-      return
-    }
-
-    // Clear any existing leave timer
-    if (leaveTimerRef.current !== null) {
-      clearTimeout(leaveTimerRef.current)
-      leaveTimerRef.current = null
-    }
-
-    // Only start hover timer if we're not already dragging
-    if (!isDraggingRef.current) {
-      // Set timer to switch to hover view
-      hoverTimerRef.current = window.setTimeout(() => {
-        setView('hover').catch(console.error)
-      }, HOVER_DELAY)
-    }
-  }, [setView])
-
-  const handleMouseLeave = useCallback(() => {
-    // Clear any existing hover timer
-    if (hoverTimerRef.current !== null) {
-      clearTimeout(hoverTimerRef.current)
-      hoverTimerRef.current = null
-    }
-  }, [])
-
-  // Effect to clean up timers on unmount
   useEffect(() => {
-    return () => {
-      if (hoverTimerRef.current !== null) {
-        clearTimeout(hoverTimerRef.current)
-      }
-      if (leaveTimerRef.current !== null) {
-        clearTimeout(leaveTimerRef.current)
-      }
-    }
-  }, [])
+    const handle = document.getElementById('drag-handle')
+    if (!handle) return
 
-  useEffect(() => {
-    const handle = document.getElementById('drag-handle');
-    if (!handle) return;
-    
-    // Simple drag handler with mouse events only
-    let isDragging = false;
-    let lastY = 0;
-    
-    const onMouseDown = (e) => {
-      // Start the drag
-      isDragging = true;
-      isDraggingRef.current = true;
-      lastY = e.clientY;
-      
-      // Clear any hover timers when dragging starts
-      if (hoverTimerRef.current !== null) {
-        clearTimeout(hoverTimerRef.current)
-        hoverTimerRef.current = null
-      }
-      
-      // Prevent default behaviors
-      e.preventDefault();
-      
-      // Tell the main process we're starting a drag
-      window.electronAPI.startVerticalDrag(e.clientY);
-      
-      // Add visual feedback
-      handle.classList.add('active');
-      document.body.classList.add('dragging');
-    };
-    
-    const onMouseMove = (e) => {
-      if (!isDragging) return;
-      
-      // Store the current Y position
-      lastY = e.clientY;
-      
-      // If we already have an animation frame pending, don't request another
+    let isDragging = false
+    let lastY = 0
+
+    const onMouseDown = (e: MouseEvent) => {
+      isDragging = true
+      lastY = e.clientY
+      e.preventDefault()
+      window.electronAPI.startVerticalDrag(e.clientY)
+
+      handle.classList.add('active')
+      document.body.classList.add('dragging')
+    }
+
+    const onMouseMove = (e: MouseEvent) => {
+      if (!isDragging) return
+      lastY = e.clientY
+
       if (rafIdRef.current === null) {
         rafIdRef.current = requestAnimationFrame(() => {
-          // Send the position to the main process
-          window.electronAPI.updateVerticalDrag(lastY);
-          rafIdRef.current = null;
-        });
+          window.electronAPI.updateVerticalDrag(lastY)
+          rafIdRef.current = null
+        })
       }
-    };
-    
+    }
+
     const onMouseUp = () => {
-      if (!isDragging) return;
-      
-      // End the drag
-      isDragging = false;
-      isDraggingRef.current = false;
-      
-      // Cancel any pending animation frame
+      if (!isDragging) return
+      isDragging = false
+
       if (rafIdRef.current !== null) {
-        cancelAnimationFrame(rafIdRef.current);
-        rafIdRef.current = null;
+        cancelAnimationFrame(rafIdRef.current)
+        rafIdRef.current = null
       }
-      
-      // Tell the main process we're done
-      window.electronAPI.endVerticalDrag();
-      
-      // Remove visual feedback
-      handle.classList.remove('active');
-      document.body.classList.remove('dragging');
-    };
-    
-    // Add the event listeners
-    handle.addEventListener('mousedown', onMouseDown);
-    document.addEventListener('mousemove', onMouseMove);
-    document.addEventListener('mouseup', onMouseUp);
-    
-    // Clean up
+
+      window.electronAPI.endVerticalDrag()
+      handle.classList.remove('active')
+      document.body.classList.remove('dragging')
+    }
+
+    handle.addEventListener('mousedown', onMouseDown)
+    document.addEventListener('mousemove', onMouseMove)
+    document.addEventListener('mouseup', onMouseUp)
+
+    // Add specific event handlers for the drag handle
+    const handleDragHandleEnter = () => {
+      setIsOverDragHandle(true)
+      // Clear any existing hover timeout when entering drag handle
+      if (hoverTimeout.current) {
+        clearTimeout(hoverTimeout.current)
+        hoverTimeout.current = null
+      }
+    }
+
+    const handleDragHandleLeave = () => {
+      setIsOverDragHandle(false)
+    }
+
+    handle.addEventListener('mouseenter', handleDragHandleEnter)
+    handle.addEventListener('mouseleave', handleDragHandleLeave)
+
     return () => {
-      handle.removeEventListener('mousedown', onMouseDown);
-      document.removeEventListener('mousemove', onMouseMove);
-      document.removeEventListener('mouseup', onMouseUp);
-      
-      // Make sure to cancel any pending animation frame
+      handle.removeEventListener('mousedown', onMouseDown)
+      document.removeEventListener('mousemove', onMouseMove)
+      document.removeEventListener('mouseup', onMouseUp)
+      handle.removeEventListener('mouseenter', handleDragHandleEnter)
+      handle.removeEventListener('mouseleave', handleDragHandleLeave)
+
       if (rafIdRef.current !== null) {
-        cancelAnimationFrame(rafIdRef.current);
+        cancelAnimationFrame(rafIdRef.current)
       }
-    };
-  }, []);
+    }
+  }, [])
+
+  useEffect(() => {
+    const pill = document.getElementById('pill-container')
+    if (!pill) return
+
+    const onMouseEnter = () => {
+      setIsMouseOver(true)
+
+      // Only start hover timer if we're not over the drag handle
+      if (!isOverDragHandle) {
+        if (hoverTimeout.current) {
+          clearTimeout(hoverTimeout.current)
+        }
+        hoverTimeout.current = setTimeout(() => {
+          // Double-check we're still not over the drag handle when the timer fires
+          if (!isOverDragHandle && isMouseOver) {
+            setView('hover')
+          }
+        }, 500)
+      }
+    }
+
+    const onMouseLeave = () => {
+      setIsMouseOver(false)
+      if (hoverTimeout.current) {
+        clearTimeout(hoverTimeout.current)
+        hoverTimeout.current = null
+      }
+    }
+
+    const handleMouseMove = () => {
+      // Only reset/restart the timer if we're over the pill but not over the drag handle
+      if (isMouseOver && !isOverDragHandle) {
+        if (hoverTimeout.current) {
+          clearTimeout(hoverTimeout.current)
+        }
+        hoverTimeout.current = setTimeout(() => {
+          // Double-check we're still not over the drag handle when the timer fires
+          if (!isOverDragHandle && isMouseOver) {
+            setView('hover')
+          }
+        }, 500)
+      }
+    }
+
+    pill.addEventListener('mouseenter', onMouseEnter)
+    pill.addEventListener('mouseleave', onMouseLeave)
+    pill.addEventListener('mousemove', handleMouseMove)
+
+    return () => {
+      pill.removeEventListener('mouseenter', onMouseEnter)
+      pill.removeEventListener('mouseleave', onMouseLeave)
+      pill.removeEventListener('mousemove', handleMouseMove)
+
+      if (hoverTimeout.current) {
+        clearTimeout(hoverTimeout.current)
+        hoverTimeout.current = null
+      }
+    }
+  }, [setView, isMouseOver, isOverDragHandle])
+
+  const switchToDefault = async () => {
+    await window.electronAPI.animateViewTransition('default')
+    setView('default')
+  }
 
   return (
-    <div 
+    <div
+      id="pill-container"
       className="w-full h-full bg-red-400 text-white flex justify-start items-center pl-2 gap-x-3"
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
     >
       <button
-        onClick={() => {
-          useViewStore.setState({ currentView: 'default' })
-          setView('default').catch(console.error)
-        }}
+        onClick={switchToDefault}
         className="bg-green-500 rounded-full w-10 h-10 cursor-pointer"
       />
-      <div 
-        className="w-8 h-full bg-blue-500 cursor-grab hover:bg-blue-600 flex items-center justify-center" 
-        id="drag-handle" 
+      <div
+        className="w-8 h-full bg-blue-500 cursor-grab hover:bg-blue-600 flex items-center justify-center"
+        id="drag-handle"
       >
         <span className="text-white select-none">⋮</span>
       </div>
     </div>
   )
-})
+}
 
 export default PillView
