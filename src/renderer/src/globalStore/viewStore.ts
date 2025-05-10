@@ -38,25 +38,27 @@ export const useViewStore = create<ViewState>()(
           
           // Handle transitions differently based on source and target views
           if (currentView === 'default' && view === 'pill') {
-            // For default->pill transitions only: wait for resize to begin
+            // For default->pill transitions:
+            // 1. Start the electron window resize
             window.electronAPI.animateViewTransition(view)
             
-            // Brief delay to let resize start before component change
-            await new Promise(resolve => setTimeout(resolve, 50))
+            // 2. Wait longer for the resize to be nearly complete before mounting pill
+            // This prevents the pill from showing up inside the default view
+            await new Promise(resolve => setTimeout(resolve, 150))
             
-            // Update the view component
+            // 3. Now it's almost pill-sized, so update the component
             set({
               currentView: view,
               dimensions: viewDimensions[view]
             })
             
-            // Clear transition state after animation completes
+            // 4. Clear transition state slightly after the change
             setTimeout(() => {
               set({
                 isTransitioning: false,
                 targetView: null
               })
-            }, 150)
+            }, 50)
           } 
           else if (currentView === 'pill' && view === 'hover' || 
                    currentView === 'hover' && view === 'pill') {

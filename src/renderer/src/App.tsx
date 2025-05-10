@@ -24,7 +24,7 @@ const viewVariants = {
 
 // Transition overlay config
 const overlayTransition = {
-  enter: { duration: 0.2 },
+  enter: { duration: 0.15 },
   exit: { duration: 0.15 }
 }
 
@@ -34,6 +34,11 @@ const overlayTransition = {
  */
 const OverlayContainer: React.FC = memo(() => {
   const { currentView, targetView, isTransitioning } = useViewStore()
+
+  // Track if we're transitioning specifically from default to pill
+  const isDefaultToPill = React.useMemo(() => {
+    return currentView === 'default' && targetView === 'pill';
+  }, [currentView, targetView]);
 
   // Memoized view component mapping
   const viewComponents = React.useMemo(
@@ -83,14 +88,17 @@ const OverlayContainer: React.FC = memo(() => {
             {React.createElement(viewComponents[currentView])}
           </motion.div>
 
-          {/* Transition Overlay - only show when explicitly transitioning */}
+          {/* Transition Overlay - with special handling for default->pill */}
           {isTransitioning && (
             <motion.div
               key={`transition-overlay`}
               initial={{ opacity: 0 }}
-              animate={{ opacity: 0.3 }}
+              animate={{ 
+                opacity: isDefaultToPill ? 0.5 : 0.3,
+                backgroundColor: isDefaultToPill ? '#000000' : 'rgba(0,0,0,0.3)'
+              }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-black pointer-events-none"
+              className="absolute inset-0 pointer-events-none"
               transition={overlayTransition}
             />
           )}
