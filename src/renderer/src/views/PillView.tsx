@@ -4,11 +4,12 @@ import { useViewStore } from '@/globalStore'
 
 const PillView = () => {
   const { resizeWindow } = useElectron()
-  const { dimensions, setView } = useViewStore()
+  const { dimensions, setView, targetView, isTransitioning } = useViewStore()
   const rafIdRef = useRef<number | null>(null)
   const hoverTimeout = useRef<NodeJS.Timeout | null>(null)
   const [isMouseOver, setIsMouseOver] = useState(false)
   const [isOverDragHandle, setIsOverDragHandle] = useState(false)
+  const [isTransitioningToDefault, setIsTransitioningToDefault] = useState(false)
 
   useEffect(() => {
     try {
@@ -155,9 +156,46 @@ const PillView = () => {
     }
   }, [setView, isMouseOver, isOverDragHandle])
 
+  // Clean up function for component unmount
+  useEffect(() => {
+    return () => {
+      if (hoverTimeout.current) {
+        clearTimeout(hoverTimeout.current)
+        hoverTimeout.current = null
+      }
+      if (rafIdRef.current) {
+        cancelAnimationFrame(rafIdRef.current)
+        rafIdRef.current = null
+      }
+    }
+  }, [])
+
   const switchToDefault = async () => {
-    await window.electronAPI.animateViewTransition('default')
-    setView('default')
+    // Set local transition state
+    setIsTransitioningToDefault(true)
+    
+    try {
+      // First start electron window resize
+      await window.electronAPI.animateViewTransition('default')
+      
+      // Wait for animation to be well underway before changing view
+      setTimeout(() => {
+        setView('default')
+      }, 250)
+    } catch (error) {
+      console.error('Failed to transition to default view:', error)
+      setIsTransitioningToDefault(false)
+    }
+  }
+
+  // If we're transitioning to default, show loading state instead of pill
+  if (isTransitioningToDefault || (targetView === 'default' && isTransitioning)) {
+    return (
+      <div className="w-full h-full bg-black/30 flex items-center justify-center">
+        {/* Simple loading spinner */}
+        <div className="w-8 h-8 border-4 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
+      </div>
+    )
   }
 
   return (
