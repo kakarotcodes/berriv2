@@ -59,11 +59,6 @@ body {
 /* Prevent text selection during drag */
 .dragging {
   user-select: none !important;
-}
-
-/* Full hardware acceleration and no transitions during dragging */
-.dragging {
-  user-select: none !important;
   -webkit-user-select: none !important;
   will-change: transform;
   transform: translateZ(0);
@@ -71,6 +66,35 @@ body {
   -webkit-backface-visibility: hidden;
   perspective: 1000px;
   -webkit-perspective: 1000px;
+  transition: none !important;
+  pointer-events: auto !important;
+  touch-action: none;
+  cursor: grabbing !important;
+}
+
+/* Optimize the pill container for dragging */
+#pill-container {
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  perspective: 1000;
+  -webkit-perspective: 1000;
+  touch-action: none;
+  transform-style: preserve-3d;
+}
+
+/* Force hardware acceleration for performance */
+.hardware-accelerated {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  will-change: transform;
+  perspective: 1000;
+}
+
+/* Disable transitions during drag for better performance */
+.dragging * {
   transition: none !important;
 }
 

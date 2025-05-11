@@ -19,7 +19,8 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
     startMouseY: 0,
     startWindowY: 0,
     windowWidth: 0,
-    windowHeight: 0
+    windowHeight: 0,
+    currentDisplayId: 0
   }
 
   ipcMain.on('start-vertical-drag', (_e, mouseY: number) => {
@@ -35,31 +36,48 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
       .catch(console.error)
   })
 
-  ipcMain.on('update-vertical-drag', (_e, mouseY: number) => {
-    if (!dragState.isDragging || !mainWindow) return;
+  let lastUpdate = 0
+  ipcMain.on('update-vertical-drag', (_e, _: number) => {
+    if (!dragState.isDragging || !mainWindow) return
+
+    const now = Date.now()
+    if (now - lastUpdate < 16) return // ~60fps
+
     try {
-      const cursorPoint = screen.getCursorScreenPoint();
-      const currentDisplay = screen.getDisplayNearestPoint(cursorPoint);
-      const workArea = currentDisplay.workArea;
-      
-      // Always keep the pill partially embedded (mostly off-screen)
-      // Use the same offset logic as in animateViewTransition.ts
-      const pillOffset = 80; // Same value as in animateViewTransition.ts
-      const newX = workArea.x + workArea.width - pillOffset;
-      
-      // Y follows the mouse, but is clamped to the display
-      const deltaY = mouseY - dragState.startMouseY;
-      const newY = dragState.startWindowY + deltaY;
-      
-      // Clamp Y to keep pill within vertical bounds
-      const minY = workArea.y;
-      const maxY = workArea.y + workArea.height - dragState.windowHeight;
-      const boundedY = Math.max(minY, Math.min(maxY, newY));
-      
-      // Apply position
-      mainWindow.setPosition(newX, boundedY, false);
-    } catch (error) {
-      console.error('Error during drag update:', error);
+      // Get cursor position directly from the main process
+      // This is more accurate than the passed mouseY from renderer
+      const cursor = screen.getCursorScreenPoint()
+      const disp = screen.getDisplayNearestPoint(cursor)
+      const area = disp.workArea
+
+      // Get current window bounds
+      const bounds = mainWindow.getBounds()
+
+      // Calculate target positions
+      const pillOffset = 80
+      const newX = area.x + area.width - pillOffset
+
+      // Use cursor position for vertical position
+      const dragHandleOffset = 20
+      const rawY = cursor.y - dragHandleOffset
+
+      // Apply bounds limiting
+      const minY = area.y
+      const maxY = area.y + area.height - dragState.windowHeight
+      const newY = Math.max(minY, Math.min(maxY, rawY))
+
+      // Skip if position hasn't changed (improves performance)
+      if (bounds.x === newX && bounds.y === newY) {
+        return
+      }
+
+      // Set position directly - avoid animation
+      mainWindow.setPosition(newX, newY, false)
+
+      // Track display ID for transitions
+      dragState.currentDisplayId = disp.id
+    } catch (err) {
+      console.error('drag update error', err)
     }
   })
 
@@ -71,5 +89,18 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
     mainWindow.webContents
       .executeJavaScript(`document.body.classList.remove('is-dragging')`)
       .catch(console.error)
+  })
+
+  // Handle window resizability
+  ipcMain.on('set-resizable', (_event, resizable) => {
+    if (!mainWindow || mainWindow.isDestroyed()) return
+
+    try {
+      // Set the window resizability
+      mainWindow.setResizable(resizable)
+      console.log(`Window resizability set to: ${resizable}`)
+    } catch (error) {
+      console.error('Error setting window resizability:', error)
+    }
   })
 }
