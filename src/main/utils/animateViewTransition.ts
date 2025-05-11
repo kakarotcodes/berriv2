@@ -5,8 +5,11 @@ import { prefs } from './prefs'
 // types
 import { ViewType } from '../../types/types'
 
-// Keep track of the last known good pill position
+// Keep track of the last known good pill position for the current session
 let lastKnownPillY: number | null = null
+
+// Flag to track if this is the first transition to pill after app launch
+let isFirstTransitionToPill = true
 
 // Debug helper
 const logPositionInfo = (message: string, data: any) => {
@@ -25,11 +28,14 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
   // Consistent margin across all views
   const MARGIN = 20
   const PILL_OFFSET = 80
+  const PILL_FIRST_TOP_MARGIN = 130  // Top margin for initial pill positioning
 
   // At startup, load the saved pill position if it exists
   const savedPillY = prefs.get('pillY') as number | undefined
   if (savedPillY !== undefined) {
     logPositionInfo('Loaded saved pill position at startup', savedPillY)
+    // Only update lastKnownPillY, but keep isFirstTransitionToPill true
+    // so we still use the 130px margin on first transition
     lastKnownPillY = savedPillY
   }
 
@@ -77,22 +83,24 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
         // Pill view positioning - use consistent offset from right edge
         targetX = workArea.x + workArea.width - PILL_OFFSET
         
-        // Determine Y position with better fallbacks
-        if (lastKnownPillY !== null) {
-          // First priority: Use the last known position from this session
+        if (isFirstTransitionToPill) {
+          // First transition to pill after app launch - use 130px from top
+          targetY = workArea.y + PILL_FIRST_TOP_MARGIN
+          logPositionInfo('First transition to pill view - positioning 130px from top', targetY)
+          
+          // Reset the flag so subsequent transitions use saved position
+          isFirstTransitionToPill = false
+        } else if (lastKnownPillY !== null) {
+          // Use the last known position from this session (from dragging or previous positions)
           targetY = lastKnownPillY
-          logPositionInfo('Using last known pill position from memory', targetY)
-        } else if (savedPillY !== undefined) {
-          // Second priority: Use the persistently stored position
-          targetY = savedPillY
-          logPositionInfo('Using saved pill position from storage', targetY)
+          logPositionInfo('Using last known pill position', targetY)
         } else {
-          // Last resort: Default to 130px from top
-          targetY = workArea.y + 130
-          logPositionInfo('Using default pill position (130px from top)', targetY)
+          // Fallback - should rarely happen if ever
+          targetY = workArea.y + PILL_FIRST_TOP_MARGIN
+          logPositionInfo('Using fallback pill position (130px from top)', targetY)
         }
 
-        // Ensure Y is within bounds
+        // Ensure Y is within bounds of current monitor
         const minY = workArea.y
         const maxY = workArea.y + workArea.height - dimensions.height
         targetY = Math.min(maxY, Math.max(minY, targetY))

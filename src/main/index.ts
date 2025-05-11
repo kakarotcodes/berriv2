@@ -10,9 +10,10 @@ import { ViewType } from '../types/types'
 let mainWindow: BrowserWindow | null = null
 
 function createWindow(): void {
-  // Get the primary display's work area
-  const primaryDisplay = screen.getPrimaryDisplay()
-  const { workArea } = primaryDisplay
+  // Get the display nearest to the cursor instead of primary display
+  const cursorPos = screen.getCursorScreenPoint()
+  const currentDisplay = screen.getDisplayNearestPoint(cursorPos)
+  const { workArea } = currentDisplay
 
   // Define the default window dimensions
   const defaultWidth = 512
