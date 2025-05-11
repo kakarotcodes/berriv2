@@ -131,3 +131,11 @@ export function animateWindowResize(args: WindowResizeOptions): void {
 export function easeInOutCubic(t: number): number {
   return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
 }
+
+export function cancelWindowResize(window: BrowserWindow): void {
+  const timeoutId = timeoutMap.get(window)
+  if (timeoutId) {
+    clearTimeout(timeoutId)
+    timeoutMap.delete(window)
+  }
+}

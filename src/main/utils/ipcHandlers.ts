@@ -36,28 +36,45 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
       .catch(console.error)
   })
 
+  let lastUpdate = 0
   ipcMain.on('update-vertical-drag', (_e, _: number) => {
     if (!dragState.isDragging || !mainWindow) return
 
+    const now = Date.now()
+    if (now - lastUpdate < 16) return // ~60fps
+
     try {
+      // Get cursor position directly from the main process
+      // This is more accurate than the passed mouseY from renderer
       const cursor = screen.getCursorScreenPoint()
       const disp = screen.getDisplayNearestPoint(cursor)
-      const area = disp.workArea // workArea of THAT display
+      const area = disp.workArea
 
-      // Horizontal placement: always hug the right edge *of this display*
+      // Get current window bounds
+      const bounds = mainWindow.getBounds()
+
+      // Calculate target positions
       const pillOffset = 80
       const newX = area.x + area.width - pillOffset
 
-      // Vertical placement: cursor-anchored, clamped to this display
-      const dragHandleOffset = 20 // same as before
+      // Use cursor position for vertical position
+      const dragHandleOffset = 20
       const rawY = cursor.y - dragHandleOffset
+
+      // Apply bounds limiting
       const minY = area.y
       const maxY = area.y + area.height - dragState.windowHeight
       const newY = Math.max(minY, Math.min(maxY, rawY))
 
+      // Skip if position hasn't changed (improves performance)
+      if (bounds.x === newX && bounds.y === newY) {
+        return
+      }
+
+      // Set position directly - avoid animation
       mainWindow.setPosition(newX, newY, false)
 
-      // Record the display we're now on (useful for hover → pill later)
+      // Track display ID for transitions
       dragState.currentDisplayId = disp.id
     } catch (err) {
       console.error('drag update error', err)
@@ -73,11 +90,11 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
       .executeJavaScript(`document.body.classList.remove('is-dragging')`)
       .catch(console.error)
   })
-  
+
   // Handle window resizability
   ipcMain.on('set-resizable', (_event, resizable) => {
     if (!mainWindow || mainWindow.isDestroyed()) return
-    
+
     try {
       // Set the window resizability
       mainWindow.setResizable(resizable)

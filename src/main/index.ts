@@ -3,6 +3,7 @@ import path from 'path'
 import { electronApp, optimizer } from '@electron-toolkit/utils'
 import { registerIpcHandlers } from './utils/ipcHandlers'
 import { registerViewHandlers } from './utils/animateViewTransition'
+import { cancelWindowResize } from './utils/windowResize'
 
 let mainWindow: BrowserWindow | null = null
 
@@ -81,6 +82,15 @@ app.on('window-all-closed', () => {
     app.quit()
   }
 })
+
+// clear window resize before app quit
+app.on('before-quit', () => {
+  if (mainWindow) cancelWindowResize(mainWindow)
+})
+
+// main.ts - Add GPU constraints
+app.commandLine.appendSwitch('disable-gpu-driver-bug-workarounds')
+app.commandLine.appendSwitch('disable-software-rasterizer')
 
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.

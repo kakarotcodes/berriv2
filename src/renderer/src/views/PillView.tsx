@@ -36,6 +36,7 @@ const PillView = () => {
 
     let isDragging = false
     let lastY = 0
+    let isAnimating = false
 
     const onMouseDown = (e: MouseEvent) => {
       isDragging = true
@@ -48,36 +49,54 @@ const PillView = () => {
       
       // Start the drag operation
       window.electronAPI.startVerticalDrag(e.clientY)
+      
+      // Start animation loop only if not already running
+      if (!isAnimating) {
+        isAnimating = true
+        requestAnimationFrame(animateDrag)
+      }
     }
 
+    // Handle mouse move events by just storing the position
     const onMouseMove = (e: MouseEvent) => {
       if (!isDragging) return
-      
-      // Update the Y position immediately - remove the RAF throttling that was causing lag
+      // Just update the position - don't send IPC messages directly
       lastY = e.clientY
-      window.electronAPI.updateVerticalDrag(lastY)
+    }
+    
+    // Animation loop runs at the display's refresh rate
+    const animateDrag = () => {
+      if (isDragging) {
+        // Send the update through IPC only in the animation frame
+        window.electronAPI.updateVerticalDrag(lastY)
+        // Schedule next frame
+        rafIdRef.current = requestAnimationFrame(animateDrag)
+      } else {
+        isAnimating = false
+      }
     }
 
     const onMouseUp = () => {
       if (!isDragging) return
       isDragging = false
 
+      // Clean up animation frame
       if (rafIdRef.current !== null) {
         cancelAnimationFrame(rafIdRef.current)
         rafIdRef.current = null
       }
 
+      // End drag operation
       window.electronAPI.endVerticalDrag()
       handle.classList.remove('active')
       document.body.classList.remove('dragging')
       
       // Explicitly save position after drag ends
       savePillPosition()
+      
+      // Mark animation as stopped
+      isAnimating = false
     }
-
-    handle.addEventListener('mousedown', onMouseDown)
-    document.addEventListener('mousemove', onMouseMove)
-    document.addEventListener('mouseup', onMouseUp)
 
     // Add specific event handlers for the drag handle
     const handleDragHandleEnter = () => {
@@ -93,18 +112,25 @@ const PillView = () => {
       setIsOverDragHandle(false)
     }
 
+    // Attach event listeners
+    handle.addEventListener('mousedown', onMouseDown)
+    document.addEventListener('mousemove', onMouseMove)
+    document.addEventListener('mouseup', onMouseUp)
     handle.addEventListener('mouseenter', handleDragHandleEnter)
     handle.addEventListener('mouseleave', handleDragHandleLeave)
 
     return () => {
+      // Clean up all event listeners
       handle.removeEventListener('mousedown', onMouseDown)
       document.removeEventListener('mousemove', onMouseMove)
       document.removeEventListener('mouseup', onMouseUp)
       handle.removeEventListener('mouseenter', handleDragHandleEnter)
       handle.removeEventListener('mouseleave', handleDragHandleLeave)
 
+      // Clean up animation frame
       if (rafIdRef.current !== null) {
         cancelAnimationFrame(rafIdRef.current)
+        rafIdRef.current = null
       }
     }
   }, [savePillPosition])
@@ -236,14 +262,14 @@ const PillView = () => {
   return (
     <div
       id="pill-container"
-      className="w-full h-full bg-red-400 text-white flex justify-start items-center pl-2 gap-x-3"
+      className="w-full h-full bg-red-400 text-white flex justify-start items-center pl-2 gap-x-3 hardware-accelerated"
     >
       <button
         onClick={switchToDefault}
         className="bg-green-500 rounded-full w-8 h-8 cursor-pointer"
       />
       <div
-        className="w-8 h-full bg-blue-500 cursor-grab hover:bg-blue-600 flex items-center justify-center"
+        className="w-8 h-full bg-blue-500 cursor-grab hover:bg-blue-600 flex items-center justify-center hardware-accelerated"
         id="drag-handle"
       >
         <span className="text-white select-none">⋮</span>
