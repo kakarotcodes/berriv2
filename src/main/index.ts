@@ -1,25 +1,32 @@
-import { app, BrowserWindow, screen } from 'electron'
+import { app, BrowserWindow, screen, powerMonitor, ipcMain } from 'electron'
 import path from 'path'
 import { electronApp, optimizer } from '@electron-toolkit/utils'
 import { registerIpcHandlers } from './utils/ipcHandlers'
 import { registerViewHandlers } from './utils/animateViewTransition'
 import { cancelWindowResize } from './utils/windowResize'
+import { prefs } from './utils/prefs'
+import { ViewType } from '../types/types'
 
 let mainWindow: BrowserWindow | null = null
 
 function createWindow(): void {
   // Get the primary display's work area
   const primaryDisplay = screen.getPrimaryDisplay()
-  const { bounds, workArea } = primaryDisplay
+  const { workArea } = primaryDisplay
 
-  // Calculate position (20px from right and bottom edges)
-  const x = bounds.x + workArea.width - 512 - 20
-  const y = bounds.y + workArea.height - 288
+  // Define the default window dimensions
+  const defaultWidth = 512
+  const defaultHeight = 288
+  
+  // Calculate position with consistent 20px margin from edges
+  const margin = 20
+  const x = workArea.x + workArea.width - defaultWidth - margin
+  const y = workArea.y + workArea.height - defaultHeight - margin
 
   mainWindow = new BrowserWindow({
     backgroundColor: '#00000000',
-    width: 512,
-    height: 288,
+    width: defaultWidth,
+    height: defaultHeight,
     minWidth: 100,
     minHeight: 40,
     vibrancy: 'under-window',
@@ -49,6 +56,43 @@ function createWindow(): void {
   // Register IPC handlers
   registerIpcHandlers(mainWindow)
   registerViewHandlers(mainWindow)
+  
+  // Set up sleep/wake handlers
+  setupPowerMonitoring(mainWindow)
+}
+
+// Register IPC handler for persisting last view before sleep
+ipcMain.on('persist-last-view', (_event, view) => {
+  console.log('Persisting last view for sleep/wake:', view)
+  prefs.set('lastViewAfterSleep', view)
+})
+
+// Handle sleep/wake events to preserve view state
+function setupPowerMonitoring(window: BrowserWindow) {
+  // Listen for system about to sleep
+  powerMonitor.on('suspend', () => {
+    if (!window || window.isDestroyed()) return
+    
+    // Save window position
+    const [x, y] = window.getPosition()
+    prefs.set('windowPosition', { x, y })
+    
+    // Request current view from renderer
+    window.webContents.send('request-current-view')
+    console.log('System suspending: requesting current view')
+  })
+  
+  // Listen for system wake up
+  powerMonitor.on('resume', () => {
+    if (!window || window.isDestroyed()) return
+    
+    // Restore view after sleep
+    const view = prefs.get('lastViewAfterSleep') as ViewType | undefined
+    if (view) {
+      console.log('System resuming: restoring view', view)
+      window.webContents.send('resume-view', view)
+    }
+  })
 }
 
 // This method will be called when Electron has finished

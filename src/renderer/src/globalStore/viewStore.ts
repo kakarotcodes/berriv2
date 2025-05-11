@@ -13,9 +13,9 @@ interface ViewState {
 }
 
 const viewDimensions: Record<ViewType, { width: number; height: number }> = {
-  default: { width: 512, height: 512 },
+  default: { width: 512, height: 288 }, // Fixed height to match main window creation
   pill: { width: 100, height: 40 },
-  hover: { width: 240, height: 240 },
+  hover: { width: 350, height: 350 }, // Match main process dimension
   expanded: { width: 800, height: 600 }
 }
 
@@ -62,10 +62,6 @@ export const useViewStore = create<ViewState>()(
             // For pill->hover: optimize the transition timing
             // Start the resize animation first
             await window.electronAPI.animateViewTransition(view)
-
-            // Wait for resize to complete
-            // await new Promise(resolve => setTimeout(resolve, 200))
-            await window.electronAPI.animateViewTransition(view) // waits for resolved promise
 
             // Then update the view component
             set({
@@ -128,7 +124,7 @@ export const useViewStore = create<ViewState>()(
     {
       name: 'view-storage',
       partialize: (state) => ({
-        currentView: state.currentView,
+        // Only persist dimensions, not currentView
         dimensions: state.dimensions
       })
     }

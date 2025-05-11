@@ -14,13 +14,17 @@ const logPositionInfo = (message: string, data: any) => {
 }
 
 export function registerViewHandlers(mainWindow: BrowserWindow) {
-  // View dimensions
+  // View dimensions - ensure they match with those defined in the renderer
   const viewDimensions = {
     default: { width: 512, height: 288 },
     pill: { width: 100, height: 40 },
-    hover: { width: 350, height: 350 },
+    hover: { width: 350, height: 350 }, // Match renderer dimensions
     expanded: { width: 800, height: 600 }
   }
+
+  // Consistent margin across all views
+  const MARGIN = 20
+  const PILL_OFFSET = 80
 
   // At startup, load the saved pill position if it exists
   const savedPillY = prefs.get('pillY') as number | undefined
@@ -66,25 +70,21 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
       let targetX, targetY
 
       if (view === 'default') {
-        // Default view: Bottom right with 20px margins
-        targetX = workArea.x + workArea.width - dimensions.width - 20
-        targetY = workArea.y + workArea.height - dimensions.height - 20
+        // Default view: Bottom right with consistent margin
+        targetX = workArea.x + workArea.width - dimensions.width - MARGIN
+        targetY = workArea.y + workArea.height - dimensions.height - MARGIN
       } else if (view === 'pill') {
-        // Pill view positioning - make sure we maintain position
-        const pillOffset = 80 // Same offset as pill view
-        targetX = workArea.x + workArea.width - pillOffset
-
-        // Get the saved position from persistent storage
-        const storedY = prefs.get('pillY') as number | undefined
+        // Pill view positioning - use consistent offset from right edge
+        targetX = workArea.x + workArea.width - PILL_OFFSET
         
         // Determine Y position with better fallbacks
         if (lastKnownPillY !== null) {
           // First priority: Use the last known position from this session
           targetY = lastKnownPillY
           logPositionInfo('Using last known pill position from memory', targetY)
-        } else if (storedY !== undefined) {
+        } else if (savedPillY !== undefined) {
           // Second priority: Use the persistently stored position
-          targetY = storedY
+          targetY = savedPillY
           logPositionInfo('Using saved pill position from storage', targetY)
         } else {
           // Last resort: Default to 130px from top
@@ -101,21 +101,17 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
         prefs.set('pillY', targetY)
         lastKnownPillY = targetY
       } else if (view === 'hover') {
-        // Hover view: Position it so it's fully visible on screen
-        // Starting from the same position as the pill, but adjusted to be fully visible
+        // Hover view: Position with consistent margin, maintaining vertical alignment with pill
+        targetX = workArea.x + workArea.width - dimensions.width - MARGIN
 
-        // For X position: Position it so it's fully within the screen
-        // Offset from right edge by its full width
-        targetX = workArea.x + workArea.width - dimensions.width - 20
-
-        // If we're coming from pill view, save the current Y position more aggressively
+        // If we're coming from pill view, save the current Y position
         if (currentBounds.width === viewDimensions.pill.width) {
           lastKnownPillY = currentBounds.y
           prefs.set('pillY', currentBounds.y)
           logPositionInfo('Saved pill Y position before hover', lastKnownPillY)
         }
 
-        // Use the same Y position as the pill
+        // Use the same Y position as the current window
         targetY = currentBounds.y
 
         // Ensure Y is within bounds for the new larger size
@@ -145,13 +141,6 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
         },
         true
       ) // true = animate
-
-      // IMPORTANT: Only reset the lastKnownPillY when explicitly told to
-      // This ensures we don't lose our position
-      // If transitioning to default view, reset the last known pill position
-      // if (view === 'default') {
-      //   lastKnownPillY = null
-      // }
 
       return true
     } catch (error) {

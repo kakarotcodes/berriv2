@@ -1,4 +1,4 @@
-import React, { Suspense, memo } from 'react'
+import React, { Suspense, memo, useEffect } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useViewStore } from '@/globalStore'
 
@@ -115,7 +115,7 @@ const overlayTransition = {
  * using GPU-accelerated animations and code splitting.
  */
 const OverlayContainer: React.FC = memo(() => {
-  const { currentView, targetView, isTransitioning } = useViewStore()
+  const { currentView, targetView, isTransitioning, setView } = useViewStore()
 
   // Track if we're transitioning specifically from default to pill
   const isDefaultToPill = React.useMemo(() => {
@@ -133,19 +133,27 @@ const OverlayContainer: React.FC = memo(() => {
     []
   )
 
-  // // Ensure components are pre-loaded
-  // React.useEffect(() => {
-  //   // Preload all view components
-  //   const preloadViews = async () => {
-  //     await Promise.all([
-  //       import('@/views/DefaultView'),
-  //       import('@/views/PillView'),
-  //       import('@/views/HoverView'),
-  //       import('@/views/ExpandedView')
-  //     ])
-  //   }
-  //   preloadViews().catch(console.error)
-  // }, [])
+  // Set up sleep/wake handlers
+  useEffect(() => {
+    // Handle sleep event - respond to request for current view
+    if (window.electronAPI?.requestCurrentView) {
+      window.electronAPI.requestCurrentView(() => {
+        // Return the current view for sleep/suspend state
+        return currentView
+      })
+    }
+
+    // Handle wake event - restore view after sleep
+    if (window.electronAPI?.onResumeFromSleep) {
+      window.electronAPI.onResumeFromSleep((view) => {
+        console.log('Resuming from sleep, restoring view:', view)
+        // Only set view if different from current
+        if (view && view !== currentView) {
+          setView(view)
+        }
+      })
+    }
+  }, [currentView, setView])
 
   return (
     <div className="w-screen h-screen bg-transparent flex items-center justify-center transform-gpu will-change-transform">
