@@ -19,7 +19,8 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
     startMouseY: 0,
     startWindowY: 0,
     windowWidth: 0,
-    windowHeight: 0
+    windowHeight: 0,
+    currentDisplayId: 0
   }
 
   ipcMain.on('start-vertical-drag', (_e, mouseY: number) => {
@@ -35,34 +36,31 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
       .catch(console.error)
   })
 
-  ipcMain.on('update-vertical-drag', (_e, mouseY: number) => {
-    if (!dragState.isDragging || !mainWindow) return;
+  ipcMain.on('update-vertical-drag', (_e, _: number) => {
+    if (!dragState.isDragging || !mainWindow) return
+
     try {
-      // Get the current cursor position directly from the screen API
-      // This is more accurate than using the mouseY value passed from the renderer
-      const cursorPoint = screen.getCursorScreenPoint();
-      const currentDisplay = screen.getDisplayNearestPoint(cursorPoint);
-      const workArea = currentDisplay.workArea;
-      
-      // Always keep the pill partially embedded (mostly off-screen)
-      const pillOffset = 80; // Same value as in animateViewTransition.ts
-      const newX = workArea.x + workArea.width - pillOffset;
-      
-      // Calculate Y position directly based on cursor position, not delta
-      // This creates a direct connection between mouse position and window position
-      // Use absolute positioning instead of relative/delta positioning
-      const dragHandleOffset = 20; // Approximate offset to position drag handle at cursor
-      const newY = cursorPoint.y - dragHandleOffset;
-      
-      // Clamp Y to keep pill within vertical bounds
-      const minY = workArea.y;
-      const maxY = workArea.y + workArea.height - dragState.windowHeight;
-      const boundedY = Math.max(minY, Math.min(maxY, newY));
-      
-      // Apply position - use false to disable animation for immediate response
-      mainWindow.setPosition(newX, boundedY, false);
-    } catch (error) {
-      console.error('Error during drag update:', error);
+      const cursor = screen.getCursorScreenPoint()
+      const disp = screen.getDisplayNearestPoint(cursor)
+      const area = disp.workArea // workArea of THAT display
+
+      // Horizontal placement: always hug the right edge *of this display*
+      const pillOffset = 80
+      const newX = area.x + area.width - pillOffset
+
+      // Vertical placement: cursor-anchored, clamped to this display
+      const dragHandleOffset = 20 // same as before
+      const rawY = cursor.y - dragHandleOffset
+      const minY = area.y
+      const maxY = area.y + area.height - dragState.windowHeight
+      const newY = Math.max(minY, Math.min(maxY, rawY))
+
+      mainWindow.setPosition(newX, newY, false)
+
+      // Record the display we're now on (useful for hover → pill later)
+      dragState.currentDisplayId = disp.id
+    } catch (err) {
+      console.error('drag update error', err)
     }
   })
 
