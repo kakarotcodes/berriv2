@@ -1,3 +1,4 @@
+// src/main/utils/windowResize.ts
 import { BrowserWindow, screen } from 'electron'
 
 // Track ongoing animations using timeout IDs

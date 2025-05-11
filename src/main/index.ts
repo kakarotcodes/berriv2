@@ -20,7 +20,7 @@ function createWindow(): void {
     width: 512,
     height: 288,
     minWidth: 100,
-    minHeight: 48,
+    minHeight: 40,
     vibrancy: 'under-window',
     visualEffectState: 'active',
     roundedCorners: true,

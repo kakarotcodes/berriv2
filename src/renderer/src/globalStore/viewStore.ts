@@ -14,7 +14,7 @@ interface ViewState {
 
 const viewDimensions: Record<ViewType, { width: number; height: number }> = {
   default: { width: 512, height: 512 },
-  pill: { width: 100, height: 48 },
+  pill: { width: 100, height: 40 },
   hover: { width: 240, height: 240 },
   expanded: { width: 800, height: 600 }
 }

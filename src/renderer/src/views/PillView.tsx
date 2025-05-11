@@ -240,7 +240,7 @@ const PillView = () => {
     >
       <button
         onClick={switchToDefault}
-        className="bg-green-500 rounded-full w-10 h-10 cursor-pointer"
+        className="bg-green-500 rounded-full w-8 h-8 cursor-pointer"
       />
       <div
         className="w-8 h-full bg-blue-500 cursor-grab hover:bg-blue-600 flex items-center justify-center"
