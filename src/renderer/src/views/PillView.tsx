@@ -11,10 +11,8 @@ const PillView = () => {
   const hoverTimeout = useRef<NodeJS.Timeout | null>(null)
   const [isOverHoverHandle, setIsOverHoverHandle] = useState(false)
   const [isTransitioningToDefault, setIsTransitioningToDefault] = useState(false)
-  // Faster hover delay for better UX
-  const HOVER_DELAY = 150
   // Very short delay for hover feedback
-  const HOVER_FEEDBACK_DELAY = 100
+  const HOVER_FEEDBACK_DELAY = 250
 
   // When pill view mounts, ensure we have a valid position
   useEffect(() => {
@@ -138,16 +136,16 @@ const PillView = () => {
 
     const handleHoverHandleEnter = () => {
       setIsOverHoverHandle(true)
-
-      // Quick delay for visual feedback before transitioning
+      
+      // Use the hover feedback delay for transitioning to hover view
       if (!isTransitioningToDefault) {
         // Cancel any existing timeouts
         if (hoverTimeout.current) {
           clearTimeout(hoverTimeout.current)
           hoverTimeout.current = null
         }
-
-        // Add a slight delay for visual feedback
+        
+        // Add the hover delay before transitioning
         hoverTimeout.current = setTimeout(() => {
           // Before transitioning to hover, save the pill position
           savePillPosition()
@@ -172,18 +170,27 @@ const PillView = () => {
     hoverHandle.addEventListener('mouseover', handleHoverHandleEnter)
     hoverHandle.addEventListener('mouseout', handleHoverHandleLeave)
 
+    // Add click handler as well for mobile/touch devices
+    const handleClick = () => {
+      savePillPosition()
+      setView('hover')
+    }
+    
+    hoverHandle.addEventListener('click', handleClick)
+
     return () => {
       hoverHandle.removeEventListener('mouseenter', handleHoverHandleEnter)
       hoverHandle.removeEventListener('mouseleave', handleHoverHandleLeave)
       hoverHandle.removeEventListener('mouseover', handleHoverHandleEnter)
       hoverHandle.removeEventListener('mouseout', handleHoverHandleLeave)
-
+      hoverHandle.removeEventListener('click', handleClick)
+      
       if (hoverTimeout.current) {
         clearTimeout(hoverTimeout.current)
         hoverTimeout.current = null
       }
     }
-  }, [setView, isOverHoverHandle, HOVER_DELAY, isTransitioningToDefault, savePillPosition])
+  }, [setView, isOverHoverHandle, HOVER_FEEDBACK_DELAY, isTransitioningToDefault, savePillPosition])
 
   // Clean up function for component unmount
   useEffect(() => {
@@ -242,14 +249,19 @@ const PillView = () => {
       id="pill-container"
       className="w-full h-full bg-gray-800 flex justify-between items-center hardware-accelerated"
     >
-      <div className="h-full px-1.5 flex items-center border-r border-gray-700">
+      <div
+        className="flex-1 h-full px-1.5 flex items-center justify-center border-r border-gray-700"
+        id="hover-handle"
+      >
         <span
-          id="hover-handle"
           style={{
             WebkitTextStroke: '0.1px black',
-            color: 'white'
+            color: 'white',
+            cursor: 'pointer',
+            transform: 'scale(1)',
+            transition: 'transform 0.2s ease'
           }}
-          className="bg-[#D92D20] rounded-full w-6 h-6 cursor-pointer text-[11px] font-extrabold flex items-center justify-center"
+          className="bg-[#D92D20] rounded-full w-6 h-6 cursor-pointer text-xs font-extrabold flex items-center justify-center"
         >
           99
         </span>
@@ -271,11 +283,11 @@ const PillView = () => {
       >
         99
       </button> */}
-      <button className="w-full h-full border-gray-700 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-600 transition-colors">
+      <button className="flex-1 w-full px-1 h-full border-gray-700 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-600 transition-colors">
         <BringToFront color="white" size={16} onClick={switchToDefault} />
       </button>
       <div
-        className="mr-2.5 h-full border-l border-gray-700 px-1.5 cursor-grab hover:bg-gray-500 flex items-center justify-center hardware-accelerated"
+        className="flex-1 mr-2.5 h-full border-l border-gray-700 pr-1 cursor-grab hover:bg-gray-500 flex items-center justify-center hardware-accelerated"
         id="drag-handle"
       >
         <GripVertical color="white" fill="white" size={16} strokeWidth={1} />
