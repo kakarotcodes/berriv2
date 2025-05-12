@@ -76,31 +76,3 @@ body {
 .dragging #drag-handle {
   pointer-events: auto;
 }
-
-/* Hover handle styles */
-#hover-handle {
-  position: relative;
-  overflow: hidden;
-  transition: background-color 0.2s ease;
-}
-
-#hover-handle:hover {
-  background-color: rgba(255, 255, 255, 0.05);
-}
-
-#hover-handle:hover span {
-  transform: scale(1.08);
-  transition: transform 0.2s ease;
-}
-
-@keyframes pulse {
-  0% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.15);
-  }
-  100% {
-    transform: scale(1);
-  }
-}

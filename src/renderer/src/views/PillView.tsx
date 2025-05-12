@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useElectron } from '@/hooks/useElectron'
-import { GripVertical, BringToFront, Bell } from 'lucide-react'
+import { Hand, Expand } from 'lucide-react'
 
 import { useViewStore } from '@/globalStore'
 
@@ -136,7 +136,7 @@ const PillView = () => {
 
     const handleHoverHandleEnter = () => {
       setIsOverHoverHandle(true)
-      
+
       // Use the hover feedback delay for transitioning to hover view
       if (!isTransitioningToDefault) {
         // Cancel any existing timeouts
@@ -144,7 +144,7 @@ const PillView = () => {
           clearTimeout(hoverTimeout.current)
           hoverTimeout.current = null
         }
-        
+
         // Add the hover delay before transitioning
         hoverTimeout.current = setTimeout(() => {
           // Before transitioning to hover, save the pill position
@@ -175,7 +175,7 @@ const PillView = () => {
       savePillPosition()
       setView('hover')
     }
-    
+
     hoverHandle.addEventListener('click', handleClick)
 
     return () => {
@@ -184,7 +184,7 @@ const PillView = () => {
       hoverHandle.removeEventListener('mouseover', handleHoverHandleEnter)
       hoverHandle.removeEventListener('mouseout', handleHoverHandleLeave)
       hoverHandle.removeEventListener('click', handleClick)
-      
+
       if (hoverTimeout.current) {
         clearTimeout(hoverTimeout.current)
         hoverTimeout.current = null
@@ -247,7 +247,7 @@ const PillView = () => {
   return (
     <div
       id="pill-container"
-      className="w-full h-full bg-gray-800 flex justify-between items-center hardware-accelerated"
+      className="w-full h-full bg-gray-800 flex justify-between items-center hardware-accelerated border-2 border-gray-800 rounded-xl shadow-sm"
     >
       <div
         className="flex-1 h-full px-1.5 flex items-center justify-center border-r border-gray-700"
@@ -261,36 +261,22 @@ const PillView = () => {
             transform: 'scale(1)',
             transition: 'transform 0.2s ease'
           }}
-          className="bg-[#D92D20] rounded-full w-6 h-6 cursor-pointer text-xs font-extrabold flex items-center justify-center"
+          className="bg-[#D92D20] rounded-full w-6 h-6 cursor-pointer text-[11px] font-extrabold flex items-center justify-center"
         >
           99
         </span>
       </div>
-      {/* <span
-        id="hover-handle"
-        className="h-full border-r px-2 border-gray-700 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-600 transition-colors"
-      >
-        <BringToFront color="white" size={16} />
-      </span> */}
-
-      {/* <button
-        style={{
-          WebkitTextStroke: '0.1px black',
-          color: 'white'
-        }}
+      <button
         onClick={switchToDefault}
-        className="bg-[#D92D20] rounded-full w-6 h-6 cursor-pointer text-[11px] font-extrabold flex items-center justify-center"
+        className="flex-1 w-full px-1 h-full border-gray-700 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-600 transition-colors"
       >
-        99
-      </button> */}
-      <button className="flex-1 w-full px-1 h-full border-gray-700 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-600 transition-colors">
-        <BringToFront color="white" size={16} onClick={switchToDefault} />
+        <Expand color="white" size={16} />
       </button>
       <div
-        className="flex-1 mr-2.5 h-full border-l border-gray-700 pr-1 cursor-grab hover:bg-gray-500 flex items-center justify-center hardware-accelerated"
+        className="flex-1 mr-2.5 h-full border-l border-gray-700 -pr-1 cursor-grab hover:bg-gray-500 flex items-center justify-center hardware-accelerated"
         id="drag-handle"
       >
-        <GripVertical color="white" fill="white" size={16} strokeWidth={1} />
+        <Hand color="white" size={18} strokeWidth={2} />
       </div>
     </div>
   )
