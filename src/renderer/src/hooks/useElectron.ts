@@ -25,6 +25,14 @@ export const useElectron = () => {
   const savePillPosition = React.useCallback(() => {
     window.electronAPI.savePillPosition()
   }, [])
+  
+  const setPillOpacity = React.useCallback((alpha: number) => {
+    window.electronAPI.setPillOpacity(alpha)
+  }, [])
+  
+  const setCssOpacity = React.useCallback((alpha: number) => {
+    window.electronAPI.setCssOpacity(alpha)
+  }, [])
 
   return {
     resizeWindow,
@@ -32,6 +40,8 @@ export const useElectron = () => {
     updateVerticalDrag,
     endVerticalDrag,
     setResizable,
-    savePillPosition
+    savePillPosition,
+    setPillOpacity,
+    setCssOpacity
   }
 }

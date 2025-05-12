@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useElectron } from '@/hooks/useElectron'
 import { Hand, Expand } from 'lucide-react'
+import { useIdleOpacity } from '@/hooks/useIdleOpacity'
 
 import { useViewStore } from '@/globalStore'
 
@@ -13,6 +14,11 @@ const PillView = () => {
   const [isTransitioningToDefault, setIsTransitioningToDefault] = useState(false)
   // Very short delay for hover feedback
   const HOVER_FEEDBACK_DELAY = 250
+  // Random delay for breathing animation to avoid synced pulses
+  const [randomDelay] = useState(() => Math.random())
+  
+  // Use the idle opacity hook with default settings
+  useIdleOpacity()
 
   // When pill view mounts, ensure we have a valid position
   useEffect(() => {
