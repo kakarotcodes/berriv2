@@ -54,7 +54,7 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
       const bounds = mainWindow.getBounds()
 
       // Calculate target positions
-      const pillOffset = 80
+      const pillOffset = 98
       const newX = area.x + area.width - pillOffset
 
       // Use cursor position for vertical position

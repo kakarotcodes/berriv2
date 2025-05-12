@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useElectron } from '@/hooks/useElectron'
-import { GripVertical, ChevronLeft } from 'lucide-react'
+import { GripVertical, BringToFront, Bell } from 'lucide-react'
 
 import { useViewStore } from '@/globalStore'
 
@@ -9,11 +9,12 @@ const PillView = () => {
   const { dimensions, setView, targetView, isTransitioning } = useViewStore()
   const rafIdRef = useRef<number | null>(null)
   const hoverTimeout = useRef<NodeJS.Timeout | null>(null)
-  const [isMouseOver, setIsMouseOver] = useState(false)
-  const [isOverDragHandle, setIsOverDragHandle] = useState(false)
+  const [isOverHoverHandle, setIsOverHoverHandle] = useState(false)
   const [isTransitioningToDefault, setIsTransitioningToDefault] = useState(false)
   // Faster hover delay for better UX
-  const HOVER_DELAY = 250
+  const HOVER_DELAY = 150
+  // Very short delay for hover feedback
+  const HOVER_FEEDBACK_DELAY = 100
 
   // When pill view mounts, ensure we have a valid position
   useEffect(() => {
@@ -102,7 +103,6 @@ const PillView = () => {
 
     // Add specific event handlers for the drag handle
     const handleDragHandleEnter = () => {
-      setIsOverDragHandle(true)
       // Clear any existing hover timeout when entering drag handle
       if (hoverTimeout.current) {
         clearTimeout(hoverTimeout.current)
@@ -110,16 +110,11 @@ const PillView = () => {
       }
     }
 
-    const handleDragHandleLeave = () => {
-      setIsOverDragHandle(false)
-    }
-
     // Attach event listeners
     handle.addEventListener('mousedown', onMouseDown)
     document.addEventListener('mousemove', onMouseMove)
     document.addEventListener('mouseup', onMouseUp)
     handle.addEventListener('mouseenter', handleDragHandleEnter)
-    handle.addEventListener('mouseleave', handleDragHandleLeave)
 
     return () => {
       // Clean up all event listeners
@@ -127,7 +122,6 @@ const PillView = () => {
       document.removeEventListener('mousemove', onMouseMove)
       document.removeEventListener('mouseup', onMouseUp)
       handle.removeEventListener('mouseenter', handleDragHandleEnter)
-      handle.removeEventListener('mouseleave', handleDragHandleLeave)
 
       // Clean up animation frame
       if (rafIdRef.current !== null) {
@@ -138,83 +132,58 @@ const PillView = () => {
   }, [savePillPosition])
 
   useEffect(() => {
-    const pill = document.getElementById('pill-container')
-    if (!pill) return
+    // Add event listeners for the hover handle
+    const hoverHandle = document.getElementById('hover-handle')
+    if (!hoverHandle) return
 
-    const onMouseEnter = () => {
-      // Don't start hover timer if we're already transitioning to default
-      if (isTransitioningToDefault) return
+    const handleHoverHandleEnter = () => {
+      setIsOverHoverHandle(true)
 
-      setIsMouseOver(true)
-
-      // Only start hover timer if we're not over the drag handle
-      if (!isOverDragHandle) {
+      // Quick delay for visual feedback before transitioning
+      if (!isTransitioningToDefault) {
+        // Cancel any existing timeouts
         if (hoverTimeout.current) {
           clearTimeout(hoverTimeout.current)
+          hoverTimeout.current = null
         }
+
+        // Add a slight delay for visual feedback
         hoverTimeout.current = setTimeout(() => {
-          // Double-check we're still not over the drag handle when the timer fires
-          // and that we're not transitioning to default
-          if (!isOverDragHandle && isMouseOver && !isTransitioningToDefault) {
-            // Before transitioning to hover, save the pill position
-            savePillPosition()
-            setView('hover')
-          }
-        }, HOVER_DELAY)
+          // Before transitioning to hover, save the pill position
+          savePillPosition()
+          setView('hover')
+        }, HOVER_FEEDBACK_DELAY)
       }
     }
 
-    const onMouseLeave = () => {
-      setIsMouseOver(false)
+    const handleHoverHandleLeave = () => {
+      setIsOverHoverHandle(false)
       if (hoverTimeout.current) {
         clearTimeout(hoverTimeout.current)
         hoverTimeout.current = null
       }
     }
 
-    const handleMouseMove = () => {
-      // Don't restart hover timer if we're already transitioning to default
-      if (isTransitioningToDefault) return
+    // Using mouseenter/mouseleave for reliable hover detection
+    hoverHandle.addEventListener('mouseenter', handleHoverHandleEnter)
+    hoverHandle.addEventListener('mouseleave', handleHoverHandleLeave)
 
-      // Only reset/restart the timer if we're over the pill but not over the drag handle
-      if (isMouseOver && !isOverDragHandle) {
-        if (hoverTimeout.current) {
-          clearTimeout(hoverTimeout.current)
-        }
-        hoverTimeout.current = setTimeout(() => {
-          // Double-check we're still not over the drag handle when the timer fires
-          // and that we're not transitioning to default
-          if (!isOverDragHandle && isMouseOver && !isTransitioningToDefault) {
-            // Before transitioning to hover, save the pill position
-            savePillPosition()
-            setView('hover')
-          }
-        }, HOVER_DELAY)
-      }
-    }
-
-    pill.addEventListener('mouseenter', onMouseEnter)
-    pill.addEventListener('mouseleave', onMouseLeave)
-    pill.addEventListener('mousemove', handleMouseMove)
+    // Also add mouseover/mouseout as a backup detection method
+    hoverHandle.addEventListener('mouseover', handleHoverHandleEnter)
+    hoverHandle.addEventListener('mouseout', handleHoverHandleLeave)
 
     return () => {
-      pill.removeEventListener('mouseenter', onMouseEnter)
-      pill.removeEventListener('mouseleave', onMouseLeave)
-      pill.removeEventListener('mousemove', handleMouseMove)
+      hoverHandle.removeEventListener('mouseenter', handleHoverHandleEnter)
+      hoverHandle.removeEventListener('mouseleave', handleHoverHandleLeave)
+      hoverHandle.removeEventListener('mouseover', handleHoverHandleEnter)
+      hoverHandle.removeEventListener('mouseout', handleHoverHandleLeave)
 
       if (hoverTimeout.current) {
         clearTimeout(hoverTimeout.current)
         hoverTimeout.current = null
       }
     }
-  }, [
-    setView,
-    isMouseOver,
-    isOverDragHandle,
-    HOVER_DELAY,
-    isTransitioningToDefault,
-    savePillPosition
-  ])
+  }, [setView, isOverHoverHandle, HOVER_DELAY, isTransitioningToDefault, savePillPosition])
 
   // Clean up function for component unmount
   useEffect(() => {
@@ -271,25 +240,45 @@ const PillView = () => {
   return (
     <div
       id="pill-container"
-      className="w-full h-full bg-gray-800 flex gap-x-2 justify-start items-center hardware-accelerated"
+      className="w-full h-full bg-gray-800 flex justify-between items-center hardware-accelerated"
     >
-      <span className="bg-gray-600 h-full flex flex-col items-center justify-center">
-        <ChevronLeft color="white" size={18} />
-      </span>
-      <button
+      <div className="h-full px-1.5 flex items-center border-r border-gray-700">
+        <span
+          id="hover-handle"
+          style={{
+            WebkitTextStroke: '0.1px black',
+            color: 'white'
+          }}
+          className="bg-[#D92D20] rounded-full w-6 h-6 cursor-pointer text-[11px] font-extrabold flex items-center justify-center"
+        >
+          99
+        </span>
+      </div>
+      {/* <span
+        id="hover-handle"
+        className="h-full border-r px-2 border-gray-700 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-600 transition-colors"
+      >
+        <BringToFront color="white" size={16} />
+      </span> */}
+
+      {/* <button
         style={{
-          WebkitTextStroke: '0.1px black'
+          WebkitTextStroke: '0.1px black',
+          color: 'white'
         }}
         onClick={switchToDefault}
-        className="bg-[#D92D20] text-white rounded-full w-6 h-6 cursor-pointer text-[12px] font-extrabold flex items-center justify-center"
+        className="bg-[#D92D20] rounded-full w-6 h-6 cursor-pointer text-[11px] font-extrabold flex items-center justify-center"
       >
         99
+      </button> */}
+      <button className="w-full h-full border-gray-700 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-600 transition-colors">
+        <BringToFront color="white" size={16} onClick={switchToDefault} />
       </button>
       <div
-        className="absolute w-4 right-5 h-full bg-gray-600 cursor-grab hover:bg-gray-500 flex items-center justify-center hardware-accelerated"
+        className="mr-2.5 h-full border-l border-gray-700 px-1.5 cursor-grab hover:bg-gray-500 flex items-center justify-center hardware-accelerated"
         id="drag-handle"
       >
-        <GripVertical color="white" fill="white" size={32} strokeWidth={1} />
+        <GripVertical color="white" fill="white" size={16} strokeWidth={1} />
       </div>
     </div>
   )
