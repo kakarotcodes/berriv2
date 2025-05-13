@@ -256,7 +256,7 @@ const PillView = () => {
       className="w-full h-full text-white bg-gray-800 flex flex-col hardware-accelerated border-2 border-gray-800"
     >
       <div id="drag-handle" className="flex items-center justify-center pt-1">
-        <GripHorizontal size={16} />
+        <GripHorizontal size={12} />
       </div>
       {/* <div
         className="flex-1 h-full px-1.5 flex items-center justify-center border-r border-gray-700"
