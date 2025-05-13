@@ -28,6 +28,7 @@
     "electron-updater": "^6.3.9",
     "framer-motion": "^12.10.4",
     "lodash.throttle": "^4.1.1",
+    "lucide-react": "^0.509.0",
     "tailwindcss": "^4.1.5",
     "zustand": "^5.0.4"
   },

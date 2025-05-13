@@ -4,16 +4,6 @@ import { useViewStore } from '@/globalStore'
 
 import { DefaultView, PillView, HoverView, ExpandedView } from '@/views'
 
-// Animation configuration
-// const viewTransition = {
-//   type: 'spring',
-//   stiffness: 220, // Reduced from 250 for smoother motion
-//   damping: 25, // Increased for more stability
-//   mass: 1.2,
-//   velocity: 0.1,
-//   restDelta: 0.001
-// }
-
 // Smoother spring physics
 const viewTransition = {
   type: 'spring',
@@ -23,33 +13,6 @@ const viewTransition = {
   velocity: 0.1,
   restDelta: 0.001
 }
-
-// const viewVariants = {
-//   hidden: {
-//     opacity: 0,
-//     scale: 0.98,
-//     transition: {
-//       duration: 0.12, // Increased from 0.1
-//       ease: [0.4, 0, 0.2, 1]
-//     }
-//   },
-//   visible: {
-//     opacity: 1,
-//     scale: 1,
-//     transition: {
-//       duration: 0.12, // Increased from 0.1
-//       ease: [0.4, 0, 0.2, 1]
-//     }
-//   },
-//   exit: {
-//     opacity: 0,
-//     scale: 0.98,
-//     transition: {
-//       duration: 0.12, // Increased from 0.1
-//       ease: [0.4, 0, 0.2, 1]
-//     }
-//   }
-// }
 
 // Enhanced view variants with spatial movement
 const viewVariants = {

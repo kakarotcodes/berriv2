@@ -14,7 +14,7 @@ interface ViewState {
 
 const viewDimensions: Record<ViewType, { width: number; height: number }> = {
   default: { width: 512, height: 288 }, // Fixed height to match main window creation
-  pill: { width: 100, height: 40 },
+  pill: { width: 110, height: 40 },
   hover: { width: 350, height: 350 }, // Match main process dimension
   expanded: { width: 800, height: 600 }
 }

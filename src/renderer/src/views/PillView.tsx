@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { useElectron } from '@/hooks/useElectron'
+import { Hand, Expand } from 'lucide-react'
+import { useIdleOpacity } from '@/hooks/useIdleOpacity'
+
 import { useViewStore } from '@/globalStore'
 
 const PillView = () => {
@@ -7,11 +10,15 @@ const PillView = () => {
   const { dimensions, setView, targetView, isTransitioning } = useViewStore()
   const rafIdRef = useRef<number | null>(null)
   const hoverTimeout = useRef<NodeJS.Timeout | null>(null)
-  const [isMouseOver, setIsMouseOver] = useState(false)
-  const [isOverDragHandle, setIsOverDragHandle] = useState(false)
+  const [isOverHoverHandle, setIsOverHoverHandle] = useState(false)
   const [isTransitioningToDefault, setIsTransitioningToDefault] = useState(false)
-  // Faster hover delay for better UX
-  const HOVER_DELAY = 250
+  // Very short delay for hover feedback
+  const HOVER_FEEDBACK_DELAY = 250
+  // Random delay for breathing animation to avoid synced pulses
+  const [randomDelay] = useState(() => Math.random())
+  
+  // Use the idle opacity hook with default settings
+  useIdleOpacity()
 
   // When pill view mounts, ensure we have a valid position
   useEffect(() => {
@@ -19,7 +26,7 @@ const PillView = () => {
     // Reduced delay for faster initial positioning
     setTimeout(() => {
       savePillPosition()
-    }, 100) 
+    }, 100)
   }, [savePillPosition])
 
   useEffect(() => {
@@ -42,14 +49,14 @@ const PillView = () => {
       isDragging = true
       lastY = e.clientY
       e.preventDefault()
-      
+
       // Immediately add dragging classes for visual feedback
       handle.classList.add('active')
       document.body.classList.add('dragging')
-      
+
       // Start the drag operation
       window.electronAPI.startVerticalDrag(e.clientY)
-      
+
       // Start animation loop only if not already running
       if (!isAnimating) {
         isAnimating = true
@@ -63,7 +70,7 @@ const PillView = () => {
       // Just update the position - don't send IPC messages directly
       lastY = e.clientY
     }
-    
+
     // Animation loop runs at the display's refresh rate
     const animateDrag = () => {
       if (isDragging) {
@@ -90,17 +97,16 @@ const PillView = () => {
       window.electronAPI.endVerticalDrag()
       handle.classList.remove('active')
       document.body.classList.remove('dragging')
-      
+
       // Explicitly save position after drag ends
       savePillPosition()
-      
+
       // Mark animation as stopped
       isAnimating = false
     }
 
     // Add specific event handlers for the drag handle
     const handleDragHandleEnter = () => {
-      setIsOverDragHandle(true)
       // Clear any existing hover timeout when entering drag handle
       if (hoverTimeout.current) {
         clearTimeout(hoverTimeout.current)
@@ -108,16 +114,11 @@ const PillView = () => {
       }
     }
 
-    const handleDragHandleLeave = () => {
-      setIsOverDragHandle(false)
-    }
-
     // Attach event listeners
     handle.addEventListener('mousedown', onMouseDown)
     document.addEventListener('mousemove', onMouseMove)
     document.addEventListener('mouseup', onMouseUp)
     handle.addEventListener('mouseenter', handleDragHandleEnter)
-    handle.addEventListener('mouseleave', handleDragHandleLeave)
 
     return () => {
       // Clean up all event listeners
@@ -125,7 +126,6 @@ const PillView = () => {
       document.removeEventListener('mousemove', onMouseMove)
       document.removeEventListener('mouseup', onMouseUp)
       handle.removeEventListener('mouseenter', handleDragHandleEnter)
-      handle.removeEventListener('mouseleave', handleDragHandleLeave)
 
       // Clean up animation frame
       if (rafIdRef.current !== null) {
@@ -136,76 +136,67 @@ const PillView = () => {
   }, [savePillPosition])
 
   useEffect(() => {
-    const pill = document.getElementById('pill-container')
-    if (!pill) return
+    // Add event listeners for the hover handle
+    const hoverHandle = document.getElementById('hover-handle')
+    if (!hoverHandle) return
 
-    const onMouseEnter = () => {
-      // Don't start hover timer if we're already transitioning to default
-      if (isTransitioningToDefault) return
-      
-      setIsMouseOver(true)
+    const handleHoverHandleEnter = () => {
+      setIsOverHoverHandle(true)
 
-      // Only start hover timer if we're not over the drag handle
-      if (!isOverDragHandle) {
+      // Use the hover feedback delay for transitioning to hover view
+      if (!isTransitioningToDefault) {
+        // Cancel any existing timeouts
         if (hoverTimeout.current) {
           clearTimeout(hoverTimeout.current)
+          hoverTimeout.current = null
         }
+
+        // Add the hover delay before transitioning
         hoverTimeout.current = setTimeout(() => {
-          // Double-check we're still not over the drag handle when the timer fires
-          // and that we're not transitioning to default
-          if (!isOverDragHandle && isMouseOver && !isTransitioningToDefault) {
-            // Before transitioning to hover, save the pill position
-            savePillPosition()
-            setView('hover')
-          }
-        }, HOVER_DELAY)
+          // Before transitioning to hover, save the pill position
+          savePillPosition()
+          setView('hover')
+        }, HOVER_FEEDBACK_DELAY)
       }
     }
 
-    const onMouseLeave = () => {
-      setIsMouseOver(false)
+    const handleHoverHandleLeave = () => {
+      setIsOverHoverHandle(false)
       if (hoverTimeout.current) {
         clearTimeout(hoverTimeout.current)
         hoverTimeout.current = null
       }
     }
 
-    const handleMouseMove = () => {
-      // Don't restart hover timer if we're already transitioning to default
-      if (isTransitioningToDefault) return
-      
-      // Only reset/restart the timer if we're over the pill but not over the drag handle
-      if (isMouseOver && !isOverDragHandle) {
-        if (hoverTimeout.current) {
-          clearTimeout(hoverTimeout.current)
-        }
-        hoverTimeout.current = setTimeout(() => {
-          // Double-check we're still not over the drag handle when the timer fires
-          // and that we're not transitioning to default
-          if (!isOverDragHandle && isMouseOver && !isTransitioningToDefault) {
-            // Before transitioning to hover, save the pill position
-            savePillPosition()
-            setView('hover')
-          }
-        }, HOVER_DELAY)
-      }
+    // Using mouseenter/mouseleave for reliable hover detection
+    hoverHandle.addEventListener('mouseenter', handleHoverHandleEnter)
+    hoverHandle.addEventListener('mouseleave', handleHoverHandleLeave)
+
+    // Also add mouseover/mouseout as a backup detection method
+    hoverHandle.addEventListener('mouseover', handleHoverHandleEnter)
+    hoverHandle.addEventListener('mouseout', handleHoverHandleLeave)
+
+    // Add click handler as well for mobile/touch devices
+    const handleClick = () => {
+      savePillPosition()
+      setView('hover')
     }
 
-    pill.addEventListener('mouseenter', onMouseEnter)
-    pill.addEventListener('mouseleave', onMouseLeave)
-    pill.addEventListener('mousemove', handleMouseMove)
+    hoverHandle.addEventListener('click', handleClick)
 
     return () => {
-      pill.removeEventListener('mouseenter', onMouseEnter)
-      pill.removeEventListener('mouseleave', onMouseLeave)
-      pill.removeEventListener('mousemove', handleMouseMove)
+      hoverHandle.removeEventListener('mouseenter', handleHoverHandleEnter)
+      hoverHandle.removeEventListener('mouseleave', handleHoverHandleLeave)
+      hoverHandle.removeEventListener('mouseover', handleHoverHandleEnter)
+      hoverHandle.removeEventListener('mouseout', handleHoverHandleLeave)
+      hoverHandle.removeEventListener('click', handleClick)
 
       if (hoverTimeout.current) {
         clearTimeout(hoverTimeout.current)
         hoverTimeout.current = null
       }
     }
-  }, [setView, isMouseOver, isOverDragHandle, HOVER_DELAY, isTransitioningToDefault, savePillPosition])
+  }, [setView, isOverHoverHandle, HOVER_FEEDBACK_DELAY, isTransitioningToDefault, savePillPosition])
 
   // Clean up function for component unmount
   useEffect(() => {
@@ -227,17 +218,17 @@ const PillView = () => {
       clearTimeout(hoverTimeout.current)
       hoverTimeout.current = null
     }
-    
+
     // Save the pill position before transitioning away
     savePillPosition()
-    
+
     // Set local transition state immediately to prevent hover from triggering
     setIsTransitioningToDefault(true)
-    
+
     try {
       // First start electron window resize
       await window.electronAPI.animateViewTransition('default')
-      
+
       // Wait for animation to be well underway before changing view
       // Increased from 250ms to 300ms to ensure the animation is further along
       setTimeout(() => {
@@ -252,9 +243,9 @@ const PillView = () => {
   // If we're transitioning to default, show loading state instead of pill
   if (isTransitioningToDefault || (targetView === 'default' && isTransitioning)) {
     return (
-      <div className="w-full h-full bg-black/30 flex items-center justify-center">
+      <div className="w-full h-full bg-[#00000000] flex items-center justify-center">
         {/* Simple loading spinner */}
-        <div className="w-8 h-8 border-4 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
+        {/* <div className="w-8 h-8 border-4 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div> */}
       </div>
     )
   }
@@ -262,17 +253,36 @@ const PillView = () => {
   return (
     <div
       id="pill-container"
-      className="w-full h-full bg-red-400 text-white flex justify-start items-center pl-2 gap-x-3 hardware-accelerated"
+      className="w-full h-full bg-gray-800 flex justify-between items-center hardware-accelerated border-2 border-gray-800 rounded-xl shadow-sm"
     >
+      <div
+        className="flex-1 h-full px-1.5 flex items-center justify-center border-r border-gray-700"
+        id="hover-handle"
+      >
+        <span
+          style={{
+            WebkitTextStroke: '0.1px black',
+            color: 'white',
+            cursor: 'pointer',
+            transform: 'scale(1)',
+            transition: 'transform 0.2s ease'
+          }}
+          className="bg-[#D92D20] rounded-full w-6 h-6 cursor-pointer text-[11px] font-extrabold flex items-center justify-center"
+        >
+          99
+        </span>
+      </div>
       <button
         onClick={switchToDefault}
-        className="bg-green-500 rounded-full w-8 h-8 cursor-pointer"
-      />
+        className="flex-1 w-full px-1 h-full border-gray-700 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-600 transition-colors"
+      >
+        <Expand color="white" size={16} />
+      </button>
       <div
-        className="w-8 h-full bg-blue-500 cursor-grab hover:bg-blue-600 flex items-center justify-center hardware-accelerated"
+        className="flex-1 mr-2.5 h-full border-l border-gray-700 -pr-1 cursor-grab hover:bg-gray-500 flex items-center justify-center hardware-accelerated"
         id="drag-handle"
       >
-        <span className="text-white select-none">⋮</span>
+        <Hand color="white" size={18} strokeWidth={2} />
       </div>
     </div>
   )

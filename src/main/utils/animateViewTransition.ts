@@ -20,14 +20,14 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
   // View dimensions - ensure they match with those defined in the renderer
   const viewDimensions = {
     default: { width: 512, height: 288 },
-    pill: { width: 100, height: 40 },
+    pill: { width: 110, height: 40 },
     hover: { width: 350, height: 350 }, // Match renderer dimensions
     expanded: { width: 800, height: 600 }
   }
 
   // Consistent margin across all views
   const MARGIN = 20
-  const PILL_OFFSET = 80
+  const PILL_OFFSET = 98
   const PILL_FIRST_TOP_MARGIN = 130  // Top margin for initial pill positioning
 
   // At startup, load the saved pill position if it exists

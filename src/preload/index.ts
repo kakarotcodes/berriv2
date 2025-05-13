@@ -1,6 +1,11 @@
 // preload/index.js
 const { contextBridge, ipcRenderer } = require('electron')
 
+// CSS opacity fallback handler
+ipcRenderer.on('pill:set-css-opacity', (_event, alpha) => {
+  document.documentElement.style.opacity = alpha.toString()
+})
+
 contextBridge.exposeInMainWorld('electronAPI', {
   resizeWindow: (dimensions) => ipcRenderer.send('resize-window', dimensions),
   animateViewTransition: (view) => {
@@ -14,6 +19,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   endVerticalDrag: () => ipcRenderer.send('end-vertical-drag'),
   setResizable: (resizable) => ipcRenderer.send('set-resizable', resizable),
   savePillPosition: () => ipcRenderer.send('save-pill-position'),
+  
+  // Opacity control
+  setPillOpacity: (alpha) => ipcRenderer.send('pill:set-opacity', alpha),
+  setCssOpacity: (alpha) => {
+    document.documentElement.style.opacity = alpha.toString()
+  },
   
   // Sleep/wake handlers
   requestCurrentView: (callback) => {

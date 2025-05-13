@@ -11,6 +11,10 @@ interface ElectronAPI {
   setResizable: (resizable: boolean) => void
   savePillPosition: () => void
   
+  // Opacity control
+  setPillOpacity: (alpha: number) => void
+  setCssOpacity: (alpha: number) => void
+  
   // Sleep/wake handlers
   requestCurrentView: (callback: () => ViewType) => void
   onResumeFromSleep: (callback: (view: ViewType) => void) => void

@@ -4,6 +4,7 @@ import { electronApp, optimizer } from '@electron-toolkit/utils'
 import { registerIpcHandlers } from './utils/ipcHandlers'
 import { registerViewHandlers } from './utils/animateViewTransition'
 import { cancelWindowResize } from './utils/windowResize'
+import { setWindowOpacity } from './utils/windowOpacity'
 import { prefs } from './utils/prefs'
 import { ViewType } from '../types/types'
 
@@ -61,6 +62,13 @@ function createWindow(): void {
   // Set up sleep/wake handlers
   setupPowerMonitoring(mainWindow)
 }
+
+// Register IPC handler for window opacity
+ipcMain.on('pill:set-opacity', (_e, alpha: number) => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    setWindowOpacity(mainWindow, alpha)
+  }
+})
 
 // Register IPC handler for persisting last view before sleep
 ipcMain.on('persist-last-view', (_event, view) => {
