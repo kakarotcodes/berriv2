@@ -15,6 +15,9 @@ interface ElectronAPI {
   setPillOpacity: (alpha: number) => void
   setCssOpacity: (alpha: number) => void
   
+  // External links
+  openExternal: (url: string) => void
+  
   // Sleep/wake handlers
   requestCurrentView: (callback: () => ViewType) => void
   onResumeFromSleep: (callback: (view: ViewType) => void) => void

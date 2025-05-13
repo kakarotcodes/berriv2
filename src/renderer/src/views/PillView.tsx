@@ -1,9 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
+import { LayoutGrid, GripHorizontal } from 'lucide-react'
+
+// Hooks
 import { useElectron } from '@/hooks/useElectron'
-import { Hand, Expand, GripHorizontal } from 'lucide-react'
 import { useIdleOpacity } from '@/hooks/useIdleOpacity'
 
 import { useViewStore } from '@/globalStore'
+import SimpleIconComponent from '@/components/SimpleIconComponent'
 
 const PillView = () => {
   const { resizeWindow, savePillPosition } = useElectron()
@@ -14,8 +17,6 @@ const PillView = () => {
   const [isTransitioningToDefault, setIsTransitioningToDefault] = useState(false)
   // Very short delay for hover feedback
   const HOVER_FEEDBACK_DELAY = 250
-  // Random delay for breathing animation to avoid synced pulses
-  const [randomDelay] = useState(() => Math.random())
 
   // Use the idle opacity hook with default settings
   useIdleOpacity()
@@ -240,6 +241,10 @@ const PillView = () => {
     }
   }
 
+  const startGoogleMeet = () => {
+    window.electronAPI?.openExternal('https://meet.google.com/new')
+  }
+
   // If we're transitioning to default, show loading state instead of pill
   if (isTransitioningToDefault || (targetView === 'default' && isTransitioning)) {
     return (
@@ -253,15 +258,13 @@ const PillView = () => {
   return (
     <div
       id="pill-container"
-      className="w-full h-full text-white bg-gray-800 flex flex-col hardware-accelerated border-2 border-gray-800"
+      className="w-full h-full text-white bg-gray-800 flex flex-col hardware-accelerated"
     >
       <div id="drag-handle" className="flex items-center justify-center pt-1">
         <GripHorizontal size={12} />
       </div>
-      {/* <div
-        className="flex-1 h-full px-1.5 flex items-center justify-center border-r border-gray-700"
-        id="hover-handle"
-      >
+      <div className="h-1" />
+      <div className="flex-1 w-full px-1.5 flex items-center justify-center" id="hover-handle">
         <span
           style={{
             WebkitTextStroke: '0.1px black',
@@ -270,23 +273,30 @@ const PillView = () => {
             transform: 'scale(1)',
             transition: 'transform 0.2s ease'
           }}
-          className="bg-[#D92D20] rounded-full w-6 h-6 cursor-pointer text-[11px] font-extrabold flex items-center justify-center"
+          className="bg-[#D92D20] rounded-full w-5 h-5 cursor-pointer text-[10px] font-extrabold flex items-center justify-center"
         >
           99
         </span>
       </div>
       <button
         onClick={switchToDefault}
-        className="flex-1 w-full px-1 h-full border-gray-700 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-600 transition-colors"
+        className="flex-1 w-full px-1 border-gray-700 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-600 transition-colors"
       >
-        <Expand color="white" size={16} />
+        <LayoutGrid color="white" size={14} strokeWidth={2} />
       </button>
-      <div
-        className="flex-1 mr-2.5 h-full border-l border-gray-700 -pr-1 cursor-grab hover:bg-gray-500 flex items-center justify-center hardware-accelerated"
+      <button
+        onClick={startGoogleMeet}
+        className="cursor-pointer flex-1 w-full border-gray-700 -pr-1 hover:bg-gray-500 flex items-center justify-center hardware-accelerated"
         id="drag-handle"
       >
-        <Hand color="white" size={18} strokeWidth={2} />
-      </div> */}
+        <SimpleIconComponent slug="siGooglemeet" size={14} />
+      </button>
+      <div
+        className="cursor-pointer flex-1 w-full border-gray-700 -pr-1 hover:bg-gray-500 flex items-center justify-center hardware-accelerated"
+        id="drag-handle"
+      >
+        <SimpleIconComponent slug="siGooglecalendar" size={14} />
+      </div>
     </div>
   )
 }

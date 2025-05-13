@@ -119,7 +119,7 @@ const OverlayContainer: React.FC = memo(() => {
   }, [currentView, setView])
 
   return (
-    <div className="w-screen h-screen bg-transparent flex items-center justify-center transform-gpu will-change-transform">
+    <main className="w-screen h-screen bg-transparent flex items-center justify-center transform-gpu will-change-transform">
       <AnimatePresence mode="wait">
         <Suspense
           fallback={
@@ -182,7 +182,7 @@ const OverlayContainer: React.FC = memo(() => {
           )}
         </Suspense>
       </AnimatePresence>
-    </div>
+    </main>
   )
 })
 

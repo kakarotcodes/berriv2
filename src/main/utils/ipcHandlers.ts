@@ -1,6 +1,8 @@
-import { ipcMain, BrowserWindow, screen } from 'electron'
+import { ipcMain, BrowserWindow, screen, shell } from 'electron'
+import { setWindowOpacity } from '../utils/windowOpacity'
 import { animateWindowResize } from './windowResize'
 import { prefs } from './prefs'
+import { OFFSET } from '../../constants/constants'
 
 export function registerIpcHandlers(mainWindow: BrowserWindow) {
   ipcMain.on('resize-window', (_event, { width, height }) => {
@@ -54,11 +56,11 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
       const bounds = mainWindow.getBounds()
 
       // Calculate target positions
-      const pillOffset = 40
+      const pillOffset = OFFSET.PILLOFFSET
       const newX = area.x + area.width - pillOffset
 
       // Use cursor position for vertical position
-      const dragHandleOffset = 20
+      const dragHandleOffset = 10
       const rawY = cursor.y - dragHandleOffset
 
       // Apply bounds limiting
@@ -102,5 +104,28 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
     } catch (error) {
       console.error('Error setting window resizability:', error)
     }
+  })
+
+  // Register IPC handler for opening external links
+  ipcMain.on('open-external', (_event, url) => {
+    // Only allow specific trusted URLs
+    if (url === 'https://meet.google.com/new') {
+      shell.openExternal(url)
+    } else {
+      console.error('Attempted to open untrusted URL:', url)
+    }
+  })
+
+  // Register IPC handler for window opacity
+  ipcMain.on('pill:set-opacity', (_e, alpha: number) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      setWindowOpacity(mainWindow, alpha)
+    }
+  })
+
+  // Register IPC handler for persisting last view before sleep
+  ipcMain.on('persist-last-view', (_event, view) => {
+    console.log('Persisting last view for sleep/wake:', view)
+    prefs.set('lastViewAfterSleep', view)
   })
 }

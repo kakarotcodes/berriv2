@@ -26,6 +26,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     document.documentElement.style.opacity = alpha.toString()
   },
   
+  // External links
+  openExternal: (url) => ipcRenderer.send('open-external', url),
+  
   // Sleep/wake handlers
   requestCurrentView: (callback) => {
     ipcRenderer.on('request-current-view', () => {

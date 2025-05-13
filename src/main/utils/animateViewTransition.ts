@@ -6,7 +6,7 @@ import { prefs } from './prefs'
 import { ViewType } from '../../types/types'
 
 // constants
-import { WIDTH, HEIGHT } from '../../constants/constants'
+import { WIDTH, HEIGHT, OFFSET } from '../../constants/constants'
 
 // Keep track of the last known good pill position for the current session
 let lastKnownPillY: number | null = null
@@ -30,7 +30,7 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
 
   // Consistent margin across all views
   const MARGIN = 20
-  const PILL_OFFSET = 40
+  const PILL_OFFSET = OFFSET.PILLOFFSET
   const PILL_FIRST_TOP_MARGIN = 130 // Top margin for initial pill positioning
 
   // At startup, load the saved pill position if it exists
