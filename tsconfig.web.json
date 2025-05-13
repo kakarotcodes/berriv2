@@ -7,7 +7,8 @@
     "src/preload/*.d.ts",
     "src/renderer/src/globalStore/**/*",
     "src/renderer/electron.d.ts",
-    "src/main/utils/animateViewTransition.ts"
+    "src/main/utils/animateViewTransition.ts",
+    "src/constants/constants.ts"
   ],
   "compilerOptions": {
     "composite": true,

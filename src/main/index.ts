@@ -1,11 +1,23 @@
 import { app, BrowserWindow, screen, powerMonitor, ipcMain } from 'electron'
 import path from 'path'
 import { electronApp, optimizer } from '@electron-toolkit/utils'
+
+// utiles
 import { registerIpcHandlers } from './utils/ipcHandlers'
 import { registerViewHandlers } from './utils/animateViewTransition'
 import { cancelWindowResize } from './utils/windowResize'
 import { setWindowOpacity } from './utils/windowOpacity'
 import { prefs } from './utils/prefs'
+
+// constants
+import {
+  PILL_VIEW_WIDTH,
+  PILL_VIEW_HEIGHT,
+  DEFAULT_VIEW_WIDTH,
+  DEFAULT_VIEW_HEIGHT
+} from '../constants/constants'
+
+// types
 import { ViewType } from '../types/types'
 
 let mainWindow: BrowserWindow | null = null
@@ -17,9 +29,9 @@ function createWindow(): void {
   const { workArea } = currentDisplay
 
   // Define the default window dimensions
-  const defaultWidth = 512
-  const defaultHeight = 288
-  
+  const defaultWidth = DEFAULT_VIEW_WIDTH
+  const defaultHeight = DEFAULT_VIEW_HEIGHT
+
   // Calculate position with consistent 20px margin from edges
   const margin = 20
   const x = workArea.x + workArea.width - defaultWidth - margin
@@ -29,8 +41,8 @@ function createWindow(): void {
     backgroundColor: '#00000000',
     width: defaultWidth,
     height: defaultHeight,
-    minWidth: 100,
-    minHeight: 40,
+    minWidth: PILL_VIEW_WIDTH,
+    minHeight: PILL_VIEW_HEIGHT,
     vibrancy: 'under-window',
     visualEffectState: 'active',
     roundedCorners: true,
@@ -58,7 +70,7 @@ function createWindow(): void {
   // Register IPC handlers
   registerIpcHandlers(mainWindow)
   registerViewHandlers(mainWindow)
-  
+
   // Set up sleep/wake handlers
   setupPowerMonitoring(mainWindow)
 }
@@ -81,20 +93,20 @@ function setupPowerMonitoring(window: BrowserWindow) {
   // Listen for system about to sleep
   powerMonitor.on('suspend', () => {
     if (!window || window.isDestroyed()) return
-    
+
     // Save window position
     const [x, y] = window.getPosition()
     prefs.set('windowPosition', { x, y })
-    
+
     // Request current view from renderer
     window.webContents.send('request-current-view')
     console.log('System suspending: requesting current view')
   })
-  
+
   // Listen for system wake up
   powerMonitor.on('resume', () => {
     if (!window || window.isDestroyed()) return
-    
+
     // Restore view after sleep
     const view = prefs.get('lastViewAfterSleep') as ViewType | undefined
     if (view) {

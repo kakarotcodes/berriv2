@@ -255,7 +255,8 @@ const PillView = () => {
       id="pill-container"
       className="w-full h-full bg-gray-800 flex justify-between items-center hardware-accelerated border-2 border-gray-800 rounded-xl shadow-sm"
     >
-      <div
+      Vertical Pill
+      {/* <div
         className="flex-1 h-full px-1.5 flex items-center justify-center border-r border-gray-700"
         id="hover-handle"
       >
@@ -283,7 +284,7 @@ const PillView = () => {
         id="drag-handle"
       >
         <Hand color="white" size={18} strokeWidth={2} />
-      </div>
+      </div> */}
     </div>
   )
 }

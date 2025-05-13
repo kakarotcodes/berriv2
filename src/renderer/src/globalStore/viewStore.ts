@@ -2,6 +2,16 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
+// constants
+import {
+  DEFAULT_VIEW_HEIGHT,
+  DEFAULT_VIEW_WIDTH,
+  HOVER_VIEW_HEIGHT,
+  HOVER_VIEW_WIDTH,
+  PILL_VIEW_HEIGHT,
+  PILL_VIEW_WIDTH
+} from './../../../constants/constants'
+
 type ViewType = 'default' | 'pill' | 'hover' | 'expanded'
 
 interface ViewState {
@@ -13,9 +23,9 @@ interface ViewState {
 }
 
 const viewDimensions: Record<ViewType, { width: number; height: number }> = {
-  default: { width: 512, height: 288 }, // Fixed height to match main window creation
-  pill: { width: 110, height: 40 },
-  hover: { width: 350, height: 350 }, // Match main process dimension
+  default: { width: DEFAULT_VIEW_WIDTH, height: DEFAULT_VIEW_HEIGHT }, // Fixed height to match main window creation
+  pill: { width: PILL_VIEW_WIDTH, height: PILL_VIEW_HEIGHT },
+  hover: { width: HOVER_VIEW_WIDTH, height: HOVER_VIEW_HEIGHT }, // Match main process dimension
   expanded: { width: 800, height: 600 }
 }
 

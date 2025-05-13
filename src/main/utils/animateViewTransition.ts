@@ -5,6 +5,16 @@ import { prefs } from './prefs'
 // types
 import { ViewType } from '../../types/types'
 
+// constants
+import {
+  DEFAULT_VIEW_HEIGHT,
+  DEFAULT_VIEW_WIDTH,
+  HOVER_VIEW_HEIGHT,
+  HOVER_VIEW_WIDTH,
+  PILL_VIEW_HEIGHT,
+  PILL_VIEW_WIDTH
+} from '../../constants/constants'
+
 // Keep track of the last known good pill position for the current session
 let lastKnownPillY: number | null = null
 
@@ -19,16 +29,16 @@ const logPositionInfo = (message: string, data: any) => {
 export function registerViewHandlers(mainWindow: BrowserWindow) {
   // View dimensions - ensure they match with those defined in the renderer
   const viewDimensions = {
-    default: { width: 512, height: 288 },
-    pill: { width: 110, height: 40 },
-    hover: { width: 350, height: 350 }, // Match renderer dimensions
+    default: { width: DEFAULT_VIEW_WIDTH, height: DEFAULT_VIEW_HEIGHT },
+    pill: { width: PILL_VIEW_WIDTH, height: PILL_VIEW_HEIGHT },
+    hover: { width: HOVER_VIEW_WIDTH, height: HOVER_VIEW_HEIGHT }, // Match renderer dimensions
     expanded: { width: 800, height: 600 }
   }
 
   // Consistent margin across all views
   const MARGIN = 20
   const PILL_OFFSET = 98
-  const PILL_FIRST_TOP_MARGIN = 130  // Top margin for initial pill positioning
+  const PILL_FIRST_TOP_MARGIN = 130 // Top margin for initial pill positioning
 
   // At startup, load the saved pill position if it exists
   const savedPillY = prefs.get('pillY') as number | undefined
@@ -60,10 +70,12 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
 
       // Get current window position (for transitions)
       const currentBounds = mainWindow.getBounds()
-      
+
       // Save current position before any transitions if we're in pill view
-      if (currentBounds.width === viewDimensions.pill.width && 
-          currentBounds.height === viewDimensions.pill.height) {
+      if (
+        currentBounds.width === viewDimensions.pill.width &&
+        currentBounds.height === viewDimensions.pill.height
+      ) {
         // We're definitely in pill view now, save the position for later use
         lastKnownPillY = currentBounds.y
         prefs.set('pillY', currentBounds.y)
@@ -82,12 +94,12 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
       } else if (view === 'pill') {
         // Pill view positioning - use consistent offset from right edge
         targetX = workArea.x + workArea.width - PILL_OFFSET
-        
+
         if (isFirstTransitionToPill) {
           // First transition to pill after app launch - use 130px from top
           targetY = workArea.y + PILL_FIRST_TOP_MARGIN
           logPositionInfo('First transition to pill view - positioning 130px from top', targetY)
-          
+
           // Reset the flag so subsequent transitions use saved position
           isFirstTransitionToPill = false
         } else if (lastKnownPillY !== null) {
@@ -104,7 +116,7 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
         const minY = workArea.y
         const maxY = workArea.y + workArea.height - dimensions.height
         targetY = Math.min(maxY, Math.max(minY, targetY))
-        
+
         // Update the stored position to ensure consistency
         prefs.set('pillY', targetY)
         lastKnownPillY = targetY
@@ -134,10 +146,12 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
         targetY = workArea.y + (workArea.height - dimensions.height) / 2
       }
 
-      logPositionInfo(
-        `Target position for ${view} view`,
-        { x: targetX, y: targetY, width: dimensions.width, height: dimensions.height }
-      )
+      logPositionInfo(`Target position for ${view} view`, {
+        x: targetX,
+        y: targetY,
+        width: dimensions.width,
+        height: dimensions.height
+      })
 
       // 4. Set the window size and position (animation handled by the OS)
       mainWindow.setBounds(
@@ -156,15 +170,17 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
       return false
     }
   })
-  
+
   // Add an explicit IPC handler for persisting the pill position
   ipcMain.on('save-pill-position', () => {
     if (!mainWindow || mainWindow.isDestroyed()) return
-    
+
     const bounds = mainWindow.getBounds()
     // Only save if we're in pill view
-    if (bounds.width === viewDimensions.pill.width && 
-        bounds.height === viewDimensions.pill.height) {
+    if (
+      bounds.width === viewDimensions.pill.width &&
+      bounds.height === viewDimensions.pill.height
+    ) {
       prefs.set('pillY', bounds.y)
       lastKnownPillY = bounds.y
       logPositionInfo('Explicitly saved pill position', bounds.y)
