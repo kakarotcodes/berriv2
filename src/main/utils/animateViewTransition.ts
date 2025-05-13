@@ -6,14 +6,7 @@ import { prefs } from './prefs'
 import { ViewType } from '../../types/types'
 
 // constants
-import {
-  DEFAULT_VIEW_HEIGHT,
-  DEFAULT_VIEW_WIDTH,
-  HOVER_VIEW_HEIGHT,
-  HOVER_VIEW_WIDTH,
-  PILL_VIEW_HEIGHT,
-  PILL_VIEW_WIDTH
-} from '../../constants/constants'
+import { WIDTH, HEIGHT } from '../../constants/constants'
 
 // Keep track of the last known good pill position for the current session
 let lastKnownPillY: number | null = null
@@ -29,9 +22,9 @@ const logPositionInfo = (message: string, data: any) => {
 export function registerViewHandlers(mainWindow: BrowserWindow) {
   // View dimensions - ensure they match with those defined in the renderer
   const viewDimensions = {
-    default: { width: DEFAULT_VIEW_WIDTH, height: DEFAULT_VIEW_HEIGHT },
-    pill: { width: PILL_VIEW_WIDTH, height: PILL_VIEW_HEIGHT },
-    hover: { width: HOVER_VIEW_WIDTH, height: HOVER_VIEW_HEIGHT }, // Match renderer dimensions
+    default: { width: WIDTH.DEFAULT, height: HEIGHT.DEFAULT },
+    pill: { width: WIDTH.PILL, height: HEIGHT.PILL },
+    hover: { width: WIDTH.HOVER, height: HEIGHT.HOVER }, // Match renderer dimensions
     expanded: { width: 800, height: 600 }
   }
 

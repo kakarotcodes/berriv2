@@ -1,11 +1,11 @@
-// pill view
-export const PILL_VIEW_HEIGHT = 100
-export const PILL_VIEW_WIDTH = 50
+export const WIDTH = {
+  DEFAULT: 512,
+  PILL: 50,
+  HOVER: 350
+}
 
-// hover view
-export const HOVER_VIEW_HEIGHT = 350
-export const HOVER_VIEW_WIDTH = 350
-
-// default view
-export const DEFAULT_VIEW_HEIGHT = 288
-export const DEFAULT_VIEW_WIDTH = 512
+export const HEIGHT = {
+  DEFAULT: 288,
+  PILL: 100,
+  HOVER: 350
+}

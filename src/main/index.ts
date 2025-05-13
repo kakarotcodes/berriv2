@@ -10,12 +10,7 @@ import { setWindowOpacity } from './utils/windowOpacity'
 import { prefs } from './utils/prefs'
 
 // constants
-import {
-  PILL_VIEW_WIDTH,
-  PILL_VIEW_HEIGHT,
-  DEFAULT_VIEW_WIDTH,
-  DEFAULT_VIEW_HEIGHT
-} from '../constants/constants'
+import { WIDTH, HEIGHT } from '../constants/constants'
 
 // types
 import { ViewType } from '../types/types'
@@ -29,8 +24,8 @@ function createWindow(): void {
   const { workArea } = currentDisplay
 
   // Define the default window dimensions
-  const defaultWidth = DEFAULT_VIEW_WIDTH
-  const defaultHeight = DEFAULT_VIEW_HEIGHT
+  const defaultWidth = WIDTH.DEFAULT
+  const defaultHeight = HEIGHT.DEFAULT
 
   // Calculate position with consistent 20px margin from edges
   const margin = 20
@@ -41,8 +36,8 @@ function createWindow(): void {
     backgroundColor: '#00000000',
     width: defaultWidth,
     height: defaultHeight,
-    minWidth: PILL_VIEW_WIDTH,
-    minHeight: PILL_VIEW_HEIGHT,
+    minWidth: WIDTH.PILL,
+    minHeight: HEIGHT.PILL,
     vibrancy: 'under-window',
     visualEffectState: 'active',
     roundedCorners: true,
