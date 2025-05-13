@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useElectron } from '@/hooks/useElectron'
-import { Hand, Expand } from 'lucide-react'
+import { Hand, Expand, GripHorizontal } from 'lucide-react'
 import { useIdleOpacity } from '@/hooks/useIdleOpacity'
 
 import { useViewStore } from '@/globalStore'
@@ -16,7 +16,7 @@ const PillView = () => {
   const HOVER_FEEDBACK_DELAY = 250
   // Random delay for breathing animation to avoid synced pulses
   const [randomDelay] = useState(() => Math.random())
-  
+
   // Use the idle opacity hook with default settings
   useIdleOpacity()
 
@@ -253,9 +253,11 @@ const PillView = () => {
   return (
     <div
       id="pill-container"
-      className="w-full h-full bg-gray-800 flex justify-between items-center hardware-accelerated border-2 border-gray-800 rounded-xl shadow-sm"
+      className="w-full h-full text-white bg-gray-800 flex flex-col hardware-accelerated border-2 border-gray-800"
     >
-      Vertical Pill
+      <div id="drag-handle" className="flex items-center justify-center pt-1">
+        <GripHorizontal size={16} />
+      </div>
       {/* <div
         className="flex-1 h-full px-1.5 flex items-center justify-center border-r border-gray-700"
         id="hover-handle"

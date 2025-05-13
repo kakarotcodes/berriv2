@@ -30,7 +30,7 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
 
   // Consistent margin across all views
   const MARGIN = 20
-  const PILL_OFFSET = 98
+  const PILL_OFFSET = 40
   const PILL_FIRST_TOP_MARGIN = 130 // Top margin for initial pill positioning
 
   // At startup, load the saved pill position if it exists

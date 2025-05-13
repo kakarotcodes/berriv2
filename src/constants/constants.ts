@@ -1,6 +1,6 @@
 export const WIDTH = {
   DEFAULT: 512,
-  PILL: 50,
+  PILL: 30,
   HOVER: 350
 }
 
