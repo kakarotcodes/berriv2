@@ -6,7 +6,7 @@ const HoverView = memo(() => {
   const leaveTimerRef = useRef<number | null>(null);
   
   // Constant for leave delay
-  const LEAVE_DELAY = 500;
+  const LEAVE_DELAY = 3000;
   
   // Clean up timers on unmount
   useEffect(() => {

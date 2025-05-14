@@ -269,7 +269,7 @@ const PillView = () => {
         <GripHorizontal size={12} />
       </div>
       <div className="h-1" />
-      <div className="flex-1 w-full px-1.5 flex items-center justify-center" id="hover-handle">
+      <div className="flex-1 w-full px-1.5 flex items-center justify-center" onClick={() => setView('hover')}>
         <span
           style={{
             WebkitTextStroke: '0.1px black',
