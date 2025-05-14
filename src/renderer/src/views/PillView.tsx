@@ -153,10 +153,12 @@ const PillView: React.FC = () => {
       // First start electron window resize
       await window.electronAPI.animateViewTransition('default')
 
-      // Reduce the delay to match the animation time
+      // Reduce the delay to match the animation time in viewStore
+      // This should be slightly faster than viewStore's transition delay
+      // to ensure DefaultView gets mounted quickly
       setTimeout(() => {
         setView('default')
-      }, 250)
+      }, 150)
     } catch (error) {
       console.error('Failed to transition to default view:', error)
       setIsTransitioningToDefault(false)
