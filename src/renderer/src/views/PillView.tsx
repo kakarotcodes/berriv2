@@ -7,6 +7,7 @@ import { useIdleOpacity } from '@/hooks/useIdleOpacity'
 
 // store
 import { useViewStore } from '@/globalStore'
+import { useViewController } from '@/controller/viewController'
 
 // components
 import { SimpleIconComponent } from '@/components/ui'
@@ -20,6 +21,9 @@ const PillView = () => {
   const [isTransitioningToDefault, setIsTransitioningToDefault] = useState(false)
   // Very short delay for hover feedback
   const HOVER_FEEDBACK_DELAY = 250
+
+  // controller
+  const { setActiveFeature } = useViewController()
 
   // Use the idle opacity hook with default settings
   useIdleOpacity()
@@ -309,7 +313,10 @@ const PillView = () => {
         <SimpleIconComponent slug="siGooglecalendar" size={14} />
       </div>
       <div
-        onClick={() => setView('hover')}
+        onClick={() => {
+          setActiveFeature('clipboard')
+          setView('hover')
+        }}
         className="cursor-pointer flex-1 w-full border-gray-700 -pr-1 hover:bg-gray-500 flex items-center justify-center hardware-accelerated"
         id="drag-handle"
       >

@@ -1,12 +1,13 @@
 // dependencies
 import React, { useState } from 'react'
-import { X, ChevronsUpDown } from 'lucide-react'
+import { X, ChevronsUpDown, ClipboardPen } from 'lucide-react'
 
 // store
 import { useViewStore } from '@/globalStore'
 
 // types
 import { ViewType } from 'src/types/types'
+import { SimpleIconComponent } from '../ui'
 
 const Header: React.FC = () => {
   const { setView } = useViewStore()
@@ -47,7 +48,17 @@ const Header: React.FC = () => {
           )}
         </button>
       </div>
-      <p className="m-0 text-white font-bold">Berri</p>
+      <div className="flex items-center justify-center gap-4">
+        <button className="hover:bg-white/40 transition-colors text-white rounded-full p-2 border border-white/20">
+          <SimpleIconComponent slug="siGooglemeet" size={16} />
+        </button>
+        <button className="hover:bg-white/40 transition-colors text-white rounded-full p-2 border border-white/20">
+          <SimpleIconComponent slug="siGooglecalendar" size={16} />
+        </button>
+        <button className="hover:bg-white/40 transition-colors text-white rounded-full p-2 border border-white/20">
+          <ClipboardPen size={16} color="white" />
+        </button>
+      </div>
     </div>
   )
 }

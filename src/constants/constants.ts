@@ -1,13 +1,13 @@
 export const WIDTH = {
   DEFAULT: 512,
   PILL: 35,
-  HOVER: 400
+  HOVER: 384
 }
 
 export const HEIGHT = {
   DEFAULT: 288,
   PILL: 200,
-  HOVER: 600
+  HOVER: 500
 }
 
 export const OFFSET = {
