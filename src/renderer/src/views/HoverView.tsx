@@ -3,8 +3,9 @@ import { memo, useCallback, useEffect, useRef } from 'react'
 import { ClipboardPen } from 'lucide-react'
 
 // components
-import SimpleIconComponent from '@/components/SimpleIconComponent'
-import { Divider, Header } from '@/components'
+import { SimpleIconComponent } from '@/components/ui'
+import { Header } from '@/components/layout'
+import { Divider } from '@/components/shared'
 
 // store
 import { useViewStore } from '@/globalStore'
