@@ -53,7 +53,7 @@ const HoverLayout: React.FC<Props> = ({ children }) => {
   }, [])
 
   // Handle toggle with additional logic for mouse leaving
-  const handleTogglePin = () => {
+  const handleTogglePin = useCallback(() => {
     // Store current pin state before toggling
     const wasPinned = isPinned
 
@@ -67,7 +67,7 @@ const HoverLayout: React.FC<Props> = ({ children }) => {
         setView('pill').catch(console.error)
       }, LEAVE_DELAY)
     }
-  }
+  }, [isPinned, togglePin, setView])
 
   return (
     <div

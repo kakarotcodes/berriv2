@@ -1,6 +1,5 @@
 // dependencies
-import React, { Suspense, memo, useEffect } from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
+import React, { memo, useEffect } from 'react'
 
 // store
 import { useViewStore } from '@/globalStore'
@@ -8,17 +7,8 @@ import { useViewStore } from '@/globalStore'
 // views
 import { DefaultView, PillView, HoverView, ExpandedView } from '@/views'
 
-// constants
-import {
-  componentFade,
-  overlayTransition,
-  viewTransition,
-  viewVariants
-} from '../../constants/constants'
-
 /**
- * OverlayContainer - Optimized container with smooth transitions between views
- * using GPU-accelerated animations and code splitting.
+ * OverlayContainer - With all animations removed
  */
 const App: React.FC = memo(() => {
   const { currentView, targetView, isTransitioning, setView } = useViewStore()
@@ -27,6 +17,16 @@ const App: React.FC = memo(() => {
   const isDefaultToPill = React.useMemo(() => {
     return currentView === 'default' && targetView === 'pill'
   }, [currentView, targetView])
+
+  // Track if we're transitioning from hover to pill
+  const isHoverToPill = React.useMemo(() => {
+    return currentView === 'hover' && targetView === 'pill'
+  }, [currentView, targetView])
+
+  // Track if we're transitioning to/from hover view
+  const isHoverTransition = React.useMemo(() => {
+    return (currentView === 'hover' || targetView === 'hover') && isTransitioning
+  }, [currentView, targetView, isTransitioning])
 
   // Memoized view component mapping
   const viewComponents = React.useMemo(
@@ -72,70 +72,22 @@ const App: React.FC = memo(() => {
     }
   }, [currentView, setView])
 
-  return (
-    <main className="w-screen h-screen bg-transparent flex items-center justify-center transform-gpu will-change-transform">
-      <AnimatePresence mode="wait">
-        <Suspense
-          fallback={
-            <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-              <div className="bg-white/10 p-2 rounded-md">
-                <span className="text-white/80 text-sm">Loading view...</span>
-              </div>
-            </div>
-          }
-        >
-          {/* Current View */}
-          <motion.div
-            key={currentView}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-            variants={viewVariants}
-            transition={viewTransition}
-            className="absolute inset-0 flex items-center justify-center"
-            style={{
-              willChange: 'transform, opacity',
-              backfaceVisibility: 'hidden',
-              WebkitBackfaceVisibility: 'hidden'
-            }}
-          >
-            <AnimatePresence mode="wait">
-              {!isTransitioning && (
-                <motion.div
-                  key={`component-${currentView}`}
-                  initial="hidden"
-                  animate="visible"
-                  exit="exit"
-                  variants={componentFade}
-                  className="w-full h-full"
-                >
-                  {React.createElement(viewComponents[currentView])}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.div>
+  // If transitioning to or from a view, or transitioning in general,
+  // show an empty window without any content
+  if (isTransitioning) {
+    return (
+      <main className="w-screen h-screen bg-transparent flex items-center justify-center">
+        {/* Render nothing during transitions */}
+      </main>
+    );
+  }
 
-          {/* Transition Overlay */}
-          {isTransitioning && (
-            <motion.div
-              key={`transition-overlay`}
-              initial={{ opacity: 0 }}
-              animate={{
-                opacity: isDefaultToPill ? 0.5 : 0.3,
-                backgroundColor: isDefaultToPill ? '#000000' : 'rgba(0,0,0,0.3)'
-              }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 pointer-events-none"
-              transition={overlayTransition}
-              style={{
-                willChange: 'opacity',
-                backfaceVisibility: 'hidden',
-                WebkitBackfaceVisibility: 'hidden'
-              }}
-            />
-          )}
-        </Suspense>
-      </AnimatePresence>
+  // Regular rendering without animations for all views
+  return (
+    <main className="w-screen h-screen bg-transparent flex items-center justify-center">
+      <div className="absolute inset-0 flex items-center justify-center" style={{ opacity: 1 }}>
+        {React.createElement(viewComponents[currentView])}
+      </div>
     </main>
   )
 })

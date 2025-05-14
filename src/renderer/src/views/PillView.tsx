@@ -7,7 +7,7 @@ import { useIdleOpacity } from '@/hooks/useIdleOpacity'
 
 // store & controller
 import { useViewStore } from '@/globalStore'
-import { viewController } from '@/controller'
+import { useViewController } from '@/controller'
 
 // layouts
 import { PillLayout } from '@/layouts'
@@ -23,7 +23,7 @@ const PillView: React.FC = () => {
   const [isTransitioningToDefault, setIsTransitioningToDefault] = useState(false)
 
   // controller
-  const { setActiveFeature } = viewController()
+  const { setActiveFeature } = useViewController()
 
   // Use the idle opacity hook with default settings
   useIdleOpacity()
@@ -190,11 +190,13 @@ const PillView: React.FC = () => {
 
       <PillButton
         onClick={switchToDefault}
+        featureKey="default"
         icon={<LayoutGrid color="white" size={14} strokeWidth={2} />}
       />
 
       <PillButton
         onClick={() => startGoogleMeet()}
+        featureKey="googleMeet"
         icon={<SimpleIconComponent slug="siGooglemeet" size={14} />}
         draggable
       />
@@ -202,6 +204,7 @@ const PillView: React.FC = () => {
       <PillButton icon={<SimpleIconComponent slug="siGooglecalendar" size={14} />} draggable />
 
       <PillButton
+        featureKey="clipboard"
         onClick={() => {
           setActiveFeature('clipboard')
           setView('hover')

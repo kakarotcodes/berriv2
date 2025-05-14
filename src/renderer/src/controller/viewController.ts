@@ -4,11 +4,11 @@ import { create } from 'zustand'
 // globalStore/viewController.ts
 type Feature = 'clipboard' | 'calendar' | 'notes' | null
 
-export const viewController = create<{
+export const useViewController = create<{
   activeFeature: Feature
   setActiveFeature: (feature: Feature) => void
 }>((set) => ({
-  activeFeature: null,
+  activeFeature: 'clipboard',
   currentView: 'pill',
   setActiveFeature: (feature) => set({ activeFeature: feature })
 }))

@@ -1,1 +1,1 @@
-export {  viewController } from './viewController'
+export { useViewController } from './viewController'

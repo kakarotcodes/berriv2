@@ -5,17 +5,29 @@ import React from 'react'
 import { HoverLayout } from '@/layouts'
 
 // controller
-import { viewController } from '@/controller'
+import { useViewController } from '@/controller'
 
-// utils
-import { hoverViewMap } from '@/utils/viewComponentRegistry'
+// Import components directly
+import ClipboardHoverView from '@/features/clipboard/views/ClipboardHoverView'
+
+// Static component map to avoid any registration that might cause transitions
+const ComponentMap = {
+  'clipboard': ClipboardHoverView,
+  'calendar': () => <div>Calendar View</div>,
+  'notes': () => <div>Notes View</div>
+};
 
 const HoverView: React.FC = () => {
-  const { activeFeature } = viewController()
-  const DynamicComponent = activeFeature ? hoverViewMap[activeFeature] : null
-
+  const { activeFeature } = useViewController()
+  
+  // Use the feature key to determine what component to render
+  // This approach avoids any complex mounting/unmounting logic that could cause transitions
   return (
-    <HoverLayout>{DynamicComponent ? <DynamicComponent /> : <div>No View Found</div>}</HoverLayout>
+    <HoverLayout>
+      {activeFeature && ComponentMap[activeFeature] 
+        ? React.createElement(ComponentMap[activeFeature]) 
+        : <div>No View Found</div>}
+    </HoverLayout>
   )
 }
 

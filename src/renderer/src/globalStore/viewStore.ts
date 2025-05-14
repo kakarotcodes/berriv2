@@ -42,110 +42,40 @@ export const useViewStore = create<ViewState>()(
         try {
           const currentView = get().currentView
 
-          // Step 1: Mark that we're starting a transition and set the target
+          // Start transition - show blank state
           set({
             targetView: view,
             isTransitioning: true
           })
 
-          // Handle transitions differently based on source and target views
-          if (currentView === 'default' && view === 'pill') {
-            // For default->pill transitions:
-            // 1. Start the electron window resize
-            window.electronAPI.animateViewTransition(view)
+          // All view transitions follow the same pattern:
+          // 1. Start with an empty window
+          // 2. Resize window without any animations
+          // 3. Update the component
+          
+          // Update dimensions immediately to match the target
+          set({
+            dimensions: viewDimensions[view]
+          });
+          
+          // Start the resize animation
+          await window.electronAPI.animateViewTransition(view)
 
-            // 2. Wait longer for the resize to be nearly complete before mounting pill
-            await new Promise((resolve) => setTimeout(resolve, 250))
+          // Wait for a small fixed time for resize to complete
+          await new Promise((resolve) => setTimeout(resolve, 200))
 
-            // 3. Now it's almost pill-sized, so update the component
+          // Update to the new view
+          set({
+            currentView: view
+          })
+
+          // End transition - show the actual content
+          setTimeout(() => {
             set({
-              currentView: view,
-              dimensions: viewDimensions[view]
-            })
-
-            // 4. Clear transition state slightly after the change
-            setTimeout(() => {
-              set({
-                isTransitioning: false,
-                targetView: null
-              })
-            }, 150)
-          } else if (currentView === 'pill' && view === 'hover') {
-            // For pill->hover: optimize the transition timing
-            // Start the resize animation first
-            await window.electronAPI.animateViewTransition(view)
-
-            // Then update the view component
-            set({
-              currentView: view,
-              dimensions: viewDimensions[view]
-            })
-
-            // Clear transition state after animation completes
-            setTimeout(() => {
-              set({
-                isTransitioning: false,
-                targetView: null
-              })
-            }, 100)
-          } else if (currentView === 'hover' && view === 'pill') {
-            // For hover->pill: optimize the transition timing
-            // Start the resize animation first
-            await window.electronAPI.animateViewTransition(view)
-
-            // Wait for resize to complete
-            await new Promise((resolve) => setTimeout(resolve, 200))
-
-            // Then update the view component
-            set({
-              currentView: view,
-              dimensions: viewDimensions[view]
-            })
-
-            // Clear transition state after animation completes
-            setTimeout(() => {
-              set({
-                isTransitioning: false,
-                targetView: null
-              })
-            }, 100)
-          } else if (currentView === 'pill' && view === 'default') {
-            // For pill->default: optimize timing for larger resize
-            // First start the resize animation
-            window.electronAPI.animateViewTransition(view)
-
-            // Wait for just enough time for the window to start resizing
-            // Shorter delay to make component appear faster with fade effect
-            await new Promise((resolve) => setTimeout(resolve, 150))
-
-            // Update the view component quickly to start fade animation
-            set({
-              currentView: view,
-              dimensions: viewDimensions[view]
-            })
-
-            // Clear transition state on a slightly longer delay to allow fade-in to complete
-            setTimeout(() => {
-              set({
-                isTransitioning: false,
-                targetView: null
-              })
-            }, 250)
-          } else {
-            // For all other transitions: optimize timing
-            window.electronAPI.animateViewTransition(view)
-
-            // Wait for resize to complete
-            await new Promise((resolve) => setTimeout(resolve, 200))
-
-            // Update the view component
-            set({
-              currentView: view,
-              dimensions: viewDimensions[view],
               isTransitioning: false,
               targetView: null
             })
-          }
+          }, 50)
         } catch (error) {
           console.error('View transition failed:', error)
           set({
