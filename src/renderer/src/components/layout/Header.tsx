@@ -37,7 +37,14 @@ const Header: React.FC = () => {
           onMouseLeave={() => setHoverGreen(false)}
           className="w-3 h-3 rounded-full bg-[#28C840] hover:brightness-90 relative flex items-center justify-center"
         >
-          {hoverGreen && <ChevronsUpDown size={10} color="black" className="absolute -rotate-45" strokeWidth={2.5} />}
+          {hoverGreen && (
+            <ChevronsUpDown
+              size={10}
+              color="black"
+              className="absolute -rotate-45"
+              strokeWidth={2.5}
+            />
+          )}
         </button>
       </div>
       <p className="m-0 text-white font-bold">Berri</p>

@@ -6,6 +6,9 @@ ipcRenderer.on('pill:set-css-opacity', (_event, alpha) => {
   document.documentElement.style.opacity = alpha.toString()
 })
 
+// Increase the max listeners limit for the 'request-current-view' event
+ipcRenderer.setMaxListeners(20)
+
 contextBridge.exposeInMainWorld('electronAPI', {
   resizeWindow: (dimensions) => ipcRenderer.send('resize-window', dimensions),
   animateViewTransition: (view) => {
@@ -34,15 +37,33 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // Sleep/wake handlers
   requestCurrentView: (callback) => {
+    // Remove any existing listeners to prevent memory leaks
+    ipcRenderer.removeAllListeners('request-current-view');
+    
+    // Add the new listener
     ipcRenderer.on('request-current-view', () => {
       // Call the provided callback to get the current view
       const view = callback() || 'default'
       ipcRenderer.send('persist-last-view', view)
     })
+    
+    // Return a cleanup function that can be called to remove the listener
+    return () => {
+      ipcRenderer.removeAllListeners('request-current-view')
+    }
   },
   onResumeFromSleep: (callback) => {
+    // Remove any existing listeners to prevent memory leaks
+    ipcRenderer.removeAllListeners('resume-view');
+    
+    // Add the new listener
     ipcRenderer.on('resume-view', (_event, view) => {
       callback(view)
     })
+    
+    // Return a cleanup function
+    return () => {
+      ipcRenderer.removeAllListeners('resume-view')
+    }
   }
 })

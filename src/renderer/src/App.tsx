@@ -98,24 +98,35 @@ const OverlayContainer: React.FC = memo(() => {
 
   // Set up sleep/wake handlers
   useEffect(() => {
+    const cleanups: Array<() => void> = [];
+    
     // Handle sleep event - respond to request for current view
     if (window.electronAPI?.requestCurrentView) {
-      window.electronAPI.requestCurrentView(() => {
+      const cleanup = window.electronAPI.requestCurrentView(() => {
         // Return the current view for sleep/suspend state
         return currentView
-      })
+      });
+      
+      cleanups.push(cleanup);
     }
 
     // Handle wake event - restore view after sleep
     if (window.electronAPI?.onResumeFromSleep) {
-      window.electronAPI.onResumeFromSleep((view) => {
+      const cleanup = window.electronAPI.onResumeFromSleep((view) => {
         console.log('Resuming from sleep, restoring view:', view)
         // Only set view if different from current
         if (view && view !== currentView) {
           setView(view)
         }
-      })
+      });
+      
+      cleanups.push(cleanup);
     }
+    
+    // Return cleanup function to remove listeners when component unmounts or dependencies change
+    return () => {
+      cleanups.forEach(cleanup => cleanup());
+    };
   }, [currentView, setView])
 
   return (

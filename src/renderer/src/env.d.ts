@@ -22,8 +22,8 @@ interface ElectronAPI {
   startGoogleMeet: () => Promise<string>
 
   // Sleep/wake handlers
-  requestCurrentView: (callback: () => ViewType) => void
-  onResumeFromSleep: (callback: (view: ViewType) => void) => void
+  requestCurrentView: (callback: () => ViewType) => (() => void)
+  onResumeFromSleep: (callback: (view: ViewType) => void) => (() => void)
 }
 
 declare global {

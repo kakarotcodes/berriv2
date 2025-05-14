@@ -12,6 +12,9 @@ interface ViewState {
   targetView: ViewType | null
   isTransitioning: boolean
   dimensions: { width: number; height: number }
+  isPinned: boolean
+  setIsPinned: (pinned: boolean) => void
+  togglePin: () => void
   setView: (view: ViewType) => Promise<void>
 }
 
@@ -29,6 +32,12 @@ export const useViewStore = create<ViewState>()(
       targetView: null,
       isTransitioning: false,
       dimensions: viewDimensions.default,
+      isPinned: false,
+      
+      setIsPinned: (pinned: boolean) => set({ isPinned: pinned }),
+      
+      togglePin: () => set((state) => ({ isPinned: !state.isPinned })),
+      
       setView: async (view) => {
         try {
           const currentView = get().currentView
@@ -127,8 +136,9 @@ export const useViewStore = create<ViewState>()(
     {
       name: 'view-storage',
       partialize: (state) => ({
-        // Only persist dimensions, not currentView
-        dimensions: state.dimensions
+        // Only persist dimensions and pinned state
+        dimensions: state.dimensions,
+        isPinned: state.isPinned
       })
     }
   )
