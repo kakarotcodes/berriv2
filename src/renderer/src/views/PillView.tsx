@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { LayoutGrid, GripHorizontal } from 'lucide-react'
+import { LayoutGrid, GripHorizontal, ClipboardPen } from 'lucide-react'
 
 // Hooks
 import { useElectron } from '@/hooks/useElectron'
@@ -301,6 +301,13 @@ const PillView = () => {
         id="drag-handle"
       >
         <SimpleIconComponent slug="siGooglecalendar" size={14} />
+      </div>
+      <div
+        onClick={() => setView('hover')}
+        className="cursor-pointer flex-1 w-full border-gray-700 -pr-1 hover:bg-gray-500 flex items-center justify-center hardware-accelerated"
+        id="drag-handle"
+      >
+        <ClipboardPen size={15} />
       </div>
     </div>
   )
