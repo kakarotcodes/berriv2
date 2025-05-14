@@ -10,14 +10,17 @@ interface ElectronAPI {
   endVerticalDrag: () => void
   setResizable: (resizable: boolean) => void
   savePillPosition: () => void
-  
+
   // Opacity control
   setPillOpacity: (alpha: number) => void
   setCssOpacity: (alpha: number) => void
-  
+
   // External links
   openExternal: (url: string) => void
-  
+
+  // Google Meet
+  startGoogleMeet: () => Promise<string>
+
   // Sleep/wake handlers
   requestCurrentView: (callback: () => ViewType) => void
   onResumeFromSleep: (callback: (view: ViewType) => void) => void

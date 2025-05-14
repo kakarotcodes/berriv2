@@ -234,15 +234,20 @@ const PillView = () => {
       // Increased from 250ms to 300ms to ensure the animation is further along
       setTimeout(() => {
         setView('default')
-      }, 300)
+      }, 1000)
     } catch (error) {
       console.error('Failed to transition to default view:', error)
       setIsTransitioningToDefault(false)
     }
   }
 
-  const startGoogleMeet = () => {
-    window.electronAPI?.openExternal('https://meet.google.com/new')
+  const startGoogleMeet = async () => {
+    try {
+      await window.electronAPI.startGoogleMeet()
+    } catch (e) {
+      console.error('Failed to start meeting:', e)
+      alert('Failed to start meeting.')
+    }
   }
 
   // If we're transitioning to default, show loading state instead of pill

@@ -19,16 +19,19 @@ contextBridge.exposeInMainWorld('electronAPI', {
   endVerticalDrag: () => ipcRenderer.send('end-vertical-drag'),
   setResizable: (resizable) => ipcRenderer.send('set-resizable', resizable),
   savePillPosition: () => ipcRenderer.send('save-pill-position'),
-  
+
   // Opacity control
   setPillOpacity: (alpha) => ipcRenderer.send('pill:set-opacity', alpha),
   setCssOpacity: (alpha) => {
     document.documentElement.style.opacity = alpha.toString()
   },
-  
+
   // External links
   openExternal: (url) => ipcRenderer.send('open-external', url),
-  
+
+  // Google Meet
+  startGoogleMeet: () => ipcRenderer.invoke('start-google-meet'),
+
   // Sleep/wake handlers
   requestCurrentView: (callback) => {
     ipcRenderer.on('request-current-view', () => {
