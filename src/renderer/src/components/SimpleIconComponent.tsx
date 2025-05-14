@@ -5,7 +5,7 @@ interface SimpleIconProps {
   size?: number
 }
 
-const SimpleIcon = ({ slug, size = 24 }: SimpleIconProps) => {
+const SimpleIconComponent: React.FC<SimpleIconProps> = ({ slug, size = 24 }) => {
   const icon = icons[slug]
   if (!icon) return null
 
@@ -23,4 +23,4 @@ const SimpleIcon = ({ slug, size = 24 }: SimpleIconProps) => {
   )
 }
 
-export default SimpleIcon
+export default SimpleIconComponent
