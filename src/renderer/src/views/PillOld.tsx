@@ -16,7 +16,11 @@ const PillView = () => {
   const { resizeWindow, savePillPosition } = useElectron()
   const { dimensions, setView, targetView, isTransitioning } = useViewStore()
   const rafIdRef = useRef<number | null>(null)
+  const hoverTimeout = useRef<NodeJS.Timeout | null>(null)
+  const [isOverHoverHandle, setIsOverHoverHandle] = useState(false)
   const [isTransitioningToDefault, setIsTransitioningToDefault] = useState(false)
+  // Very short delay for hover feedback
+  const HOVER_FEEDBACK_DELAY = 250
 
   // controller
   const { setActiveFeature } = viewController()
@@ -109,16 +113,27 @@ const PillView = () => {
       isAnimating = false
     }
 
+    // Add specific event handlers for the drag handle
+    const handleDragHandleEnter = () => {
+      // Clear any existing hover timeout when entering drag handle
+      if (hoverTimeout.current) {
+        clearTimeout(hoverTimeout.current)
+        hoverTimeout.current = null
+      }
+    }
+
     // Attach event listeners
     handle.addEventListener('mousedown', onMouseDown)
     document.addEventListener('mousemove', onMouseMove)
     document.addEventListener('mouseup', onMouseUp)
+    handle.addEventListener('mouseenter', handleDragHandleEnter)
 
     return () => {
       // Clean up all event listeners
       handle.removeEventListener('mousedown', onMouseDown)
       document.removeEventListener('mousemove', onMouseMove)
       document.removeEventListener('mouseup', onMouseUp)
+      handle.removeEventListener('mouseenter', handleDragHandleEnter)
 
       // Clean up animation frame
       if (rafIdRef.current !== null) {
@@ -128,9 +143,76 @@ const PillView = () => {
     }
   }, [savePillPosition])
 
+  useEffect(() => {
+    // Add event listeners for the hover handle
+    const hoverHandle = document.getElementById('hover-handle')
+    if (!hoverHandle) return
+
+    const handleHoverHandleEnter = () => {
+      setIsOverHoverHandle(true)
+
+      // Use the hover feedback delay for transitioning to hover view
+      if (!isTransitioningToDefault) {
+        // Cancel any existing timeouts
+        if (hoverTimeout.current) {
+          clearTimeout(hoverTimeout.current)
+          hoverTimeout.current = null
+        }
+
+        // Add the hover delay before transitioning
+        hoverTimeout.current = setTimeout(() => {
+          // Before transitioning to hover, save the pill position
+          savePillPosition()
+          setView('hover')
+        }, HOVER_FEEDBACK_DELAY)
+      }
+    }
+
+    const handleHoverHandleLeave = () => {
+      setIsOverHoverHandle(false)
+      if (hoverTimeout.current) {
+        clearTimeout(hoverTimeout.current)
+        hoverTimeout.current = null
+      }
+    }
+
+    // Using mouseenter/mouseleave for reliable hover detection
+    hoverHandle.addEventListener('mouseenter', handleHoverHandleEnter)
+    hoverHandle.addEventListener('mouseleave', handleHoverHandleLeave)
+
+    // Also add mouseover/mouseout as a backup detection method
+    hoverHandle.addEventListener('mouseover', handleHoverHandleEnter)
+    hoverHandle.addEventListener('mouseout', handleHoverHandleLeave)
+
+    // Add click handler as well for mobile/touch devices
+    const handleClick = () => {
+      savePillPosition()
+      setView('hover')
+    }
+
+    hoverHandle.addEventListener('click', handleClick)
+
+    return () => {
+      hoverHandle.removeEventListener('mouseenter', handleHoverHandleEnter)
+      hoverHandle.removeEventListener('mouseleave', handleHoverHandleLeave)
+      hoverHandle.removeEventListener('mouseover', handleHoverHandleEnter)
+      hoverHandle.removeEventListener('mouseout', handleHoverHandleLeave)
+      hoverHandle.removeEventListener('click', handleClick)
+
+      if (hoverTimeout.current) {
+        clearTimeout(hoverTimeout.current)
+        hoverTimeout.current = null
+      }
+    }
+  }, [setView, isOverHoverHandle, HOVER_FEEDBACK_DELAY, isTransitioningToDefault, savePillPosition])
+
   // Clean up function for component unmount
   useEffect(() => {
     return () => {
+      if (hoverTimeout.current) {
+        clearTimeout(hoverTimeout.current)
+        hoverTimeout.current = null
+      }
       if (rafIdRef.current) {
         cancelAnimationFrame(rafIdRef.current)
         rafIdRef.current = null
@@ -139,6 +221,12 @@ const PillView = () => {
   }, [])
 
   const switchToDefault = async () => {
+    // Immediately cancel any pending hover timeout
+    if (hoverTimeout.current) {
+      clearTimeout(hoverTimeout.current)
+      hoverTimeout.current = null
+    }
+
     // Save the pill position before transitioning away
     savePillPosition()
 
@@ -150,6 +238,7 @@ const PillView = () => {
       await window.electronAPI.animateViewTransition('default')
 
       // Wait for animation to be well underway before changing view
+      // Increased from 250ms to 300ms to ensure the animation is further along
       setTimeout(() => {
         setView('default')
       }, 1000)

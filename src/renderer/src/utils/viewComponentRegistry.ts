@@ -8,3 +8,7 @@ import { FeatureKey } from '@/types/feature'
 export const hoverViewMap: Record<FeatureKey, React.FC> = {
   clipboard: ClipboardHoverView
 }
+
+export const defaultViewMap: Record<FeatureKey, React.FC> = {
+  clipboard: ClipboardHoverView
+}
