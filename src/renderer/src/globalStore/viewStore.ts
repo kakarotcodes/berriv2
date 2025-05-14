@@ -109,6 +109,26 @@ export const useViewStore = create<ViewState>()(
                 targetView: null
               })
             }, 100)
+          } else if (currentView === 'pill' && view === 'default') {
+            // For pill->default: optimize timing for larger resize
+            window.electronAPI.animateViewTransition(view)
+
+            // Wait for resize animation to be well underway
+            await new Promise((resolve) => setTimeout(resolve, 250))
+
+            // Update the view component
+            set({
+              currentView: view,
+              dimensions: viewDimensions[view]
+            })
+
+            // Clear transition state after animation completes
+            setTimeout(() => {
+              set({
+                isTransitioning: false,
+                targetView: null
+              })
+            }, 100)
           } else {
             // For all other transitions: optimize timing
             window.electronAPI.animateViewTransition(view)

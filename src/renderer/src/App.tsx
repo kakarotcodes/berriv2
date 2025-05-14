@@ -1,83 +1,26 @@
+// dependencies
 import React, { Suspense, memo, useEffect } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
+
+// store
 import { useViewStore } from '@/globalStore'
 
+// views
 import { DefaultView, PillView, HoverView, ExpandedView } from '@/views'
 
-// Smoother spring physics
-const viewTransition = {
-  type: 'spring',
-  stiffness: 180, // Softer spring
-  damping: 28, // Slightly more damping
-  mass: 1,
-  velocity: 0.1,
-  restDelta: 0.001
-}
-
-// Enhanced view variants with spatial movement
-const viewVariants = {
-  hidden: {
-    opacity: 0,
-    scale: 0.98,
-    y: 8, // Add vertical offset
-    transition: { duration: 0.16, ease: [0.4, 0, 0.2, 1] }
-  },
-  visible: {
-    opacity: 1,
-    scale: 1,
-    y: 0,
-    transition: { duration: 0.16, ease: [0.4, 0, 0.2, 1] }
-  },
-  exit: {
-    opacity: 0,
-    scale: 0.98,
-    y: -8, // Directional exit
-    transition: { duration: 0.16, ease: [0.4, 0, 0.2, 1] }
-  }
-}
-
-// Component fade animation
-const componentFade = {
-  hidden: {
-    opacity: 0,
-    transition: {
-      duration: 0.12, // Increased from 0.1
-      ease: [0.4, 0, 0.2, 1]
-    }
-  },
-  visible: {
-    opacity: 1,
-    transition: {
-      duration: 0.12, // Increased from 0.1
-      ease: [0.4, 0, 0.2, 1]
-    }
-  },
-  exit: {
-    opacity: 0,
-    transition: {
-      duration: 0.12, // Increased from 0.1
-      ease: [0.4, 0, 0.2, 1]
-    }
-  }
-}
-
-// Transition overlay config
-const overlayTransition = {
-  enter: {
-    duration: 0.12, // Increased from 0.1
-    ease: [0.4, 0, 0.2, 1]
-  },
-  exit: {
-    duration: 0.12, // Increased from 0.1
-    ease: [0.4, 0, 0.2, 1]
-  }
-}
+// constants
+import {
+  componentFade,
+  overlayTransition,
+  viewTransition,
+  viewVariants
+} from '../../constants/constants'
 
 /**
  * OverlayContainer - Optimized container with smooth transitions between views
  * using GPU-accelerated animations and code splitting.
  */
-const OverlayContainer: React.FC = memo(() => {
+const App: React.FC = memo(() => {
   const { currentView, targetView, isTransitioning, setView } = useViewStore()
 
   // Track if we're transitioning specifically from default to pill
@@ -98,16 +41,16 @@ const OverlayContainer: React.FC = memo(() => {
 
   // Set up sleep/wake handlers
   useEffect(() => {
-    const cleanups: Array<() => void> = [];
-    
+    const cleanups: Array<() => void> = []
+
     // Handle sleep event - respond to request for current view
     if (window.electronAPI?.requestCurrentView) {
       const cleanup = window.electronAPI.requestCurrentView(() => {
         // Return the current view for sleep/suspend state
         return currentView
-      });
-      
-      cleanups.push(cleanup);
+      })
+
+      cleanups.push(cleanup)
     }
 
     // Handle wake event - restore view after sleep
@@ -118,15 +61,15 @@ const OverlayContainer: React.FC = memo(() => {
         if (view && view !== currentView) {
           setView(view)
         }
-      });
-      
-      cleanups.push(cleanup);
+      })
+
+      cleanups.push(cleanup)
     }
-    
+
     // Return cleanup function to remove listeners when component unmounts or dependencies change
     return () => {
-      cleanups.forEach(cleanup => cleanup());
-    };
+      cleanups.forEach((cleanup) => cleanup())
+    }
   }, [currentView, setView])
 
   return (
@@ -197,4 +140,4 @@ const OverlayContainer: React.FC = memo(() => {
   )
 })
 
-export default OverlayContainer
+export default App

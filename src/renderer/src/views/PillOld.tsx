@@ -1,3 +1,5 @@
+// containers hover logic.
+
 import { useEffect, useRef, useState } from 'react'
 import { LayoutGrid, GripHorizontal, ClipboardPen } from 'lucide-react'
 

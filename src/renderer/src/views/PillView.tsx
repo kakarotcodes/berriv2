@@ -1,18 +1,22 @@
 import { useEffect, useRef, useState } from 'react'
-import { LayoutGrid, GripHorizontal, ClipboardPen } from 'lucide-react'
+import { LayoutGrid, ClipboardPen } from 'lucide-react'
 
 // Hooks
 import { useElectron } from '@/hooks/useElectron'
 import { useIdleOpacity } from '@/hooks/useIdleOpacity'
 
-// store
+// store & controller
 import { useViewStore } from '@/globalStore'
 import { viewController } from '@/controller'
 
+// layouts
+import { PillLayout } from '@/layouts'
+
 // components
 import { SimpleIconComponent } from '@/components/ui'
+import { PillButton, PillNotification } from './components'
 
-const PillView = () => {
+const PillView: React.FC = () => {
   const { resizeWindow, savePillPosition } = useElectron()
   const { dimensions, setView, targetView, isTransitioning } = useViewStore()
   const rafIdRef = useRef<number | null>(null)
@@ -149,10 +153,10 @@ const PillView = () => {
       // First start electron window resize
       await window.electronAPI.animateViewTransition('default')
 
-      // Wait for animation to be well underway before changing view
+      // Reduce the delay to match the animation time
       setTimeout(() => {
         setView('default')
-      }, 1000)
+      }, 250)
     } catch (error) {
       console.error('Failed to transition to default view:', error)
       setIsTransitioningToDefault(false)
@@ -179,61 +183,31 @@ const PillView = () => {
   }
 
   return (
-    <div
-      id="pill-container"
-      className="w-full h-full text-white bg-gray-800 flex flex-col hardware-accelerated"
-    >
-      <div id="drag-handle" className="flex items-center justify-center pt-1">
-        <GripHorizontal size={12} />
-      </div>
-      <div className="h-1" />
-      <div
-        className="flex-1 w-full px-1.5 flex items-center justify-center"
-        onClick={() => setView('hover')}
-      >
-        <span
-          style={{
-            WebkitTextStroke: '0.1px black',
-            color: 'white',
-            cursor: 'pointer',
-            transform: 'scale(1)',
-            transition: 'transform 0.2s ease'
-          }}
-          className="bg-[#D92D20] rounded-full w-5 h-5 cursor-pointer text-[10px] font-extrabold flex items-center justify-center"
-        >
-          99
-        </span>
-      </div>
-      <button
+    <PillLayout>
+      <PillNotification count={99} onClick={() => setView('hover')} />
+
+      <PillButton
         onClick={switchToDefault}
-        className="flex-1 w-full px-1 border-gray-700 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-600 transition-colors"
-      >
-        <LayoutGrid color="white" size={14} strokeWidth={2} />
-      </button>
-      <button
-        onClick={startGoogleMeet}
-        className="cursor-pointer flex-1 w-full border-gray-700 -pr-1 hover:bg-gray-500 flex items-center justify-center hardware-accelerated"
-        id="drag-handle"
-      >
-        <SimpleIconComponent slug="siGooglemeet" size={14} />
-      </button>
-      <div
-        className="cursor-pointer flex-1 w-full border-gray-700 -pr-1 hover:bg-gray-500 flex items-center justify-center hardware-accelerated"
-        id="drag-handle"
-      >
-        <SimpleIconComponent slug="siGooglecalendar" size={14} />
-      </div>
-      <div
+        icon={<LayoutGrid color="white" size={14} strokeWidth={2} />}
+      />
+
+      <PillButton
+        onClick={() => startGoogleMeet()}
+        icon={<SimpleIconComponent slug="siGooglemeet" size={14} />}
+        draggable
+      />
+
+      <PillButton icon={<SimpleIconComponent slug="siGooglecalendar" size={14} />} draggable />
+
+      <PillButton
         onClick={() => {
           setActiveFeature('clipboard')
           setView('hover')
         }}
-        className="cursor-pointer flex-1 w-full border-gray-700 -pr-1 hover:bg-gray-500 flex items-center justify-center hardware-accelerated"
-        id="drag-handle"
-      >
-        <ClipboardPen size={15} />
-      </div>
-    </div>
+        icon={<ClipboardPen size={15} />}
+        draggable
+      />
+    </PillLayout>
   )
 }
 
