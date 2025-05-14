@@ -7,7 +7,7 @@ import { useIdleOpacity } from '@/hooks/useIdleOpacity'
 
 // store
 import { useViewStore } from '@/globalStore'
-import { useViewController } from '@/controller/viewController'
+import { viewController } from '@/controller'
 
 // components
 import { SimpleIconComponent } from '@/components/ui'
@@ -23,7 +23,7 @@ const PillView = () => {
   const HOVER_FEEDBACK_DELAY = 250
 
   // controller
-  const { setActiveFeature } = useViewController()
+  const { setActiveFeature } = viewController()
 
   // Use the idle opacity hook with default settings
   useIdleOpacity()

@@ -1,9 +1,17 @@
+// dependencies
 import React from 'react'
 
-type Props = {}
+// components
+import ClipboardHistory from '../components/ClipboardHistory'
 
-const ClipBoardHoverView = (props: Props) => {
-  return <div>ClipBoardHoverView</div>
+const ClipBoardHoverView: React.FC = () => {
+  return (
+    <div>
+      <section>
+        <ClipboardHistory />
+      </section>
+    </div>
+  )
 }
 
 export default ClipBoardHoverView
