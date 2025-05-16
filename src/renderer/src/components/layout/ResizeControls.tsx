@@ -21,7 +21,7 @@ const ResizeControls: React.FC = () => {
   return (
     <div
       id="resize-btn-grp"
-      className="absolute left-0 top-0 flex items-center justify-center gap-2 h-full"
+      className="flex items-center justify-center gap-2 h-full"
     >
       {buttons.map(({ view, color, Icon, rotate }) => (
         <button

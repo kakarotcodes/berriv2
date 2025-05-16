@@ -22,7 +22,7 @@ const ActionButton: React.FC<ActionButtonProps> = ({ featureKey, icon, onClick }
   return (
     <button
       onClick={onClick}
-      className={`rounded-full border border-white/20 p-2 ${
+      className={`rounded-full cursor-pointer border border-white/20 p-1.5 ${
         isActive ? 'bg-white/40' : 'hover:bg-white/40'
       }`}
     >

@@ -1,22 +1,25 @@
 // components
 import React, { useCallback, useEffect, useRef } from 'react'
+import { History, ClipboardPen } from 'lucide-react'
 
 // components
-import { Header } from '@/components/layout'
-import { Divider } from '@/components/shared'
-import { Switch } from '@/components/ui'
+import { HeaderHover } from '@/components/layout'
 
 // store
 import { useViewStore } from '@/globalStore'
+import ActionButton from '@/components/layout/ActionButton'
+import { SimpleIconComponent } from '@/components/ui'
+import { useViewController } from '@/controller'
 
 type Props = {
   children: React.ReactNode
 }
 
 const HoverLayout: React.FC<Props> = ({ children }) => {
-  const { setView, isPinned, togglePin } = useViewStore()
+  const { setView, isPinned } = useViewStore()
   const leaveTimerRef = useRef<number | null>(null)
   const isMouseInsideRef = useRef<boolean>(true)
+  const { setActiveFeature } = useViewController()
 
   // Constant for leave delay
   const LEAVE_DELAY = 3000
@@ -52,38 +55,45 @@ const HoverLayout: React.FC<Props> = ({ children }) => {
     }
   }, [])
 
-  // Handle toggle with additional logic for mouse leaving
-  const handleTogglePin = useCallback(() => {
-    // Store current pin state before toggling
-    const wasPinned = isPinned
-
-    // Toggle pin state in store
-    togglePin()
-
-    // If we're unpinning (was pinned but now it's not) AND the mouse is outside,
-    // start the timer to close the hover view
-    if (wasPinned && !isMouseInsideRef.current) {
-      leaveTimerRef.current = window.setTimeout(() => {
-        setView('pill').catch(console.error)
-      }, LEAVE_DELAY)
-    }
-  }, [isPinned, togglePin, setView])
+  // If we're already in hover view, we only need to set the feature, not change views
+  const handleFeatureClick = (feature) => {
+    setActiveFeature(feature)
+  }
 
   return (
     <div
-      className="relative w-full h-full px-4 py-2"
+      className="w-full h-full flex flex-col"
       onMouseLeave={handleMouseLeave}
       onMouseEnter={handleMouseEnter}
     >
-      <Header />
-      <Divider height={14} />
-      <div className="absolute top-3 right-2 flex flex-col gap-3 flex-grow">
-        <div className="flex flex-col items-center gap-2 text-white">
-          <Switch checked={isPinned} onChange={handleTogglePin} size="small" />
-          <p className="text-[7px] flex items-center -mt-1.5">Keep open</p>
+      <HeaderHover LEAVE_DELAY={LEAVE_DELAY} />
+
+      <div className="px-4 py-2">
+        <div className="flex items-center justify-center gap-4">
+          <ActionButton
+            featureKey="calendar"
+            icon={<SimpleIconComponent slug="siGooglemeet" size={14} />}
+            onClick={() => handleFeatureClick('calendar')}
+          />
+          <ActionButton
+            featureKey="calendar"
+            icon={<SimpleIconComponent slug="siGooglecalendar" size={14} />}
+            onClick={() => handleFeatureClick('calendar')}
+          />
+          <ActionButton
+            featureKey="clipboard"
+            icon={<History size={15} color="white" />}
+            onClick={() => handleFeatureClick('clipboard')}
+          />
+          <ActionButton
+            featureKey="notes"
+            icon={<ClipboardPen size={15} color="white" />}
+            onClick={() => handleFeatureClick('notes')}
+          />
         </div>
+        {/* Ensure children grow within constrained layout */}
+        <div className="flex-1 min-h-0 w-full overflow-hidden py-3">{children}</div>
       </div>
-      {children}
     </div>
   )
 }
