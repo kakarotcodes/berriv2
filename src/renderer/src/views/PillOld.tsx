@@ -5,7 +5,7 @@ import { LayoutGrid, GripHorizontal, ClipboardPen } from 'lucide-react'
 
 // Hooks
 import { useElectron } from '@/hooks/useElectron'
-import { useIdleOpacity } from '@/hooks/useIdleOpacity'
+import { useIdleOpacity } from './hooks'
 
 // store
 import { useViewStore } from '@/globalStore'

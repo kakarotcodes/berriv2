@@ -11,22 +11,7 @@ import { DefaultView, PillView, HoverView, ExpandedView } from '@/views'
  * OverlayContainer - With all animations removed
  */
 const App: React.FC = memo(() => {
-  const { currentView, targetView, isTransitioning, setView } = useViewStore()
-
-  // Track if we're transitioning specifically from default to pill
-  const isDefaultToPill = React.useMemo(() => {
-    return currentView === 'default' && targetView === 'pill'
-  }, [currentView, targetView])
-
-  // Track if we're transitioning from hover to pill
-  const isHoverToPill = React.useMemo(() => {
-    return currentView === 'hover' && targetView === 'pill'
-  }, [currentView, targetView])
-
-  // Track if we're transitioning to/from hover view
-  const isHoverTransition = React.useMemo(() => {
-    return (currentView === 'hover' || targetView === 'hover') && isTransitioning
-  }, [currentView, targetView, isTransitioning])
+  const { currentView, isTransitioning, setView } = useViewStore()
 
   // Memoized view component mapping
   const viewComponents = React.useMemo(
@@ -76,10 +61,8 @@ const App: React.FC = memo(() => {
   // show an empty window without any content
   if (isTransitioning) {
     return (
-      <main className="w-screen h-screen bg-transparent flex items-center justify-center">
-        {/* Render nothing during transitions */}
-      </main>
-    );
+      <main className="w-screen h-screen bg-transparent flex items-center justify-center"></main>
+    )
   }
 
   // Regular rendering without animations for all views
