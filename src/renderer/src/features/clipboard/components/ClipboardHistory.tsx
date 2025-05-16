@@ -19,8 +19,8 @@ const ClipboardHistory: React.FC = () => {
         <Divider />
       </div>
 
-      {/* Scrollable container - will only scroll its contents */}
-      <div className="flex flex-col flex-1 min-h-0 overflow-y-auto rounded-md border border-zinc-600 p-2 mt-2">
+      {/* Scrollable container with custom scrollbar styles */}
+      <div className="flex flex-col flex-1 min-h-0 overflow-y-auto rounded-md border border-zinc-600 p-2 mt-2 dark-scrollbar">
         <ul className="space-y-2 text-sm">
           {history.map((entry) => (
             <ClipboardItem key={entry.id} content={entry.content} />
