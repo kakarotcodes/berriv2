@@ -24,6 +24,7 @@ body {
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow: hidden; /* Prevent body scrolling */
 }
 
 /* Prevent text selection during drag */
@@ -81,4 +82,10 @@ body {
 /* Keep pointer events on the hover-header during drag */
 .dragging #hover-header {
   pointer-events: auto;
+}
+
+/* Ensure scrollable containers don't cause parent scrolling */
+.overflow-y-auto {
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
 }

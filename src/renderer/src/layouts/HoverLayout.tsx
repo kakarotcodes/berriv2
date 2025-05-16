@@ -62,14 +62,14 @@ const HoverLayout: React.FC<Props> = ({ children }) => {
 
   return (
     <div
-      className="w-full h-full flex flex-col"
+      className="w-full h-full flex flex-col overflow-hidden"
       onMouseLeave={handleMouseLeave}
       onMouseEnter={handleMouseEnter}
     >
       <HeaderHover LEAVE_DELAY={LEAVE_DELAY} />
 
-      <div className="px-4 py-2">
-        <div className="flex items-center justify-center gap-4">
+      <div className="px-4 py-2 flex flex-col flex-grow overflow-hidden">
+        <div className="flex items-center justify-center gap-4 flex-shrink-0">
           <ActionButton
             featureKey="calendar"
             icon={<SimpleIconComponent slug="siGooglemeet" size={14} />}
