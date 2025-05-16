@@ -1,6 +1,6 @@
 // views/PillView.tsx
 import { useState } from 'react'
-import { LayoutGrid, ClipboardPen } from 'lucide-react'
+import { LayoutGrid, ClipboardPen, History } from 'lucide-react'
 
 // Hooks
 import { useElectron } from '@/hooks/useElectron'
@@ -20,7 +20,7 @@ const PillView: React.FC = () => {
   const { dimensions, setView, targetView, isTransitioning } = useViewStore()
   const { setActiveFeature } = useViewController()
   const [isTransitioningToDefault, setIsTransitioningToDefault] = useState(false)
-  
+
   useIdleOpacity()
   useDragHandle(savePillPosition)
   usePillInit(savePillPosition, resizeWindow, dimensions)
@@ -60,13 +60,6 @@ const PillView: React.FC = () => {
         icon={<LayoutGrid color="white" size={14} />}
       />
 
-      <PillButton
-        onClick={startGoogleMeet}
-        featureKey="googleMeet"
-        icon={<SimpleIconComponent slug="siGooglemeet" size={14} />}
-        draggable
-      />
-
       <PillButton icon={<SimpleIconComponent slug="siGooglecalendar" size={14} />} draggable />
 
       <PillButton
@@ -75,7 +68,24 @@ const PillView: React.FC = () => {
           setView('hover')
         }}
         featureKey="clipboard"
+        icon={<History size={15} />}
+        draggable
+      />
+
+      <PillButton
+        onClick={() => {
+          setActiveFeature('notes')
+          setView('hover')
+        }}
+        featureKey="notes"
         icon={<ClipboardPen size={15} />}
+        draggable
+      />
+
+      <PillButton
+        onClick={startGoogleMeet}
+        featureKey="googleMeet"
+        icon={<SimpleIconComponent slug="siGooglemeet" size={14} />}
         draggable
       />
     </PillLayout>

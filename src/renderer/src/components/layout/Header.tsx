@@ -1,6 +1,6 @@
 // dependencies
 import React from 'react'
-import { ClipboardPen } from 'lucide-react'
+import { ClipboardPen, History } from 'lucide-react'
 
 // controller
 import { useViewController } from '@/controller/viewController'
@@ -11,12 +11,10 @@ import ResizeControls from './ResizeControls'
 // types
 import { SimpleIconComponent } from '../ui'
 import ActionButton from './ActionButton'
-import { useViewStore } from '@/globalStore'
 
 const Header: React.FC = () => {
   const { setActiveFeature } = useViewController()
-  const { currentView } = useViewStore()
-  
+
   // If we're already in hover view, we only need to set the feature, not change views
   const handleFeatureClick = (feature) => {
     setActiveFeature(feature)
@@ -38,8 +36,13 @@ const Header: React.FC = () => {
         />
         <ActionButton
           featureKey="clipboard"
-          icon={<ClipboardPen size={16} color="white" />}
+          icon={<History size={16} color="white" />}
           onClick={() => handleFeatureClick('clipboard')}
+        />
+        <ActionButton
+          featureKey="notes"
+          icon={<ClipboardPen size={16} color="white" />}
+          onClick={() => handleFeatureClick('notes')}
         />
       </div>
     </div>
