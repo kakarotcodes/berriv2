@@ -1,70 +1,80 @@
-import { useEffect, useRef, useState } from 'react'
+// dependencies
+import { useEffect, useRef, useState, memo } from 'react'
+import { Copy, ChevronDown, ChevronUp, Check } from 'lucide-react'
 
-// Define a new ClipboardItem component to handle expansion logic
-const ClipboardItem: React.FC<{ content: string }> = ({ content }) => {
+type ClipboardItemProps = {
+  content: string
+}
+
+// Define the component directly, without using React.FC
+const ClipboardItem = memo(({ content }: ClipboardItemProps) => {
   const [expanded, setExpanded] = useState(false)
+  const [copied, setCopied] = useState(false)
   const [isTruncated, setIsTruncated] = useState(false)
+
   const textRef = useRef<HTMLDivElement>(null)
 
-  // Check if text is truncated
+  // Truncation detection
   useEffect(() => {
-    const checkIfTruncated = () => {
-      if (textRef.current) {
-        const isOverflowing = textRef.current.scrollWidth > textRef.current.clientWidth
-        setIsTruncated(isOverflowing)
+    const checkTruncation = () => {
+      const el = textRef.current
+      if (el) {
+        setIsTruncated(el.scrollWidth > el.clientWidth)
       }
     }
 
-    checkIfTruncated()
-
-    // Also check on window resize
-    window.addEventListener('resize', checkIfTruncated)
-    return () => window.removeEventListener('resize', checkIfTruncated)
+    checkTruncation()
+    window.addEventListener('resize', checkTruncation)
+    return () => window.removeEventListener('resize', checkTruncation)
   }, [content])
 
-  const toggleExpand = () => {
-    setExpanded(!expanded)
+  const handleCopy = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    navigator.clipboard.writeText(content)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1500)
   }
 
   return (
-    <li className={`border border-zinc-600 p-2 rounded text-white ${expanded ? 'h-auto' : 'h-10'}`}>
-      {expanded ? (
-        <div>
-          <div className="flex justify-between items-start">
-            <div className="pr-2">{content}</div>
-            <button onClick={toggleExpand} className="flex-shrink-0 text-zinc-400 hover:text-white">
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M5 15l7-7 7 7"
-                />
-              </svg>
-            </button>
-          </div>
+    <li
+      className={`border border-zinc-600 p-2 rounded text-white transition-all ${
+        expanded ? 'h-auto' : 'h-10 overflow-hidden'
+      }`}
+      onClick={() => setExpanded((prev) => !prev)}
+    >
+      <div className="flex justify-between items-start gap-2">
+        <div ref={textRef} className={`pr-2 ${!expanded ? 'truncate' : ''}`}>
+          {content}
         </div>
-      ) : (
-        <div className="flex justify-between items-center h-full">
-          <div ref={textRef} className="truncate pr-2">
-            {content}
-          </div>
+
+        <div className="flex-shrink-0 flex items-center gap-2">
           {isTruncated && (
-            <button onClick={toggleExpand} className="flex-shrink-0 text-zinc-400 hover:text-white">
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 9l-7 7-7-7"
-                />
-              </svg>
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                setExpanded((prev) => !prev)
+              }}
+              className="text-zinc-400 hover:text-white"
+              title={expanded ? 'Collapse' : 'Expand'}
+            >
+              {expanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
             </button>
           )}
+
+          <button
+            onClick={handleCopy}
+            className={`transition-colors ${
+              copied ? 'text-green-500' : 'text-zinc-400 hover:text-white'
+            }`}
+            title="Copy to clipboard"
+          >
+            {copied ? <Check size={15} /> : <Copy size={13} />}
+          </button>
         </div>
-      )}
+      </div>
     </li>
   )
-}
+})
 
+ClipboardItem.displayName = 'ClipboardItem'
 export default ClipboardItem
