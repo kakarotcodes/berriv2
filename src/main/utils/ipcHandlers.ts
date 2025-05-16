@@ -3,6 +3,7 @@ import { setWindowOpacity } from '../utils/windowOpacity'
 import { animateWindowResize } from './windowResize'
 import { prefs } from './prefs'
 import { OFFSET, WIDTH } from '../../constants/constants'
+import { getClipboardHistory, startClipboardPolling, stopClipboardPolling } from './clipboardMonitor'
 
 export function registerIpcHandlers(mainWindow: BrowserWindow) {
   ipcMain.on('resize-window', (_event, { width, height }) => {
@@ -56,22 +57,22 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
       const bounds = mainWindow.getBounds()
 
       // Calculate target position based on window type (pill or hover)
-      let newX;
-      const isPillView = bounds.width === WIDTH.PILL;
-      const isHoverView = bounds.width === WIDTH.HOVER;
-      
+      let newX
+      const isPillView = bounds.width === WIDTH.PILL
+      const isHoverView = bounds.width === WIDTH.HOVER
+
       // Use appropriate offset based on window type
       if (isPillView) {
         // Use pill offset for pill view (50px from right edge)
-        const pillOffset = OFFSET.PILLOFFSET;
-        newX = area.x + area.width - pillOffset;
+        const pillOffset = OFFSET.PILLOFFSET
+        newX = area.x + area.width - pillOffset
       } else if (isHoverView) {
         // Use margin for hover view (20px from right edge)
-        const MARGIN = 20;
-        newX = area.x + area.width - bounds.width - MARGIN;
+        const MARGIN = 20
+        newX = area.x + area.width - bounds.width - MARGIN
       } else {
         // For other views, maintain current X position
-        newX = bounds.x;
+        newX = bounds.x
       }
 
       // Use cursor position for vertical position
@@ -187,4 +188,23 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
     console.log('Persisting last view for sleep/wake:', view)
     prefs.set('lastViewAfterSleep', view)
   })
+
+  // Register IPC handler for clipboard history
+  ipcMain.handle('clipboard:get-history', () => {
+    return getClipboardHistory()
+  })
+  
+  // Start clipboard polling with a callback that sends updates to renderer
+  startClipboardPolling((entry) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('clipboard:update', entry)
+    }
+  })
+  
+  // Clean up polling on window close
+  if (mainWindow) {
+    mainWindow.on('closed', () => {
+      stopClipboardPolling()
+    })
+  }
 }

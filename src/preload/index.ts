@@ -38,15 +38,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Sleep/wake handlers
   requestCurrentView: (callback) => {
     // Remove any existing listeners to prevent memory leaks
-    ipcRenderer.removeAllListeners('request-current-view');
-    
+    ipcRenderer.removeAllListeners('request-current-view')
+
     // Add the new listener
     ipcRenderer.on('request-current-view', () => {
       // Call the provided callback to get the current view
       const view = callback() || 'default'
       ipcRenderer.send('persist-last-view', view)
     })
-    
+
     // Return a cleanup function that can be called to remove the listener
     return () => {
       ipcRenderer.removeAllListeners('request-current-view')
@@ -54,16 +54,35 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   onResumeFromSleep: (callback) => {
     // Remove any existing listeners to prevent memory leaks
-    ipcRenderer.removeAllListeners('resume-view');
-    
+    ipcRenderer.removeAllListeners('resume-view')
+
     // Add the new listener
     ipcRenderer.on('resume-view', (_event, view) => {
       callback(view)
     })
-    
+
     // Return a cleanup function
     return () => {
       ipcRenderer.removeAllListeners('resume-view')
+    }
+  },
+
+  // Clipboard history
+  clipboard: {
+    getHistory: () => ipcRenderer.invoke('clipboard:get-history'),
+    onUpdate: (callback) => {
+      // Remove existing listeners to prevent memory leaks
+      ipcRenderer.removeAllListeners('clipboard:update')
+      
+      // Add the new listener
+      ipcRenderer.on('clipboard:update', (_event, entry) => {
+        callback(entry)
+      })
+      
+      // Return a cleanup function
+      return () => {
+        ipcRenderer.removeAllListeners('clipboard:update')
+      }
     }
   }
 })

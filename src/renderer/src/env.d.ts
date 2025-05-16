@@ -2,6 +2,12 @@
 
 import { ViewType } from '../../types/types'
 
+interface ClipboardEntry {
+  id: string
+  content: string
+  timestamp: number
+}
+
 interface ElectronAPI {
   resizeWindow: (dimensions: { width: number; height: number }) => void
   animateViewTransition: (view: ViewType) => Promise<boolean>
@@ -21,9 +27,15 @@ interface ElectronAPI {
   // Google Meet
   startGoogleMeet: () => Promise<string>
 
+  // Clipboard history
+  clipboard: {
+    getHistory: () => Promise<ClipboardEntry[]>
+    onUpdate: (callback: (entry: ClipboardEntry) => void) => () => void
+  }
+
   // Sleep/wake handlers
-  requestCurrentView: (callback: () => ViewType) => (() => void)
-  onResumeFromSleep: (callback: (view: ViewType) => void) => (() => void)
+  requestCurrentView: (callback: () => ViewType) => () => void
+  onResumeFromSleep: (callback: (view: ViewType) => void) => () => void
 }
 
 declare global {

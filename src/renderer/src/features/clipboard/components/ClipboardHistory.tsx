@@ -4,7 +4,14 @@ import React from 'react'
 // components
 import { Divider } from '@/components/shared'
 
+// hooks
+import { useClipboardHistory } from '../hooks/clipboardHooks'
+
 const ClipboardHistory: React.FC = () => {
+  const history = useClipboardHistory()
+
+  console.log(history)
+
   return (
     <div className="w-full h-full flex flex-col text-white overflow-hidden">
       {/* Fixed header */}
@@ -15,14 +22,13 @@ const ClipboardHistory: React.FC = () => {
 
       {/* Scrollable container - will only scroll its contents */}
       <div className="flex flex-col flex-1 min-h-0 overflow-y-auto rounded-md border border-white/10 p-2 mt-2">
-        {[...Array(20)].map((_, i) => (
-          <div
-            key={i}
-            className="w-full h-8 rounded-md border border-white/20 flex items-center px-2 flex-shrink-0 mb-2 last:mb-0"
-          >
-            <p className="text-xs font-bold truncate">Clipboard {i + 1}</p>
-          </div>
-        ))}
+        <ul className="space-y-2 text-sm">
+          {history.map((entry) => (
+            <li key={entry.id} className="border border-zinc-700 p-2 rounded text-white">
+              {entry.content}
+            </li>
+          ))}
+        </ul>
       </div>
     </div>
   )
