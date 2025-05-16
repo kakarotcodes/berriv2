@@ -23,7 +23,9 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
     startWindowY: 0,
     windowWidth: 0,
     windowHeight: 0,
-    currentDisplayId: 0
+    currentDisplayId: 0,
+    startMouseX: 0,
+    startWindowX: 0
   }
 
   ipcMain.on('start-vertical-drag', (_e, mouseY: number) => {
@@ -34,6 +36,12 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
     dragState.startWindowY = bounds.y
     dragState.windowWidth = bounds.width
     dragState.windowHeight = bounds.height
+    
+    // Get cursor position for X tracking as well
+    const cursor = screen.getCursorScreenPoint()
+    dragState.startMouseX = cursor.x
+    dragState.startWindowX = bounds.x
+    
     mainWindow.webContents
       .executeJavaScript(`document.body.classList.add('is-dragging')`)
       .catch(console.error)
@@ -67,9 +75,29 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
         const pillOffset = OFFSET.PILLOFFSET
         newX = area.x + area.width - pillOffset
       } else if (isHoverView) {
-        // Use margin for hover view (20px from right edge)
-        const MARGIN = 20
-        newX = area.x + area.width - bounds.width - MARGIN
+        // For hover view, allow free horizontal movement but snap to right edge when close
+        const MARGIN = 20;
+        const SNAP_THRESHOLD = 50; // pixels from right edge to trigger snap
+        
+        // Calculate relative mouse movement
+        const dx = cursor.x - dragState.startMouseX;
+        // Apply the movement to the original window position
+        let calculatedX = dragState.startWindowX + dx;
+        
+        // Calculate distance from right edge
+        const distanceFromRightEdge = area.x + area.width - (calculatedX + bounds.width);
+        
+        // If close to right edge, snap to it
+        if (distanceFromRightEdge >= 0 && distanceFromRightEdge <= SNAP_THRESHOLD) {
+          newX = area.x + area.width - bounds.width - MARGIN;
+        } else {
+          newX = calculatedX;
+        }
+        
+        // Ensure window stays within screen bounds
+        const minX = area.x;
+        const maxX = area.x + area.width - bounds.width;
+        newX = Math.max(minX, Math.min(maxX, newX));
       } else {
         // For other views, maintain current X position
         newX = bounds.x
@@ -101,12 +129,45 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
 
   ipcMain.on('end-vertical-drag', () => {
     if (!mainWindow || mainWindow.isDestroyed()) return
-    const [, y] = mainWindow.getPosition()
-    prefs.set('pillY', y)
+    const bounds = mainWindow.getBounds()
+    const [x, y] = mainWindow.getPosition()
+    
+    // Save position based on window type
+    const isPillView = bounds.width === WIDTH.PILL
+    const isHoverView = bounds.width === WIDTH.HOVER
+    
+    if (isPillView) {
+      prefs.set('pillY', y)
+    } else if (isHoverView) {
+      // Save hover position
+      prefs.set('hoverX', x)
+      prefs.set('hoverY', y)
+    }
+    
     dragState.isDragging = false
     mainWindow.webContents
       .executeJavaScript(`document.body.classList.remove('is-dragging')`)
       .catch(console.error)
+  })
+
+  // Save pill position handler
+  ipcMain.on('save-pill-position', () => {
+    if (!mainWindow || mainWindow.isDestroyed()) return
+    const [, y] = mainWindow.getPosition()
+    prefs.set('pillY', y)
+  })
+  
+  // Save hover position handler
+  ipcMain.on('save-hover-position', () => {
+    if (!mainWindow || mainWindow.isDestroyed()) return
+    const bounds = mainWindow.getBounds()
+    // Only save hover position if we're actually in hover view
+    if (bounds.width === WIDTH.HOVER) {
+      const [x, y] = mainWindow.getPosition()
+      prefs.set('hoverX', x)
+      prefs.set('hoverY', y)
+      console.log('Saved hover position:', x, y)
+    }
   })
 
   // Handle window resizability
@@ -207,4 +268,5 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
       stopClipboardPolling()
     })
   }
-}
+} 
+ 

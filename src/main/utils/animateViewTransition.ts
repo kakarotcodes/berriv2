@@ -11,6 +11,10 @@ import { WIDTH, HEIGHT, OFFSET } from '../../constants/constants'
 // Keep track of the last known good pill position for the current session
 let lastKnownPillY: number | null = null
 
+// Keep track of the last known hover position
+let lastKnownHoverX: number | null = null
+let lastKnownHoverY: number | null = null
+
 // Flag to track if this is the first transition to pill after app launch
 let isFirstTransitionToPill = true
 
@@ -40,6 +44,18 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
     // Only update lastKnownPillY, but keep isFirstTransitionToPill true
     // so we still use the 130px margin on first transition
     lastKnownPillY = savedPillY
+  }
+  
+  // Load saved hover positions
+  const savedHoverX = prefs.get('hoverX') as number | undefined
+  const savedHoverY = prefs.get('hoverY') as number | undefined
+  if (savedHoverX !== undefined) {
+    lastKnownHoverX = savedHoverX
+    logPositionInfo('Loaded saved hover X position at startup', savedHoverX)
+  }
+  if (savedHoverY !== undefined) {
+    lastKnownHoverY = savedHoverY
+    logPositionInfo('Loaded saved hover Y position at startup', savedHoverY)
   }
 
   // Handle IPC calls for view transitions
@@ -115,24 +131,55 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
         lastKnownPillY = targetY
       } else if (view === 'hover') {
         // Hover view: Position with consistent margin, maintaining vertical alignment with pill
-        targetX = workArea.x + workArea.width - dimensions.width - MARGIN
+        // Default position for hover if not already positioned
+        let defaultX = workArea.x + workArea.width - dimensions.width - MARGIN;
+        
+        // If we have a known hover position and we're coming from pill, use it
+        if (lastKnownHoverX !== null && currentBounds.width === viewDimensions.pill.width) {
+          targetX = lastKnownHoverX;
+          
+          // Make sure it's still on screen (in case display size changed)
+          const minX = workArea.x;
+          const maxX = workArea.x + workArea.width - dimensions.width;
+          targetX = Math.max(minX, Math.min(maxX, targetX));
+        }
+        // If we're already in hover view, maintain its current X position
+        else if (currentBounds.width === viewDimensions.hover.width) {
+          // Keep the current X position
+          targetX = currentBounds.x;
+        } else {
+          // Initial position for hover view from pill or other views
+          targetX = defaultX;
+        }
 
         // If we're coming from pill view, save the current Y position
         if (currentBounds.width === viewDimensions.pill.width) {
-          lastKnownPillY = currentBounds.y
-          prefs.set('pillY', currentBounds.y)
-          logPositionInfo('Saved pill Y position before hover', lastKnownPillY)
+          lastKnownPillY = currentBounds.y;
+          prefs.set('pillY', currentBounds.y);
+          logPositionInfo('Saved pill Y position before hover', lastKnownPillY);
+        } 
+        // If we're leaving hover view, save its position
+        else if (currentBounds.width === viewDimensions.hover.width) {
+          lastKnownHoverX = currentBounds.x;
+          lastKnownHoverY = currentBounds.y;
+          prefs.set('hoverX', currentBounds.x);
+          prefs.set('hoverY', currentBounds.y);
+          logPositionInfo('Saved hover position', { x: lastKnownHoverX, y: lastKnownHoverY });
         }
 
-        // Use the same Y position as the current window
-        targetY = currentBounds.y
+        // Use the known hover Y if available, otherwise use current window Y
+        if (lastKnownHoverY !== null && currentBounds.width === viewDimensions.pill.width) {
+          targetY = lastKnownHoverY;
+        } else {
+          targetY = currentBounds.y;
+        }
 
         // Ensure Y is within bounds for the new larger size
-        const minY = workArea.y
-        const maxY = workArea.y + workArea.height - dimensions.height
-        targetY = Math.min(maxY, Math.max(minY, targetY))
+        const minY = workArea.y;
+        const maxY = workArea.y + workArea.height - dimensions.height;
+        targetY = Math.min(maxY, Math.max(minY, targetY));
 
-        logPositionInfo('Hover view positioned fully on screen', { targetX, targetY })
+        logPositionInfo('Hover view positioned fully on screen', { targetX, targetY });
       } else {
         // Other views: Centered in display
         targetX = workArea.x + (workArea.width - dimensions.width) / 2

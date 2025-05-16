@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import { useElectron } from '@/hooks/useElectron'
 
 export function useHoverHeaderDrag() {
-  const { startVerticalDrag, updateVerticalDrag, endVerticalDrag, savePillPosition } = useElectron()
+  const { startVerticalDrag, updateVerticalDrag, endVerticalDrag, savePillPosition, saveHoverPosition } = useElectron()
   const rafIdRef = useRef<number | null>(null)
   const isDraggingRef = useRef(false)
   const lastYRef = useRef(0)
@@ -72,8 +72,8 @@ export function useHoverHeaderDrag() {
       }
       document.body.classList.remove('dragging')
       
-      // Save position
-      savePillPosition()
+      // Save position (both hover and pill for consistency)
+      saveHoverPosition()
     }
 
     // Attach event listeners to the document instead of just the hover-header
@@ -103,5 +103,5 @@ export function useHoverHeaderDrag() {
         cleanupFnRef.current = null
       }
     }
-  }, [startVerticalDrag, updateVerticalDrag, endVerticalDrag, savePillPosition])
+  }, [startVerticalDrag, updateVerticalDrag, endVerticalDrag, savePillPosition, saveHoverPosition])
 } 

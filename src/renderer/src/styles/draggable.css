@@ -4,6 +4,10 @@ body.dragging {
   user-select: none;
 }
 
+#hover-header {
+  cursor: grab !important;
+}
+
 #hover-header.dragging {
   cursor: grabbing !important;
 }
