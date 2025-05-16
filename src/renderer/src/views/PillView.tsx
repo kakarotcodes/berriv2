@@ -20,10 +20,10 @@ const PillView: React.FC = () => {
   const { dimensions, setView, targetView, isTransitioning } = useViewStore()
   const { setActiveFeature } = useViewController()
   const [isTransitioningToDefault, setIsTransitioningToDefault] = useState(false)
-
+  
   useIdleOpacity()
-  usePillInit(savePillPosition, resizeWindow, dimensions)
   useDragHandle(savePillPosition)
+  usePillInit(savePillPosition, resizeWindow, dimensions)
 
   const switchToDefault = async () => {
     savePillPosition()
