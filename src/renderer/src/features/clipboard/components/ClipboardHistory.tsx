@@ -21,10 +21,10 @@ const ClipboardHistory: React.FC = () => {
       </div>
 
       {/* Scrollable container - will only scroll its contents */}
-      <div className="flex flex-col flex-1 min-h-0 overflow-y-auto rounded-md border border-white/10 p-2 mt-2">
+      <div className="flex flex-col flex-1 min-h-0 overflow-y-auto rounded-md border border-zinc-600 p-2 mt-2">
         <ul className="space-y-2 text-sm">
           {history.map((entry) => (
-            <li key={entry.id} className="border border-zinc-700 p-2 rounded text-white">
+            <li key={entry.id} className="border border-zinc-600 p-2 rounded text-white">
               {entry.content}
             </li>
           ))}
