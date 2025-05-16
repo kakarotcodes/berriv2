@@ -22,7 +22,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   endVerticalDrag: () => ipcRenderer.send('end-vertical-drag'),
   setResizable: (resizable) => ipcRenderer.send('set-resizable', resizable),
   savePillPosition: () => ipcRenderer.send('save-pill-position'),
-  saveHoverPosition: () => ipcRenderer.send('save-hover-position'),
 
   // Opacity control
   setPillOpacity: (alpha) => ipcRenderer.send('pill:set-opacity', alpha),

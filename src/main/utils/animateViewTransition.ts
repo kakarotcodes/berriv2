@@ -37,6 +37,9 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
   const PILL_OFFSET = OFFSET.PILLOFFSET
   const PILL_FIRST_TOP_MARGIN = 130 // Top margin for initial pill positioning
 
+  // Debug: Log all stored preferences at startup
+  console.log('[PREFS] All stored preferences:', prefs.store)
+
   // At startup, load the saved pill position if it exists
   const savedPillY = prefs.get('pillY') as number | undefined
   if (savedPillY !== undefined) {
@@ -49,13 +52,25 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
   // Load saved hover positions
   const savedHoverX = prefs.get('hoverX') as number | undefined
   const savedHoverY = prefs.get('hoverY') as number | undefined
+  
+  // Debug log for hover position
+  console.log('[POSITION] Raw hover position from prefs:', { 
+    hoverX: savedHoverX, 
+    hoverY: savedHoverY
+  })
+  
   if (savedHoverX !== undefined) {
     lastKnownHoverX = savedHoverX
     logPositionInfo('Loaded saved hover X position at startup', savedHoverX)
+  } else {
+    console.log('[POSITION] No saved hover X position found')
   }
+  
   if (savedHoverY !== undefined) {
     lastKnownHoverY = savedHoverY
     logPositionInfo('Loaded saved hover Y position at startup', savedHoverY)
+  } else {
+    console.log('[POSITION] No saved hover Y position found')
   }
 
   // Handle IPC calls for view transitions
@@ -130,56 +145,55 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
         prefs.set('pillY', targetY)
         lastKnownPillY = targetY
       } else if (view === 'hover') {
-        // Hover view: Position with consistent margin, maintaining vertical alignment with pill
-        // Default position for hover if not already positioned
-        let defaultX = workArea.x + workArea.width - dimensions.width - MARGIN;
-        
-        // If we have a known hover position and we're coming from pill, use it
-        if (lastKnownHoverX !== null && currentBounds.width === viewDimensions.pill.width) {
-          targetX = lastKnownHoverX;
-          
-          // Make sure it's still on screen (in case display size changed)
-          const minX = workArea.x;
-          const maxX = workArea.x + workArea.width - dimensions.width;
-          targetX = Math.max(minX, Math.min(maxX, targetX));
-        }
-        // If we're already in hover view, maintain its current X position
-        else if (currentBounds.width === viewDimensions.hover.width) {
-          // Keep the current X position
-          targetX = currentBounds.x;
-        } else {
-          // Initial position for hover view from pill or other views
-          targetX = defaultX;
-        }
+        // REQUIREMENT: Open hover view at the pill's location
 
-        // If we're coming from pill view, save the current Y position
-        if (currentBounds.width === viewDimensions.pill.width) {
+        // If we're leaving hover view, save its position for next time and update pill's position
+        if (currentBounds.width === viewDimensions.hover.width) {
+          // Save hover Y position to be used for pill's position next time
           lastKnownPillY = currentBounds.y;
           prefs.set('pillY', currentBounds.y);
-          logPositionInfo('Saved pill Y position before hover', lastKnownPillY);
-        } 
-        // If we're leaving hover view, save its position
-        else if (currentBounds.width === viewDimensions.hover.width) {
-          lastKnownHoverX = currentBounds.x;
-          lastKnownHoverY = currentBounds.y;
-          prefs.set('hoverX', currentBounds.x);
-          prefs.set('hoverY', currentBounds.y);
-          logPositionInfo('Saved hover position', { x: lastKnownHoverX, y: lastKnownHoverY });
+          logPositionInfo('Saved hover Y position to be used for pill', currentBounds.y);
         }
 
-        // Use the known hover Y if available, otherwise use current window Y
-        if (lastKnownHoverY !== null && currentBounds.width === viewDimensions.pill.width) {
-          targetY = lastKnownHoverY;
-        } else {
+        // Position hover view at the pill's location if coming from pill view
+        if (currentBounds.width === viewDimensions.pill.width) {
+          // Use pill position with an offset from the right edge
+          const rightEdgeOffset = 20; // Space between hover view and right edge
+          
+          // Use pill's Y position
           targetY = currentBounds.y;
+          
+          // Check if this is coming from the right side pill
+          // The pill is typically positioned at the right edge
+          const isPillAtRightEdge = Math.abs((workArea.x + workArea.width - PILL_OFFSET) - currentBounds.x) < 5;
+          
+          if (isPillAtRightEdge) {
+            // Position hover with space from right edge
+            targetX = workArea.x + workArea.width - dimensions.width - rightEdgeOffset;
+            logPositionInfo('Positioning hover with space from right edge', { targetX, targetY });
+          } else {
+            // Just use pill's exact position
+            targetX = currentBounds.x;
+            logPositionInfo('Positioning hover at exact pill location', { targetX, targetY });
+          }
+        } else {
+          // Otherwise use saved position or fallback to current position
+          targetX = currentBounds.x;
+          targetY = currentBounds.y;
+          logPositionInfo('Keeping current position for hover', { targetX, targetY });
         }
 
-        // Ensure Y is within bounds for the new larger size
+        // Ensure the position is within screen bounds
+        const minX = workArea.x;
+        const maxX = workArea.x + workArea.width - dimensions.width;
+        targetX = Math.max(minX, Math.min(maxX, targetX));
+
+        // Ensure Y is within bounds for the hover size
         const minY = workArea.y;
         const maxY = workArea.y + workArea.height - dimensions.height;
         targetY = Math.min(maxY, Math.max(minY, targetY));
 
-        logPositionInfo('Hover view positioned fully on screen', { targetX, targetY });
+        logPositionInfo('Final hover view position', { targetX, targetY });
       } else {
         // Other views: Centered in display
         targetX = workArea.x + (workArea.width - dimensions.width) / 2

@@ -75,29 +75,17 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
         const pillOffset = OFFSET.PILLOFFSET
         newX = area.x + area.width - pillOffset
       } else if (isHoverView) {
-        // For hover view, allow free horizontal movement but snap to right edge when close
-        const MARGIN = 20;
-        const SNAP_THRESHOLD = 50; // pixels from right edge to trigger snap
+        // For hover view, allow free horizontal movement
         
         // Calculate relative mouse movement
         const dx = cursor.x - dragState.startMouseX;
         // Apply the movement to the original window position
         let calculatedX = dragState.startWindowX + dx;
         
-        // Calculate distance from right edge
-        const distanceFromRightEdge = area.x + area.width - (calculatedX + bounds.width);
-        
-        // If close to right edge, snap to it
-        if (distanceFromRightEdge >= 0 && distanceFromRightEdge <= SNAP_THRESHOLD) {
-          newX = area.x + area.width - bounds.width - MARGIN;
-        } else {
-          newX = calculatedX;
-        }
-        
         // Ensure window stays within screen bounds
         const minX = area.x;
         const maxX = area.x + area.width - bounds.width;
-        newX = Math.max(minX, Math.min(maxX, newX));
+        newX = Math.max(minX, Math.min(maxX, calculatedX));
       } else {
         // For other views, maintain current X position
         newX = bounds.x
@@ -137,11 +125,13 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
     const isHoverView = bounds.width === WIDTH.HOVER
     
     if (isPillView) {
+      // Save pill position directly
       prefs.set('pillY', y)
+      console.log('[POSITION] Saved pill Y position after drag:', y)
     } else if (isHoverView) {
-      // Save hover position
-      prefs.set('hoverX', x)
-      prefs.set('hoverY', y)
+      // Save hover Y position as pill position
+      prefs.set('pillY', y)
+      console.log('[POSITION] Saved hover Y position as pill position:', y)
     }
     
     dragState.isDragging = false
@@ -157,19 +147,6 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
     prefs.set('pillY', y)
   })
   
-  // Save hover position handler
-  ipcMain.on('save-hover-position', () => {
-    if (!mainWindow || mainWindow.isDestroyed()) return
-    const bounds = mainWindow.getBounds()
-    // Only save hover position if we're actually in hover view
-    if (bounds.width === WIDTH.HOVER) {
-      const [x, y] = mainWindow.getPosition()
-      prefs.set('hoverX', x)
-      prefs.set('hoverY', y)
-      console.log('Saved hover position:', x, y)
-    }
-  })
-
   // Handle window resizability
   ipcMain.on('set-resizable', (_event, resizable) => {
     if (!mainWindow || mainWindow.isDestroyed()) return

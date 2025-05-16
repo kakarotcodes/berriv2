@@ -26,10 +26,6 @@ export const useElectron = () => {
     window.electronAPI.savePillPosition()
   }, [])
   
-  const saveHoverPosition = React.useCallback(() => {
-    window.electronAPI.saveHoverPosition()
-  }, [])
-  
   const setPillOpacity = React.useCallback((alpha: number) => {
     window.electronAPI.setPillOpacity(alpha)
   }, [])
@@ -45,7 +41,6 @@ export const useElectron = () => {
     endVerticalDrag,
     setResizable,
     savePillPosition,
-    saveHoverPosition,
     setPillOpacity,
     setCssOpacity
   }
