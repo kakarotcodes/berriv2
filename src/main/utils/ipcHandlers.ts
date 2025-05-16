@@ -2,7 +2,7 @@ import { ipcMain, BrowserWindow, screen, shell, clipboard } from 'electron'
 import { setWindowOpacity } from '../utils/windowOpacity'
 import { animateWindowResize } from './windowResize'
 import { prefs } from './prefs'
-import { OFFSET } from '../../constants/constants'
+import { OFFSET, WIDTH } from '../../constants/constants'
 
 export function registerIpcHandlers(mainWindow: BrowserWindow) {
   ipcMain.on('resize-window', (_event, { width, height }) => {
@@ -55,9 +55,24 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
       // Get current window bounds
       const bounds = mainWindow.getBounds()
 
-      // Calculate target positions
-      const pillOffset = OFFSET.PILLOFFSET
-      const newX = area.x + area.width - pillOffset
+      // Calculate target position based on window type (pill or hover)
+      let newX;
+      const isPillView = bounds.width === WIDTH.PILL;
+      const isHoverView = bounds.width === WIDTH.HOVER;
+      
+      // Use appropriate offset based on window type
+      if (isPillView) {
+        // Use pill offset for pill view (50px from right edge)
+        const pillOffset = OFFSET.PILLOFFSET;
+        newX = area.x + area.width - pillOffset;
+      } else if (isHoverView) {
+        // Use margin for hover view (20px from right edge)
+        const MARGIN = 20;
+        newX = area.x + area.width - bounds.width - MARGIN;
+      } else {
+        // For other views, maintain current X position
+        newX = bounds.x;
+      }
 
       // Use cursor position for vertical position
       const dragHandleOffset = 10

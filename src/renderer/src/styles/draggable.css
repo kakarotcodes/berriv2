@@ -1,0 +1,14 @@
+/* Dragging styles */
+body.dragging {
+  cursor: grabbing !important;
+  user-select: none;
+}
+
+#hover-header.dragging {
+  cursor: grabbing !important;
+}
+
+/* Add visual feedback during dragging */
+#hover-header.dragging .bg-white\/40 {
+  background-color: rgba(255, 255, 255, 0.6);
+} 

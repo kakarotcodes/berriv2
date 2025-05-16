@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 @import './base.css';
+@import './draggable.css';
 
 :root {
   background: rgba(24, 24, 24, 0.15);
@@ -74,5 +75,10 @@ body {
 
 /* But keep pointer events on the drag handle */
 .dragging #drag-handle {
+  pointer-events: auto;
+}
+
+/* Keep pointer events on the hover-header during drag */
+.dragging #hover-header {
   pointer-events: auto;
 }
