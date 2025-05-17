@@ -27,21 +27,19 @@ const viewDimensions: Record<ViewType, { width: number; height: number }> = {
 
 export const useViewStore = create<ViewState>()(
   persist(
-    (set, get) => ({
+    (set, _) => ({
       currentView: 'default',
       targetView: null,
       isTransitioning: false,
       dimensions: viewDimensions.default,
       isPinned: false,
-      
+
       setIsPinned: (pinned: boolean) => set({ isPinned: pinned }),
-      
+
       togglePin: () => set((state) => ({ isPinned: !state.isPinned })),
-      
+
       setView: async (view) => {
         try {
-          const currentView = get().currentView
-
           // Start transition - show blank state
           set({
             targetView: view,
@@ -52,12 +50,12 @@ export const useViewStore = create<ViewState>()(
           // 1. Start with an empty window
           // 2. Resize window without any animations
           // 3. Update the component
-          
+
           // Update dimensions immediately to match the target
           set({
             dimensions: viewDimensions[view]
-          });
-          
+          })
+
           // Start the resize animation
           await window.electronAPI.animateViewTransition(view)
 
