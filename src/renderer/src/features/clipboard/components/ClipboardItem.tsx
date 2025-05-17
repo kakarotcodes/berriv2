@@ -37,13 +37,13 @@ const ClipboardItem = memo(({ content }: ClipboardItemProps) => {
 
   return (
     <li
-      className={`border border-zinc-600 p-2 rounded text-white transition-all ${
+      className={`flex flex-col justify-center border border-zinc-600 p-2 rounded text-white transition-all ${
         expanded ? 'h-auto' : 'h-10 overflow-hidden'
       }`}
       onClick={() => setExpanded((prev) => !prev)}
     >
       <div className="flex justify-between items-start gap-2">
-        <div ref={textRef} className={`pr-2 ${!expanded ? 'truncate' : ''}`}>
+        <div ref={textRef} className={`pr-2 text-sm ${!expanded ? 'truncate' : ''}`}>
           {content}
         </div>
 

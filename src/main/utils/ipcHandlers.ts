@@ -118,7 +118,7 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
   ipcMain.on('end-vertical-drag', () => {
     if (!mainWindow || mainWindow.isDestroyed()) return
     const bounds = mainWindow.getBounds()
-    const [x, y] = mainWindow.getPosition()
+    const [_, y] = mainWindow.getPosition()
     
     // Save position based on window type
     const isPillView = bounds.width === WIDTH.PILL
