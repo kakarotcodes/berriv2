@@ -23,7 +23,7 @@ const ClipboardHistory: React.FC = () => {
       <div className="flex flex-col flex-1 min-h-0 overflow-y-auto rounded-md border border-zinc-600 p-2 mt-2 dark-scrollbar">
         <ul className="space-y-2 text-sm">
           {history.map((entry) => (
-            <ClipboardItem key={entry.id} content={entry.content} />
+            <ClipboardItem key={entry.id} content={entry.content} timestamp={entry.timestamp} />
           ))}
         </ul>
       </div>

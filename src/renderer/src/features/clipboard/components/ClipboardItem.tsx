@@ -1,13 +1,15 @@
 // dependencies
 import { useEffect, useRef, useState, memo } from 'react'
 import { Copy, ChevronDown, ChevronUp, Check } from 'lucide-react'
+import { DateTime } from 'luxon'
 
 type ClipboardItemProps = {
   content: string
+  timestamp: number
 }
 
 // Define the component directly, without using React.FC
-const ClipboardItem = memo(({ content }: ClipboardItemProps) => {
+const ClipboardItem = memo(({ content, timestamp }: ClipboardItemProps) => {
   const [expanded, setExpanded] = useState(false)
   const [copied, setCopied] = useState(false)
   const [isTruncated, setIsTruncated] = useState(false)
@@ -45,6 +47,7 @@ const ClipboardItem = memo(({ content }: ClipboardItemProps) => {
       <div className="flex justify-between items-start gap-2">
         <div ref={textRef} className={`pr-2 text-sm ${!expanded ? 'truncate' : ''}`}>
           {content}
+          <p className="text-[8px] text-zinc-400">{DateTime.fromMillis(timestamp).toFormat('dd MMM yyyy HH:mm')}</p>
         </div>
 
         <div className="flex-shrink-0 flex items-center gap-2">
