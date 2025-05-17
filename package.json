@@ -24,6 +24,7 @@
     "@electron-toolkit/preload": "^3.0.1",
     "@electron-toolkit/utils": "^4.0.0",
     "@types/lodash.throttle": "^4.1.9",
+    "better-sqlite3": "^11.10.0",
     "electron-store": "^8.1.0",
     "electron-updater": "^6.3.9",
     "framer-motion": "^12.10.4",
