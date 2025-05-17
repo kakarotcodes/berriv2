@@ -67,22 +67,39 @@ contextBridge.exposeInMainWorld('electronAPI', {
     }
   },
 
+  // ------------------------------------------------------------
   // Clipboard history
+  // ------------------------------------------------------------
+
   clipboard: {
     getHistory: () => ipcRenderer.invoke('clipboard:get-history'),
     onUpdate: (callback) => {
       // Remove existing listeners to prevent memory leaks
       ipcRenderer.removeAllListeners('clipboard:update')
-      
+
       // Add the new listener
       ipcRenderer.on('clipboard:update', (_event, entry) => {
         callback(entry)
       })
-      
+
       // Return a cleanup function
       return () => {
         ipcRenderer.removeAllListeners('clipboard:update')
       }
     }
+  },
+
+  // ------------------------------------------------------------
+  // Notes API
+  // ------------------------------------------------------------
+
+  notesAPI: {
+    getAllNotes: () => ipcRenderer.invoke('notes:getAll'),
+    getTrashedNotes: () => ipcRenderer.invoke('notes:getTrashed'),
+    insertNote: (note) => ipcRenderer.invoke('notes:insert', note),
+    updateNote: (id, fields) => ipcRenderer.invoke('notes:update', { id, fields }),
+    trashNote: (id) => ipcRenderer.invoke('notes:trash', id),
+    restoreNote: (id) => ipcRenderer.invoke('notes:restore', id),
+    permanentlyDeleteNote: (id) => ipcRenderer.invoke('notes:deleteForever', id)
   }
 })

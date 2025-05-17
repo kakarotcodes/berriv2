@@ -5,7 +5,9 @@
     "src/main/**/*",
     "src/preload/**/*",
     "src/types/types.ts",
-    "src/constants/constants.ts"
+    "src/constants/constants.ts",
+    "src/renderer/src/features/notes/db/**/*",
+    "src/renderer/src/features/notes/types/**/*"
   ],
   "compilerOptions": {
     "composite": true,

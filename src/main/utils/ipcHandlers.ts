@@ -3,7 +3,14 @@ import { setWindowOpacity } from '../utils/windowOpacity'
 import { animateWindowResize } from './windowResize'
 import { prefs } from './prefs'
 import { OFFSET, WIDTH } from '../../constants/constants'
-import { getClipboardHistory, startClipboardPolling, stopClipboardPolling } from './clipboardMonitor'
+import {
+  getClipboardHistory,
+  startClipboardPolling,
+  stopClipboardPolling
+} from './clipboardMonitor'
+
+// Notes
+import { NotesDB } from '../../renderer/src/features/notes/db/notesDB'
 
 export function registerIpcHandlers(mainWindow: BrowserWindow) {
   ipcMain.on('resize-window', (_event, { width, height }) => {
@@ -36,12 +43,12 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
     dragState.startWindowY = bounds.y
     dragState.windowWidth = bounds.width
     dragState.windowHeight = bounds.height
-    
+
     // Get cursor position for X tracking as well
     const cursor = screen.getCursorScreenPoint()
     dragState.startMouseX = cursor.x
     dragState.startWindowX = bounds.x
-    
+
     mainWindow.webContents
       .executeJavaScript(`document.body.classList.add('is-dragging')`)
       .catch(console.error)
@@ -76,16 +83,16 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
         newX = area.x + area.width - pillOffset
       } else if (isHoverView) {
         // For hover view, allow free horizontal movement
-        
+
         // Calculate relative mouse movement
-        const dx = cursor.x - dragState.startMouseX;
+        const dx = cursor.x - dragState.startMouseX
         // Apply the movement to the original window position
-        let calculatedX = dragState.startWindowX + dx;
-        
+        let calculatedX = dragState.startWindowX + dx
+
         // Ensure window stays within screen bounds
-        const minX = area.x;
-        const maxX = area.x + area.width - bounds.width;
-        newX = Math.max(minX, Math.min(maxX, calculatedX));
+        const minX = area.x
+        const maxX = area.x + area.width - bounds.width
+        newX = Math.max(minX, Math.min(maxX, calculatedX))
       } else {
         // For other views, maintain current X position
         newX = bounds.x
@@ -119,11 +126,11 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
     if (!mainWindow || mainWindow.isDestroyed()) return
     const bounds = mainWindow.getBounds()
     const [_, y] = mainWindow.getPosition()
-    
+
     // Save position based on window type
     const isPillView = bounds.width === WIDTH.PILL
     const isHoverView = bounds.width === WIDTH.HOVER
-    
+
     if (isPillView) {
       // Save pill position directly
       prefs.set('pillY', y)
@@ -133,7 +140,7 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
       prefs.set('pillY', y)
       console.log('[POSITION] Saved hover Y position as pill position:', y)
     }
-    
+
     dragState.isDragging = false
     mainWindow.webContents
       .executeJavaScript(`document.body.classList.remove('is-dragging')`)
@@ -146,7 +153,7 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
     const [, y] = mainWindow.getPosition()
     prefs.set('pillY', y)
   })
-  
+
   // Handle window resizability
   ipcMain.on('set-resizable', (_event, resizable) => {
     if (!mainWindow || mainWindow.isDestroyed()) return
@@ -227,23 +234,58 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
     prefs.set('lastViewAfterSleep', view)
   })
 
+  // ------------------------------------------------------------
+  // Clipboard history
+  // ------------------------------------------------------------
+
   // Register IPC handler for clipboard history
   ipcMain.handle('clipboard:get-history', () => {
     return getClipboardHistory()
   })
-  
+
   // Start clipboard polling with a callback that sends updates to renderer
   startClipboardPolling((entry) => {
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send('clipboard:update', entry)
     }
   })
-  
+
   // Clean up polling on window close
   if (mainWindow) {
     mainWindow.on('closed', () => {
       stopClipboardPolling()
     })
   }
-} 
- 
+
+  // ------------------------------------------------------------
+  // Notes API
+  // ------------------------------------------------------------
+
+  ipcMain.handle('notes:getAll', () => {
+    return NotesDB.getAllNotes()
+  })
+
+  ipcMain.handle('notes:getTrashed', () => {
+    return NotesDB.getTrashedNotes()
+  })
+
+  ipcMain.handle('notes:insert', (_event, note) => {
+    return NotesDB.insertNote(note)
+  })
+
+  ipcMain.handle('notes:update', (_event, { id, fields }) => {
+    return NotesDB.updateNote(id, fields)
+  })
+
+  ipcMain.handle('notes:trash', (_event, id) => {
+    return NotesDB.trashNote(id)
+  })
+
+  ipcMain.handle('notes:restore', (_event, id) => {
+    return NotesDB.restoreNote(id)
+  })
+
+  ipcMain.handle('notes:deleteForever', (_event, id) => {
+    return NotesDB.permanentlyDeleteNote(id)
+  })
+}

@@ -27,15 +27,26 @@ interface ElectronAPI {
   // Google Meet
   startGoogleMeet: () => Promise<string>
 
+  // Sleep/wake handlers
+  requestCurrentView: (callback: () => ViewType) => () => void
+  onResumeFromSleep: (callback: (view: ViewType) => void) => () => void
+
   // Clipboard history
   clipboard: {
     getHistory: () => Promise<ClipboardEntry[]>
     onUpdate: (callback: (entry: ClipboardEntry) => void) => () => void
   }
 
-  // Sleep/wake handlers
-  requestCurrentView: (callback: () => ViewType) => () => void
-  onResumeFromSleep: (callback: (view: ViewType) => void) => () => void
+  // Notes API
+  notesAPI: {
+    getAllNotes: () => Promise<Note[]>
+    getTrashedNotes: () => Promise<Note[]>
+    insertNote: (note: Note) => Promise<void>
+    updateNote: (id: string, fields: Partial<Omit<Note, 'id'>>) => Promise<void>
+    trashNote: (id: string) => Promise<void>
+    restoreNote: (id: string) => Promise<void>
+    permanentlyDeleteNote: (id: string) => Promise<void>
+  }
 }
 
 declare global {
