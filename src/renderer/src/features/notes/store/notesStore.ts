@@ -17,6 +17,8 @@ interface NotesState {
   trashNote: (id: string) => Promise<void>
   restoreNote: (id: string) => Promise<void>
   permanentlyDeleteNote: (id: string) => Promise<void>
+  
+  createNewNote: () => Promise<void>
 }
 
 export const useNotesStore = create<NotesState>((set, get) => ({
@@ -68,5 +70,18 @@ export const useNotesStore = create<NotesState>((set, get) => ({
     await window.electronAPI.notesAPI.permanentlyDeleteNote(id)
     const trashed = get().trashed.filter((n) => n.id !== id)
     set({ trashed })
+  },
+  
+  createNewNote: async () => {
+    const newNote: Note = {
+      id: crypto.randomUUID(),
+      title: 'Untitled Note',
+      type: 'text',
+      content: '',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }
+    
+    await get().addNote(newNote)
   }
 }))

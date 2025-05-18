@@ -8,40 +8,43 @@ import { ViewType } from '../../types/types'
 // constants
 import { WIDTH, HEIGHT, OFFSET } from '../../constants/constants'
 
-// Keep track of the last known good pill position for the current session
-let lastKnownPillY: number | null = null
-
-// Keep track of the last known hover position
-let lastKnownHoverX: number | null = null
-let lastKnownHoverY: number | null = null
-
-// Flag to track if this is the first transition to pill after app launch
-let isFirstTransitionToPill = true
-
 // Debug helper
 const logPositionInfo = (message: string, data: any) => {
   console.log(`[POSITION] ${message}:`, data)
 }
 
 export function registerViewHandlers(mainWindow: BrowserWindow) {
-  // View dimensions - ensure they match with those defined in the renderer
+  const MARGIN = 20 // Consistent margin from screen edges
+  const PILL_OFFSET = OFFSET.PILLOFFSET // Distance from right edge for pill view
+  const PILL_FIRST_TOP_MARGIN = 130 // Distance from top on first launch
+
+  // Default dimensions for various views
   const viewDimensions = {
     default: { width: WIDTH.DEFAULT, height: HEIGHT.DEFAULT },
     pill: { width: WIDTH.PILL, height: HEIGHT.PILL },
-    hover: { width: WIDTH.HOVER, height: HEIGHT.HOVER }, // Match renderer dimensions
+    hover: { width: WIDTH.HOVER, height: HEIGHT.HOVER },
     expanded: { width: 800, height: 600 }
   }
 
-  // Consistent margin across all views
-  const MARGIN = 20
-  const PILL_OFFSET = OFFSET.PILLOFFSET
-  const PILL_FIRST_TOP_MARGIN = 130 // Top margin for initial pill positioning
+  // Track positions between transitions
+  let lastKnownPillY: number | null = null
+  let lastKnownHoverX: number | null = null
+  let lastKnownHoverY: number | null = null
+  let isFirstTransitionToPill = true
 
-  // Debug: Log all stored preferences at startup
-  console.log('[PREFS] All stored preferences:', prefs.store)
+  // Load saved positions and dimensions from preferences
+  const savedPillY = prefs.get('pillY') as number | undefined
+  const customHoverWidth = prefs.get('customHoverWidth') as number | undefined
+  const customHoverHeight = prefs.get('customHoverHeight') as number | undefined
+  
+  if (customHoverWidth && customHoverHeight) {
+    // Use custom dimensions if saved previously
+    viewDimensions.hover.width = customHoverWidth
+    viewDimensions.hover.height = customHoverHeight
+    console.log('[DIMENSIONS] Using custom hover dimensions:', customHoverWidth, 'x', customHoverHeight)
+  }
 
   // At startup, load the saved pill position if it exists
-  const savedPillY = prefs.get('pillY') as number | undefined
   if (savedPillY !== undefined) {
     logPositionInfo('Loaded saved pill position at startup', savedPillY)
     // Only update lastKnownPillY, but keep isFirstTransitionToPill true
@@ -107,6 +110,28 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
       }
 
       console.log(`Transitioning to ${view} view on display:`, currentDisplay.id)
+
+      // Set window resizability based on the view type
+      // Make window resizable only in hover view
+      if (view === 'hover') {
+        mainWindow.setResizable(true)
+        mainWindow.setMinimumSize(WIDTH.MIN_HOVER, HEIGHT.MIN_HOVER)
+        console.log('Window set to resizable with minimum size 200x200')
+      } else {
+        // Save window size if currently in hover view before transitioning away
+        if (currentBounds.width >= viewDimensions.hover.width && 
+            currentBounds.height >= viewDimensions.hover.height) {
+          // Save the custom hover dimensions if user resized the window
+          prefs.set('customHoverWidth', currentBounds.width)
+          prefs.set('customHoverHeight', currentBounds.height)
+          console.log('Saved custom hover dimensions:', currentBounds.width, 'x', currentBounds.height)
+        }
+        
+        // Make window non-resizable for other views
+        mainWindow.setResizable(false)
+        mainWindow.setMinimumSize(WIDTH.PILL, HEIGHT.PILL)
+        console.log('Window set to non-resizable')
+      }
 
       // 3. Calculate target position based on view type
       let targetX, targetY
