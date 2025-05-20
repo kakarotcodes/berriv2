@@ -67,7 +67,7 @@ const NotesEditor: React.FC = () => {
   }
 
   return (
-    <div className="flex-1 bg-[#121212] text-white p-6 flex flex-col gap-4">
+    <div className="flex-1 h-full bg-[#121212] text-white p-6 flex flex-col gap-4">
       {/* Note type toggle */}
       <div className="flex items-center gap-2 text-sm">
         <span className="text-zinc-400">Note type:</span>
@@ -116,7 +116,7 @@ const NotesEditor: React.FC = () => {
       {/* Body editor */}
       {note.type === 'text' && (
         <textarea
-          className="flex-1 bg-transparent resize-none outline-none text-base leading-relaxed"
+          className="flex-1 bg-gray-800 h-screen resize-none outline-none text-base leading-relaxed"
           placeholder="Start typing..."
           value={typeof content === 'string' ? content : ''}
           onChange={(e) => {
