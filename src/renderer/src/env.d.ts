@@ -12,6 +12,9 @@ interface ElectronAPI {
   resizeWindow: (dimensions: { width: number; height: number }) => void
   animateViewTransition: (view: ViewType) => Promise<boolean>
 
+  // Get current window bounds
+  getWindowBounds: () => Promise<{ x: number; y: number; width: number; height: number } | null>
+
   // Vertical drag
   startVerticalDrag: (mouseY: number) => void
   updateVerticalDrag: (mouseY: number) => void
@@ -24,6 +27,11 @@ interface ElectronAPI {
 
   setResizable: (resizable: boolean) => void
   savePillPosition: () => void
+
+  // Hover view size management
+  saveHoverSize: (dimensions: { width: number; height: number }) => void
+  getSavedHoverSize: () => Promise<{ width: number; height: number }>
+  fixHoverDimensions: () => void
 
   // Opacity control
   setPillOpacity: (alpha: number) => void

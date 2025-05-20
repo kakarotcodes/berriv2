@@ -2,7 +2,7 @@ import { ipcMain, BrowserWindow, screen, shell, clipboard } from 'electron'
 import { setWindowOpacity } from '../utils/windowOpacity'
 import { animateWindowResize } from './windowResize'
 import { prefs } from './prefs'
-import { OFFSET, WIDTH } from '../../constants/constants'
+import { OFFSET, WIDTH, HEIGHT } from '../../constants/constants'
 import {
   getClipboardHistory,
   startClipboardPolling,
@@ -11,6 +11,7 @@ import {
 
 // Notes
 import { NotesDB } from '../../renderer/src/features/notes/db/notesDB'
+import { getSavedHoverSize, saveHoverSize } from './hoverSize'
 
 export function registerIpcHandlers(mainWindow: BrowserWindow) {
   ipcMain.on('resize-window', (_event, { width, height }) => {
@@ -133,16 +134,22 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
 
     // Save position based on window type
     const isPillView = bounds.width === WIDTH.PILL
-    const isHoverView = bounds.width === WIDTH.HOVER
+    const isHoverView = bounds.width > WIDTH.PILL && bounds.height > HEIGHT.PILL
 
     if (isPillView) {
       // Save pill position directly
       prefs.set('pillY', y)
       console.log('[POSITION] Saved pill Y position after drag:', y)
     } else if (isHoverView) {
-      // Save hover Y position as pill position
-      prefs.set('pillY', y)
-      console.log('[POSITION] Saved hover Y position as pill position:', y)
+      // Only update pillY if it's a significant change to avoid erratic behavior
+      const currentPillY = prefs.get('pillY') as number | null;
+      if (currentPillY === null || Math.abs(currentPillY - y) > 20) { 
+        // Save hover Y position as pill position, but only for significant changes
+        prefs.set('pillY', y)
+        console.log('[POSITION] Updated pill Y position from hover position:', y)
+      } else {
+        console.log('[POSITION] Hover position change too small, keeping existing pill Y position')
+      }
     }
 
     dragState.isDragging = false
@@ -193,15 +200,20 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
 
   // Handle window resizability
   ipcMain.on('set-resizable', (_event, resizable) => {
-    console.log('set-resizable', resizable)
     if (!mainWindow || mainWindow.isDestroyed()) return
-
     try {
-      // Set the window resizability
       mainWindow.setResizable(resizable)
-      console.log(`Window resizability set to: ${resizable}`)
-    } catch (error) {
-      console.error('Error setting window resizability:', error)
+      console.log(`[RESIZE] Window resizability set to: ${resizable}`)
+      
+      // Important: If we're making the window resizable, make sure it has minimum dimensions
+      if (resizable) {
+        mainWindow.setMinimumSize(200, 200);
+      } else {
+        // When disabling resizable mode, clear minimum size constraints
+        mainWindow.setMinimumSize(1, 1);
+      }
+    } catch (err) {
+      console.error('[RESIZE] Failed to set resizability:', err)
     }
   })
 
@@ -335,6 +347,78 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
       } catch (err) {
         console.error('Failed to set resizability:', err)
       }
+    }
+  })
+
+  // Add handler to get current window bounds
+  ipcMain.handle('get-window-bounds', () => {
+    if (!mainWindow || mainWindow.isDestroyed()) {
+      console.warn('[DEBUG] get-window-bounds called but window is not available')
+      return null
+    }
+    const bounds = mainWindow.getBounds()
+    console.log('[DEBUG] get-window-bounds returning:', bounds)
+    return bounds
+  })
+
+  // Handler for saving hover view size
+  ipcMain.on('save-hover-size', (_event, dimensions) => {
+    console.log('[HOVER] save-hover-size called with dimensions:', dimensions)
+    if (!dimensions || typeof dimensions !== 'object') {
+      console.error('[HOVER] Invalid dimensions provided to save-hover-size:', dimensions)
+      return
+    }
+    
+    const { width, height } = dimensions
+    if (typeof width === 'number' && typeof height === 'number') {
+      console.log('[HOVER] Saving hover dimensions:', { width, height })
+      saveHoverSize(width, height)
+      
+      // Debug: read back from prefs to confirm
+      const savedSize = getSavedHoverSize()
+      console.log('[HOVER] Confirmed saved dimensions:', savedSize)
+    } else {
+      console.error('[HOVER] Invalid width or height in save-hover-size:', dimensions)
+    }
+  })
+  
+  // Handler for getting saved hover size
+  ipcMain.handle('get-hover-size', () => {
+    const size = getSavedHoverSize()
+    console.log('[HOVER] Retrieved saved hover dimensions:', size)
+    return size
+  })
+  
+  // Add a dedicated function to apply hover view dimensions
+  ipcMain.on('fix-hover-dimensions', () => {
+    if (!mainWindow || mainWindow.isDestroyed()) return
+    
+    const { width, height } = getSavedHoverSize()
+    console.log('[HOVER] Fixing hover dimensions to:', { width, height })
+    
+    // Validate dimensions - only apply if they're reasonable hover dimensions
+    // This helps prevent applying pill dimensions to hover view
+    if (width === WIDTH.PILL || height === HEIGHT.PILL || 
+        width < 100 || height < 100) {
+      console.log('[HOVER] Invalid hover dimensions (too small), using defaults:', 
+                  { width: WIDTH.HOVER, height: HEIGHT.HOVER })
+      
+      const bounds = mainWindow.getBounds()
+      mainWindow.setBounds({
+        x: bounds.x,
+        y: bounds.y,
+        width: WIDTH.HOVER,
+        height: HEIGHT.HOVER
+      }, false)
+    } else {
+      // Apply the validated dimensions
+      const bounds = mainWindow.getBounds()
+      mainWindow.setBounds({
+        x: bounds.x,
+        y: bounds.y,
+        width,
+        height
+      }, false)
     }
   })
 }

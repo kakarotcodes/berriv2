@@ -18,6 +18,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return Promise.reject('Invalid view type')
   },
 
+  // Get current window bounds
+  getWindowBounds: () => ipcRenderer.invoke('get-window-bounds'),
+
   // ------------------------------------------------------------
   // Vertical Drag
   // ------------------------------------------------------------
@@ -117,5 +120,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
     trashNote: (id) => ipcRenderer.invoke('notes:trash', id),
     restoreNote: (id) => ipcRenderer.invoke('notes:restore', id),
     permanentlyDeleteNote: (id) => ipcRenderer.invoke('notes:deleteForever', id)
-  }
+  },
+
+  // Fix hover dimensions
+  fixHoverDimensions: () => ipcRenderer.send('fix-hover-dimensions'),
+  
+  // Hover size management
+  saveHoverSize: (dimensions) => ipcRenderer.send('save-hover-size', dimensions),
+  getSavedHoverSize: () => ipcRenderer.invoke('get-hover-size'),
 })

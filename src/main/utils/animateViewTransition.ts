@@ -81,10 +81,33 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
 
     try {
       // 1. Get target dimensions
-      const dimensions = viewDimensions[view]
+      let dimensions = viewDimensions[view]
       if (!dimensions) {
         console.error('Invalid view type:', view)
         return false
+      }
+      
+      // Special case for hover view - load saved dimensions
+      if (view === 'hover') {
+        // Get hover dimensions from prefs
+        const savedWidth = prefs.get('hoverWidth') as number | undefined
+        const savedHeight = prefs.get('hoverHeight') as number | undefined
+        
+        if (savedWidth && savedHeight) {
+          // Validate dimensions - ensure we're not using pill dimensions for hover
+          if (savedWidth !== WIDTH.PILL && savedHeight !== HEIGHT.PILL &&
+              savedWidth > 100 && savedHeight > 100) { // Minimum reasonable size 
+            console.log('[POSITION] Using saved hover dimensions:', { width: savedWidth, height: savedHeight })
+            dimensions = { width: savedWidth, height: savedHeight }
+          } else {
+            console.log('[POSITION] Saved hover dimensions invalid, using defaults:', 
+              { saved: { width: savedWidth, height: savedHeight }, 
+                using: viewDimensions.hover })
+            dimensions = viewDimensions.hover
+          }
+        } else {
+          console.log('[POSITION] No saved hover dimensions, using defaults')
+        }
       }
 
       // 2. Get current cursor position to determine current display
@@ -119,7 +142,20 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
         // Pill view positioning - use consistent offset from right edge
         targetX = workArea.x + workArea.width - PILL_OFFSET
 
-        if (isFirstTransitionToPill) {
+        // Coming from hover view - special handling to prevent position issues
+        const comingFromHover = currentBounds.width > WIDTH.PILL && 
+                               currentBounds.height > HEIGHT.PILL;
+                               
+        if (comingFromHover) {
+          // For better UX, place pill at similar vertical position as hover
+          // But validate the position is reasonable
+          targetY = currentBounds.y;
+          
+          // Update saved pill position for future use
+          lastKnownPillY = targetY;
+          prefs.set('pillY', targetY);
+          logPositionInfo('Coming from hover view, setting pill at hover Y position', targetY);
+        } else if (isFirstTransitionToPill) {
           // First transition to pill after app launch - use 130px from top
           targetY = workArea.y + PILL_FIRST_TOP_MARGIN
           logPositionInfo('First transition to pill view - positioning 130px from top', targetY)
