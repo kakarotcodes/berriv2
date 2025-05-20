@@ -23,6 +23,10 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
     })
   })
 
+  // ------------------------------------------------------------
+  // Vertical drag
+  // ------------------------------------------------------------
+
   // Drag state
   const dragState = {
     isDragging: false,
@@ -34,10 +38,6 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
     startMouseX: 0,
     startWindowX: 0
   }
-
-  // ------------------------------------------------------------
-  // Vertical drag
-  // ------------------------------------------------------------
 
   ipcMain.on('start-vertical-drag', (_e, mouseY: number) => {
     if (!mainWindow || mainWindow.isDestroyed()) return
@@ -193,6 +193,7 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
 
   // Handle window resizability
   ipcMain.on('set-resizable', (_event, resizable) => {
+    console.log('set-resizable', resizable)
     if (!mainWindow || mainWindow.isDestroyed()) return
 
     try {
@@ -324,5 +325,16 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
 
   ipcMain.handle('notes:deleteForever', (_event, id) => {
     return NotesDB.permanentlyDeleteNote(id)
+  })
+
+  ipcMain.on('set-main-window-resizable', (_event, resizable: boolean) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      try {
+        mainWindow.setResizable(resizable)
+        console.log(`Window resizability set to: ${resizable}`)
+      } catch (err) {
+        console.error('Failed to set resizability:', err)
+      }
+    }
   })
 }

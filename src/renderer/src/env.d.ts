@@ -55,6 +55,9 @@ interface ElectronAPI {
     restoreNote: (id: string) => Promise<void>
     permanentlyDeleteNote: (id: string) => Promise<void>
   }
+
+  // Main window resizability
+  setMainWindowResizable: (resizable: boolean) => void
 }
 
 declare global {

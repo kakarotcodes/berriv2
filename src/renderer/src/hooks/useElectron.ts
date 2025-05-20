@@ -46,6 +46,10 @@ export const useElectron = () => {
     window.electronAPI.endDrag()
   }, [])
 
+  const setMainWindowResizable = React.useCallback((resizable: boolean) => {
+    window.electronAPI.setMainWindowResizable(resizable)
+  }, [])
+
   return {
     resizeWindow,
     startVerticalDrag,
@@ -57,6 +61,7 @@ export const useElectron = () => {
     setCssOpacity,
     startDrag,
     updateDrag,
-    endDrag
+    endDrag,
+    setMainWindowResizable
   }
 }

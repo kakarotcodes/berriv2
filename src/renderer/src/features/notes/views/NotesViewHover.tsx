@@ -2,12 +2,23 @@ import React, { useEffect, useRef, useState } from 'react'
 import NotesSidebar from '../components/NotesSidebar'
 import NotesEditor from '../components/NotesEditor'
 import { useNotesStore } from '../store/notesStore'
+import { useElectron } from '@/hooks/useElectron'
+import { Lock, Unlock } from 'lucide-react'
 
 const NotesViewHover: React.FC = () => {
   const [leftWidth, setLeftWidth] = useState<number>(40)
   const resizerRef = useRef<HTMLDivElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const isDraggingRef = useRef<boolean>(false)
+
+  const [isResizable, setIsResizable] = useState(false)
+  const { setMainWindowResizable } = useElectron()
+
+  const toggleResizable = () => {
+    const newState = !isResizable
+    setIsResizable(newState)
+    setMainWindowResizable(newState)
+  }
 
   const { setNotes, setTrashed } = useNotesStore()
 
@@ -61,6 +72,13 @@ const NotesViewHover: React.FC = () => {
 
   return (
     <div className="w-full h-full flex text-white text-sm bg-black" ref={containerRef}>
+      <button
+        onClick={toggleResizable}
+        className="p-2 bg-zinc-700 rounded-full"
+        title={isResizable ? 'Lock resizing' : 'Allow resizing'}
+      >
+        {isResizable ? <Lock size={16} /> : <Unlock size={16} />}
+      </button>
       {/* Sidebar */}
       <div style={{ width: `${leftWidth}%` }} className="h-full overflow-hidden">
         <NotesSidebar />
