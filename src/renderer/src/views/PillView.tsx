@@ -14,9 +14,10 @@ import { useViewController } from '@/controller'
 import { PillLayout } from '@/layouts'
 import { SimpleIconComponent } from '@/components/ui'
 import { PillButton, PillNotification } from './components'
+import { Feature } from '@/controller/viewController'
 
 const PillView: React.FC = () => {
-  const { resizeWindow, savePillPosition } = useElectron()
+  const { resizeWindow, savePillPosition, setMainWindowResizable } = useElectron()
   const { dimensions, setView, targetView, isTransitioning } = useViewStore()
   const { setActiveFeature } = useViewController()
   const [isTransitioningToDefault, setIsTransitioningToDefault] = useState(false)
@@ -25,9 +26,10 @@ const PillView: React.FC = () => {
   useDragHandle(savePillPosition)
   usePillInit(savePillPosition, resizeWindow, dimensions)
 
-  const switchToDefault = async () => {
+  const switchToDefaultView = async () => {
     savePillPosition()
     setIsTransitioningToDefault(true)
+    setMainWindowResizable(false)
     try {
       await window.electronAPI.animateViewTransition('default')
       setTimeout(() => setView('default'), 150)
@@ -35,6 +37,12 @@ const PillView: React.FC = () => {
       console.error('Transition error:', error)
       setIsTransitioningToDefault(false)
     }
+  }
+
+  const switchToHoverView = (view: Feature) => {
+    setActiveFeature(view)
+    setView('hover')
+    setMainWindowResizable(true)
   }
 
   const startGoogleMeet = async () => {
@@ -55,7 +63,7 @@ const PillView: React.FC = () => {
       <PillNotification count={99} onClick={() => setView('hover')} />
 
       <PillButton
-        onClick={switchToDefault}
+        onClick={switchToDefaultView}
         featureKey="default"
         icon={<LayoutGrid color="white" size={14} />}
       />
@@ -64,8 +72,7 @@ const PillView: React.FC = () => {
 
       <PillButton
         onClick={() => {
-          setActiveFeature('clipboard')
-          setView('hover')
+          switchToHoverView('clipboard')
         }}
         featureKey="clipboard"
         icon={<History size={15} />}
@@ -74,8 +81,7 @@ const PillView: React.FC = () => {
 
       <PillButton
         onClick={() => {
-          setActiveFeature('notes')
-          setView('hover')
+          switchToHoverView('notes')
         }}
         featureKey="notes"
         icon={<ClipboardPen size={15} />}

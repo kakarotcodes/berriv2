@@ -2,7 +2,7 @@
 import { create } from 'zustand'
 
 // globalStore/viewController.ts
-type Feature = 'clipboard' | 'calendar' | 'notes' | null
+export type Feature = 'clipboard' | 'calendar' | 'notes' | null
 
 export const useViewController = create<{
   activeFeature: Feature
