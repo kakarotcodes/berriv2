@@ -40,12 +40,14 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
   // Debug: Log all stored preferences at startup
   console.log('[PREFS] All stored preferences:', prefs.store)
 
-  // At startup, load the saved pill position if it exists
+  // At startup, ALWAYS set isFirstTransitionToPill to true
+  // to ensure we use the 130px top margin on first transition
+  isFirstTransitionToPill = true
+  
+  // Still load saved pill position for subsequent transitions
   const savedPillY = prefs.get('pillY') as number | undefined
   if (savedPillY !== undefined) {
-    logPositionInfo('Loaded saved pill position at startup', savedPillY)
-    // Only update lastKnownPillY, but keep isFirstTransitionToPill true
-    // so we still use the 130px margin on first transition
+    logPositionInfo('Loaded saved pill position at startup, but will use 130px margin for first transition', savedPillY)
     lastKnownPillY = savedPillY
   }
   
@@ -142,34 +144,29 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
         // Pill view positioning - use consistent offset from right edge
         targetX = workArea.x + workArea.width - PILL_OFFSET
 
-        // Coming from hover view - special handling to prevent position issues
-        const comingFromHover = currentBounds.width > WIDTH.PILL && 
-                               currentBounds.height > HEIGHT.PILL;
-                               
-        if (comingFromHover) {
-          // For better UX, place pill at similar vertical position as hover
-          // But validate the position is reasonable
-          targetY = currentBounds.y;
-          
-          // Update saved pill position for future use
-          lastKnownPillY = targetY;
-          prefs.set('pillY', targetY);
-          logPositionInfo('Coming from hover view, setting pill at hover Y position', targetY);
-        } else if (isFirstTransitionToPill) {
-          // First transition to pill after app launch - use 130px from top
+        // Check if this is first transition to pill
+        if (isFirstTransitionToPill) {
+          // First transition to pill after app launch - ALWAYS use 130px from top
           targetY = workArea.y + PILL_FIRST_TOP_MARGIN
-          logPositionInfo('First transition to pill view - positioning 130px from top', targetY)
+          logPositionInfo('First transition to pill view - positioning with 130px top margin', targetY)
 
           // Reset the flag so subsequent transitions use saved position
           isFirstTransitionToPill = false
-        } else if (lastKnownPillY !== null) {
-          // Use the last known position from this session (from dragging or previous positions)
+        } 
+        // Coming from hover view - special handling for subsequent transitions
+        else if (currentBounds.width > WIDTH.PILL && currentBounds.height > HEIGHT.PILL) {
+          targetY = currentBounds.y
+          logPositionInfo('Coming from hover view, setting pill at hover Y position', targetY)
+        }
+        else if (lastKnownPillY !== null) {
+          // Use the last known position from this session
           targetY = lastKnownPillY
           logPositionInfo('Using last known pill position', targetY)
-        } else {
-          // Fallback - should rarely happen if ever
+        } 
+        else {
+          // Fallback - should rarely happen
           targetY = workArea.y + PILL_FIRST_TOP_MARGIN
-          logPositionInfo('Using fallback pill position (130px from top)', targetY)
+          logPositionInfo('Using fallback pill position with 130px top margin', targetY)
         }
 
         // Ensure Y is within bounds of current monitor
