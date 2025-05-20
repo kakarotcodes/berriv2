@@ -35,6 +35,10 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
     startWindowX: 0
   }
 
+  // ------------------------------------------------------------
+  // Vertical drag
+  // ------------------------------------------------------------
+
   ipcMain.on('start-vertical-drag', (_e, mouseY: number) => {
     if (!mainWindow || mainWindow.isDestroyed()) return
     const bounds = mainWindow.getBounds()
@@ -145,6 +149,39 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
     mainWindow.webContents
       .executeJavaScript(`document.body.classList.remove('is-dragging')`)
       .catch(console.error)
+  })
+
+  // ------------------------------------------------------------
+  // --- Full drag support (horizontal + vertical) ---
+  // ------------------------------------------------------------
+  ipcMain.on('start-drag', (_e, { mouseX, mouseY }) => {
+    if (!mainWindow || mainWindow.isDestroyed()) return
+    const bounds = mainWindow.getBounds()
+    dragState.isDragging = true
+    dragState.startMouseX = mouseX
+    dragState.startMouseY = mouseY
+    dragState.startWindowX = bounds.x
+    dragState.startWindowY = bounds.y
+  })
+
+  ipcMain.on('update-drag', (_e, { mouseX, mouseY }) => {
+    if (!dragState.isDragging || !mainWindow) return
+
+    const newX = mouseX - (dragState.startMouseX - dragState.startWindowX)
+    const newY = mouseY - (dragState.startMouseY - dragState.startWindowY)
+
+    const { width, height } = mainWindow.getBounds()
+    const cursor = screen.getCursorScreenPoint()
+    const area = screen.getDisplayNearestPoint(cursor).workArea
+
+    const clampedX = Math.max(area.x, Math.min(area.x + area.width - width, newX))
+    const clampedY = Math.max(area.y, Math.min(area.y + area.height - height, newY))
+
+    mainWindow.setBounds({ x: clampedX, y: clampedY, width, height }, false)
+  })
+
+  ipcMain.on('end-drag', () => {
+    dragState.isDragging = false
   })
 
   // Save pill position handler

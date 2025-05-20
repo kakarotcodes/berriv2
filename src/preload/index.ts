@@ -17,9 +17,22 @@ contextBridge.exposeInMainWorld('electronAPI', {
     }
     return Promise.reject('Invalid view type')
   },
+
+  // ------------------------------------------------------------
+  // Vertical Drag
+  // ------------------------------------------------------------
+
   startVerticalDrag: (mouseY) => ipcRenderer.send('start-vertical-drag', mouseY),
   updateVerticalDrag: (mouseY) => ipcRenderer.send('update-vertical-drag', mouseY),
   endVerticalDrag: () => ipcRenderer.send('end-vertical-drag'),
+
+  // ------------------------------------------------------------
+  // Full Drag
+  // ------------------------------------------------------------
+  startDrag: (mouseX, mouseY) => ipcRenderer.send('start-drag', { mouseX, mouseY }),
+  updateDrag: (mouseX, mouseY) => ipcRenderer.send('update-drag', { mouseX, mouseY }),
+  endDrag: () => ipcRenderer.send('end-drag'),
+
   setResizable: (resizable) => ipcRenderer.send('set-resizable', resizable),
   savePillPosition: () => ipcRenderer.send('save-pill-position'),
 

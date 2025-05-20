@@ -11,9 +11,17 @@ interface ClipboardEntry {
 interface ElectronAPI {
   resizeWindow: (dimensions: { width: number; height: number }) => void
   animateViewTransition: (view: ViewType) => Promise<boolean>
+
+  // Vertical drag
   startVerticalDrag: (mouseY: number) => void
   updateVerticalDrag: (mouseY: number) => void
   endVerticalDrag: () => void
+
+  // Full drag (horizontal + vertical)
+  startDrag: (mouseX: number, mouseY: number) => void
+  updateDrag: (mouseX: number, mouseY: number) => void
+  endDrag: () => void
+
   setResizable: (resizable: boolean) => void
   savePillPosition: () => void
 
