@@ -16,11 +16,11 @@ const FuturisticGradientDef = () => (
   </svg>
 )
 
-// Optimized gradient style for drag handle with OKLCH color - reduced glow
+// Updated gradient style for drag handle to match icons
 const futuristicGradientStyle = {
-  stroke: 'oklch(90.1% 0.076 70.697)',
+  stroke: 'url(#futuristicGradient)',
   fill: 'none',
-  filter: 'drop-shadow(0 0 2px oklch(90.1% 0.076 70.697 / 0.6)) drop-shadow(0 0 4px oklch(55.8% 0.288 302.321 / 0.3))',
+  filter: 'drop-shadow(0 0 2px rgba(168, 85, 247, 0.4))',
   strokeWidth: 2.5
 }
 
@@ -33,11 +33,12 @@ const PillLayout: React.FC<PillLayoutProps> = ({ children }) => {
   return (
     <div
       id="pill-container"
-      className="w-full h-full text-white animated-gradient pulse-gradient flex flex-col gap-y-[15px] hardware-accelerated rounded-lg overflow-hidden animated-border animated-glow"
+      className="w-full h-full text-white flex flex-col gap-y-[15px] hardware-accelerated rounded-lg overflow-hidden"
       style={{
-        backdropFilter: 'blur(8px)',
-        WebkitBackdropFilter: 'blur(8px)', // Safari support
-        backgroundColor: 'rgba(0, 0, 0, 0.25)' // Slightly darker for better contrast with reduced blur
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        // Very obvious bright glow for testing
+        border: '2px solid rgba(168, 85, 247, 0.8)',
+        boxShadow: '0 0 20px rgba(168, 85, 247, 0.8), 0 0 40px rgba(168, 85, 247, 0.6), 0 0 60px rgba(168, 85, 247, 0.4)'
       }}
     >
       <FuturisticGradientDef />
