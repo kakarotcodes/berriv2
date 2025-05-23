@@ -21,7 +21,7 @@ const ClipboardItem = memo(({ content, timestamp }: ClipboardItemProps) => {
     const checkTruncation = () => {
       const el = textRef.current
       if (el) {
-        setIsTruncated(el.scrollWidth > el.clientWidth)
+        setIsTruncated(el.scrollWidth > el.clientWidth || el.scrollHeight > el.clientHeight)
       }
     }
 
@@ -37,30 +37,66 @@ const ClipboardItem = memo(({ content, timestamp }: ClipboardItemProps) => {
     setTimeout(() => setCopied(false), 1500)
   }
 
+  // Check if content is likely code
+  const isCode = content.includes('{') && content.includes('}') && 
+                 (content.includes('function') || 
+                  content.includes('=>') || 
+                  content.includes('const') || 
+                  content.includes('let') || 
+                  content.includes('var'))
+
+  // Handler for clicking on the item
+  const handleItemClick = () => {
+    // If not expanded yet, expand it
+    if (!expanded) {
+      setExpanded(true)
+      return
+    }
+    
+    // If expanded and text is selected, don't collapse
+    const selection = window.getSelection()
+    if (selection && selection.toString().trim() !== '') {
+      // User is selecting text, don't collapse
+      return
+    }
+    
+    // Otherwise toggle expanded state
+    setExpanded((prev) => !prev)
+  }
+
   return (
     <li
       className={`flex flex-col justify-center border border-zinc-600 p-2 rounded text-white transition-all ${
         expanded ? 'h-auto' : 'h-10 overflow-hidden'
       }`}
-      onClick={() => setExpanded((prev) => !prev)}
+      onClick={handleItemClick}
     >
       <div className="flex justify-between items-start gap-2">
-        <div ref={textRef} className={`pr-2 text-sm ${!expanded ? 'truncate' : ''}`}>
+        <div 
+          ref={textRef} 
+          className={`pr-2 text-sm ${!expanded ? 'truncate' : ''} ${
+            isCode && expanded ? 'font-mono text-xs whitespace-pre-wrap' : ''
+          } max-w-full break-words ${!expanded ? 'overflow-hidden' : 'overflow-auto'}`}
+          style={{ 
+            wordBreak: 'break-word',
+            overflowWrap: 'break-word'
+          }}
+        >
           {content}
-          <p className="text-[8px] text-zinc-400">{DateTime.fromMillis(timestamp).toFormat('dd MMM yyyy HH:mm')}</p>
+          <p className="text-[8px] text-zinc-400 mt-1">{DateTime.fromMillis(timestamp).toFormat('dd MMM yyyy HH:mm')}</p>
         </div>
 
         <div className="flex-shrink-0 flex items-center gap-2">
-          {isTruncated && (
+          {isTruncated && !expanded && (
             <button
               onClick={(e) => {
                 e.stopPropagation()
-                setExpanded((prev) => !prev)
+                setExpanded(true)
               }}
               className="text-zinc-400 hover:text-white"
-              title={expanded ? 'Collapse' : 'Expand'}
+              title="Expand"
             >
-              {expanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+              <ChevronDown size={15} />
             </button>
           )}
 

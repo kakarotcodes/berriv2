@@ -1,5 +1,5 @@
 // views/PillView.tsx
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { LayoutGrid, ClipboardPen, History } from 'lucide-react'
 
 // Hooks
@@ -16,6 +16,9 @@ import { SimpleIconComponent } from '@/components/ui'
 import { PillButton, PillNotification } from './components'
 import { Feature } from '@/controller/viewController'
 
+// Constants
+import { WIDTH, HEIGHT } from '../../../constants/constants'
+
 const PillView: React.FC = () => {
   const { resizeWindow, savePillPosition, setMainWindowResizable } = useElectron()
   const { dimensions, setView, targetView, isTransitioning } = useViewStore()
@@ -25,6 +28,13 @@ const PillView: React.FC = () => {
   useIdleOpacity()
   useDragHandle(savePillPosition)
   usePillInit(savePillPosition, resizeWindow, dimensions)
+
+  // Ensure proper window state when pill view mounts
+  useEffect(() => {
+    // Disable resizing and ensure pill dimensions
+    setMainWindowResizable(false)
+    resizeWindow({ width: WIDTH.PILL, height: HEIGHT.PILL })
+  }, [setMainWindowResizable, resizeWindow])
 
   const switchToDefaultView = async () => {
     savePillPosition()
