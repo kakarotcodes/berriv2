@@ -61,13 +61,13 @@ const App: React.FC = memo(() => {
   // show an empty window without any content
   if (isTransitioning) {
     return (
-      <main className="w-screen h-screen bg-transparent flex items-center justify-center"></main>
+      <main className="w-screen h-screen animated-gradient"></main>
     )
   }
 
   // Regular rendering without animations for all views
   return (
-    <main className="w-screen h-screen bg-transparent flex items-center justify-center">
+    <main className="w-screen h-screen animated-gradient">
       <div className="absolute inset-0 flex items-center justify-center" style={{ opacity: 1 }}>
         {React.createElement(viewComponents[currentView])}
       </div>

@@ -1,0 +1,31 @@
+:root {
+  --gradient-animation-duration: 15s;
+}
+
+.animated-gradient {
+  min-height: 100vh;
+  background: linear-gradient(
+    238deg,
+    #ff2a6d,
+    #05d9e8,
+    #005678,
+    #01012b,
+    #7b2cd6,
+    #3b27ba,
+    #ff71ce
+  );
+  background-size: 400% 400%;
+  animation: gradient-shift var(--gradient-animation-duration) ease infinite;
+}
+
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+} 

@@ -11,7 +11,7 @@ const PillLayout: React.FC<PillLayoutProps> = ({ children }) => {
   return (
     <div
       id="pill-container"
-      className="w-full h-full text-white bg-gray-800 flex flex-col hardware-accelerated"
+      className="w-full h-full text-white animated-gradient flex flex-col hardware-accelerated rounded-lg overflow-hidden"
     >
       <div id="drag-handle" className="flex items-center justify-center pt-1">
         <GripHorizontal size={12} />
