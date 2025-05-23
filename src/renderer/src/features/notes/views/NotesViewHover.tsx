@@ -202,7 +202,7 @@ const NotesViewHover: React.FC = () => {
   }
 
   return (
-    <div className="w-full h-full flex text-white text-sm bg-black" ref={containerRef}>
+    <div className="w-full h-full flex text-white text-sm animated-gradient" ref={containerRef}>
       {/* Sidebar */}
       <div style={{ width: `${leftWidth}%` }} className="h-full overflow-hidden">
         <NotesSidebar />

@@ -67,7 +67,7 @@ const NotesEditor: React.FC = () => {
   }
 
   return (
-    <div className="flex-1 h-full bg-[#121212] text-white p-6 flex flex-col gap-4">
+    <div className="flex-1 h-full animated-gradient text-white p-6 flex flex-col gap-4">
       {/* Note type toggle */}
       <div className="flex items-center gap-2 text-sm">
         <span className="text-zinc-400">Note type:</span>

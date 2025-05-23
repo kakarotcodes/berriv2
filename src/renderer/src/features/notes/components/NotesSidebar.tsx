@@ -42,7 +42,7 @@ const NotesSidebar: React.FC = () => {
   }, [])
 
   return (
-    <aside className="w-72 bg-[#1f1f1f] text-white border-r border-zinc-800 flex flex-col">
+    <aside className="w-72 animated-gradient text-white border-r border-zinc-800 flex flex-col">
       {/* Header */}
       <div className="p-4 flex items-center justify-between border-b border-zinc-800">
         <h2 className="text-lg font-semibold">Notes</h2>
