@@ -1,5 +1,5 @@
 :root {
-  --gradient-animation-duration: 45s;
+  --gradient-animation-duration: 12s;
 }
 
 .animated-gradient {
@@ -14,7 +14,7 @@
     #4a1458,
     #001122
   );
-  background-size: 300% 300%;
+  background-size: 200% 200%;
   animation: gradient-shift var(--gradient-animation-duration) ease-in-out infinite;
 }
 
@@ -40,7 +40,7 @@
     #4a1458,
     #001122
   );
-  background-size: 300% 300%;
+  background-size: 200% 200%;
   background-clip: border-box;
   animation: border-shift var(--gradient-animation-duration) ease-in-out infinite;
 }
@@ -53,29 +53,14 @@
   0% {
     background-position: 0% 50%;
   }
-  12% {
-    background-position: 80% 20%;
+  25% {
+    background-position: 100% 50%;
   }
-  23% {
-    background-position: 40% 80%;
+  50% {
+    background-position: 100% 0%;
   }
-  34% {
-    background-position: 90% 60%;
-  }
-  45% {
-    background-position: 20% 30%;
-  }
-  56% {
-    background-position: 70% 90%;
-  }
-  67% {
-    background-position: 10% 70%;
-  }
-  78% {
-    background-position: 85% 40%;
-  }
-  89% {
-    background-position: 30% 85%;
+  75% {
+    background-position: 0% 0%;
   }
   100% {
     background-position: 0% 50%;
@@ -86,29 +71,14 @@
   0% {
     background-position: 0% 50%;
   }
-  12% {
-    background-position: 80% 20%;
+  25% {
+    background-position: 100% 50%;
   }
-  23% {
-    background-position: 40% 80%;
+  50% {
+    background-position: 100% 0%;
   }
-  34% {
-    background-position: 90% 60%;
-  }
-  45% {
-    background-position: 20% 30%;
-  }
-  56% {
-    background-position: 70% 90%;
-  }
-  67% {
-    background-position: 10% 70%;
-  }
-  78% {
-    background-position: 85% 40%;
-  }
-  89% {
-    background-position: 30% 85%;
+  75% {
+    background-position: 0% 0%;
   }
   100% {
     background-position: 0% 50%;
@@ -119,29 +89,23 @@
   0% {
     box-shadow: 0 0 20px rgba(10, 10, 15, 0.8), 0 0 40px rgba(10, 10, 15, 0.5), 0 0 60px rgba(10, 10, 15, 0.3);
   }
-  12% {
+  14% {
     box-shadow: 0 0 20px rgba(26, 0, 51, 0.8), 0 0 40px rgba(26, 0, 51, 0.5), 0 0 60px rgba(26, 0, 51, 0.3);
   }
-  23% {
+  28% {
     box-shadow: 0 0 20px rgba(51, 0, 102, 0.8), 0 0 40px rgba(51, 0, 102, 0.5), 0 0 60px rgba(51, 0, 102, 0.3);
   }
-  34% {
+  42% {
     box-shadow: 0 0 20px rgba(0, 68, 102, 0.8), 0 0 40px rgba(0, 68, 102, 0.5), 0 0 60px rgba(0, 68, 102, 0.3);
   }
-  45% {
+  56% {
     box-shadow: 0 0 20px rgba(15, 20, 25, 0.8), 0 0 40px rgba(15, 20, 25, 0.5), 0 0 60px rgba(15, 20, 25, 0.3);
   }
-  56% {
+  70% {
     box-shadow: 0 0 20px rgba(74, 20, 88, 0.8), 0 0 40px rgba(74, 20, 88, 0.5), 0 0 60px rgba(74, 20, 88, 0.3);
   }
-  67% {
+  84% {
     box-shadow: 0 0 20px rgba(0, 17, 34, 0.8), 0 0 40px rgba(0, 17, 34, 0.5), 0 0 60px rgba(0, 17, 34, 0.3);
-  }
-  78% {
-    box-shadow: 0 0 20px rgba(10, 10, 15, 0.8), 0 0 40px rgba(10, 10, 15, 0.5), 0 0 60px rgba(10, 10, 15, 0.3);
-  }
-  89% {
-    box-shadow: 0 0 20px rgba(26, 0, 51, 0.8), 0 0 40px rgba(26, 0, 51, 0.5), 0 0 60px rgba(26, 0, 51, 0.3);
   }
   100% {
     box-shadow: 0 0 20px rgba(10, 10, 15, 0.8), 0 0 40px rgba(10, 10, 15, 0.5), 0 0 60px rgba(10, 10, 15, 0.3);

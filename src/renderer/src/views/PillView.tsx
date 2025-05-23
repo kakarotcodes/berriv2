@@ -1,6 +1,6 @@
 // views/PillView.tsx
 import { useState, useEffect } from 'react'
-import { LayoutGrid, ClipboardPen, History } from 'lucide-react'
+import { LayoutGrid, ClipboardPen, History, Video, CalendarDays } from 'lucide-react'
 
 // Hooks
 import { useElectron } from '@/hooks/useElectron'
@@ -12,12 +12,33 @@ import { useViewController } from '@/controller'
 
 // Layouts & UI
 import { PillLayout } from '@/layouts'
-import { SimpleIconComponent } from '@/components/ui'
 import { PillButton, PillNotification } from './components'
 import { Feature } from '@/controller/viewController'
 
 // Constants
 import { WIDTH, HEIGHT } from '../../../constants/constants'
+
+// Optimized gradient style for icons with OKLCH color - reduced glow
+const futuristicGradientStyle = {
+  stroke: 'oklch(83.3% 0.145 321.434)',
+  fill: 'none',
+  filter: 'drop-shadow(0 0 2px oklch(83.3% 0.145 321.434 / 0.6)) drop-shadow(0 0 4px oklch(83.3% 0.145 321.434 / 0.3))',
+  strokeWidth: 2.5
+}
+
+// Gradient definition component
+const FuturisticGradientDef = () => (
+  <svg width="0" height="0" style={{ position: 'absolute' }}>
+    <defs>
+      <linearGradient id="futuristicGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stopColor="#a855f7" />
+        <stop offset="30%" stopColor="#c084fc" />
+        <stop offset="60%" stopColor="#e879f9" />
+        <stop offset="100%" stopColor="#f472b6" />
+      </linearGradient>
+    </defs>
+  </svg>
+)
 
 const PillView: React.FC = () => {
   const { resizeWindow, savePillPosition, setMainWindowResizable } = useElectron()
@@ -70,22 +91,29 @@ const PillView: React.FC = () => {
 
   return (
     <PillLayout>
+      <FuturisticGradientDef />
       <PillNotification count={99} onClick={() => setView('hover')} />
 
       <PillButton
         onClick={switchToDefaultView}
         featureKey="default"
-        icon={<LayoutGrid color="white" size={14} />}
+        icon={<LayoutGrid size={14} style={futuristicGradientStyle} />}
       />
 
-      <PillButton icon={<SimpleIconComponent slug="siGooglecalendar" size={14} />} draggable />
+      <PillButton
+        onClick={() => {
+          switchToHoverView('calendar')
+        }}
+        featureKey="calendar"
+        icon={<CalendarDays size={15} style={futuristicGradientStyle} />}
+      />
 
       <PillButton
         onClick={() => {
           switchToHoverView('clipboard')
         }}
         featureKey="clipboard"
-        icon={<History size={15} />}
+        icon={<History size={15} style={futuristicGradientStyle} />}
         draggable
       />
 
@@ -94,14 +122,14 @@ const PillView: React.FC = () => {
           switchToHoverView('notes')
         }}
         featureKey="notes"
-        icon={<ClipboardPen size={15} />}
+        icon={<ClipboardPen size={15} style={futuristicGradientStyle} />}
         draggable
       />
 
       <PillButton
         onClick={startGoogleMeet}
         featureKey="googleMeet"
-        icon={<SimpleIconComponent slug="siGooglemeet" size={14} />}
+        icon={<Video size={15} style={futuristicGradientStyle} />}
         draggable
       />
     </PillLayout>
