@@ -12,7 +12,7 @@ import { useViewController } from '@/controller'
 
 // Layouts & UI
 import { PillLayout } from '@/layouts'
-import { PillButton, PillNotification } from './components'
+import { PillButton } from './components'
 import { Feature } from '@/controller/viewController'
 
 // Constants
@@ -20,9 +20,10 @@ import { WIDTH, HEIGHT } from '../../../constants/constants'
 
 // Optimized gradient style for icons with OKLCH color - reduced glow
 const futuristicGradientStyle = {
-  stroke: 'oklch(83.3% 0.145 321.434)',
+  stroke: 'oklch(90.1% 0.076 70.697)',
   fill: 'none',
-  filter: 'drop-shadow(0 0 2px oklch(83.3% 0.145 321.434 / 0.6)) drop-shadow(0 0 4px oklch(83.3% 0.145 321.434 / 0.3))',
+  filter:
+    'drop-shadow(0 0 2px oklch(90.1% 0.076 70.697 / 0.6)) drop-shadow(0 0 4px oklch(55.8% 0.288 302.321 / 0.3))',
   strokeWidth: 2.5
 }
 
@@ -92,7 +93,7 @@ const PillView: React.FC = () => {
   return (
     <PillLayout>
       <FuturisticGradientDef />
-      <PillNotification count={99} onClick={() => setView('hover')} />
+      {/* <PillNotification count={99} onClick={() => setView('hover')} /> */}
 
       <PillButton
         onClick={switchToDefaultView}

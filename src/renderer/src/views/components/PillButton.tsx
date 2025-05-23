@@ -24,10 +24,11 @@ const PillButton: React.FC<PillButtonProps> = ({
   return (
     <button
       onClick={onClick}
-      className={`flex-1 w-full px-1 flex items-center justify-center border-gray-700 transition-colors duration-150 hover:bg-gray-500 ${
+      className={`w-full px-1 flex items-center justify-center border-gray-700 transition-colors duration-75 ${
         isActive ? 'bg-gray-600' : ''
       }`}
       id={draggable ? 'drag-handle' : undefined}
+      style={{ willChange: 'background-color' }}
     >
       {icon}
     </button>

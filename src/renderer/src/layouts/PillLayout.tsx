@@ -1,5 +1,5 @@
 // dependencies
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 import { GripHorizontal } from 'lucide-react'
 
 // Gradient definition component
@@ -18,9 +18,9 @@ const FuturisticGradientDef = () => (
 
 // Optimized gradient style for drag handle with OKLCH color - reduced glow
 const futuristicGradientStyle = {
-  stroke: 'oklch(83.3% 0.145 321.434)',
+  stroke: 'oklch(90.1% 0.076 70.697)',
   fill: 'none',
-  filter: 'drop-shadow(0 0 2px oklch(83.3% 0.145 321.434 / 0.6)) drop-shadow(0 0 4px oklch(83.3% 0.145 321.434 / 0.3))',
+  filter: 'drop-shadow(0 0 2px oklch(90.1% 0.076 70.697 / 0.6)) drop-shadow(0 0 4px oklch(55.8% 0.288 302.321 / 0.3))',
   strokeWidth: 2.5
 }
 
@@ -33,7 +33,7 @@ const PillLayout: React.FC<PillLayoutProps> = ({ children }) => {
   return (
     <div
       id="pill-container"
-      className="w-full h-full text-white animated-gradient flex flex-col hardware-accelerated rounded-lg overflow-hidden animated-border animated-glow"
+      className="w-full h-full text-white animated-gradient pulse-gradient flex flex-col gap-y-[15px] hardware-accelerated rounded-lg overflow-hidden animated-border animated-glow"
       style={{
         backdropFilter: 'blur(8px)',
         WebkitBackdropFilter: 'blur(8px)', // Safari support
