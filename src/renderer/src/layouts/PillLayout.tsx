@@ -33,12 +33,9 @@ const PillLayout: React.FC<PillLayoutProps> = ({ children }) => {
   return (
     <div
       id="pill-container"
-      className="w-full h-full text-white flex flex-col gap-y-[15px] hardware-accelerated rounded-lg overflow-hidden"
+      className="w-full h-full text-white flex flex-col gap-y-[15px] hardware-accelerated rounded-lg pill-glow"
       style={{
         backgroundColor: 'rgba(0, 0, 0, 0.8)',
-        // Very obvious bright glow for testing
-        border: '2px solid rgba(168, 85, 247, 0.8)',
-        boxShadow: '0 0 20px rgba(168, 85, 247, 0.8), 0 0 40px rgba(168, 85, 247, 0.6), 0 0 60px rgba(168, 85, 247, 0.4)'
       }}
     >
       <FuturisticGradientDef />
