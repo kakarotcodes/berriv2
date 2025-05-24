@@ -197,4 +197,21 @@
 .pill-glow {
   border: 2px solid rgba(168, 85, 247, 0.8);
   animation: pill-glow-pulse 2s ease-in-out infinite;
+}
+
+.pill-button-hover {
+  transition: transform 0.2s ease-out, background-color 0.15s ease;
+}
+
+.pill-button-hover:hover {
+  transform: scale(1.15);
+  background-color: rgba(168, 85, 247, 0.1);
+}
+
+.pill-icon-hover {
+  transition: transform 0.2s ease-out;
+}
+
+.pill-button-hover:hover .pill-icon-hover {
+  transform: scale(1.2);
 } 
