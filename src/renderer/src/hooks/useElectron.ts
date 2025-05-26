@@ -1,4 +1,3 @@
-// hooks/useElectron.ts
 import React from 'react'
 
 export const useElectron = () => {
@@ -25,13 +24,30 @@ export const useElectron = () => {
   const savePillPosition = React.useCallback(() => {
     window.electronAPI.savePillPosition()
   }, [])
-  
+
   const setPillOpacity = React.useCallback((alpha: number) => {
     window.electronAPI.setPillOpacity(alpha)
   }, [])
-  
+
   const setCssOpacity = React.useCallback((alpha: number) => {
     window.electronAPI.setCssOpacity(alpha)
+  }, [])
+
+  // ✅ NEW: full drag support
+  const startDrag = React.useCallback((mouseX: number, mouseY: number) => {
+    window.electronAPI.startDrag(mouseX, mouseY)
+  }, [])
+
+  const updateDrag = React.useCallback((mouseX: number, mouseY: number) => {
+    window.electronAPI.updateDrag(mouseX, mouseY)
+  }, [])
+
+  const endDrag = React.useCallback(() => {
+    window.electronAPI.endDrag()
+  }, [])
+
+  const setMainWindowResizable = React.useCallback((resizable: boolean) => {
+    window.electronAPI.setMainWindowResizable(resizable)
   }, [])
 
   return {
@@ -42,6 +58,10 @@ export const useElectron = () => {
     setResizable,
     savePillPosition,
     setPillOpacity,
-    setCssOpacity
+    setCssOpacity,
+    startDrag,
+    updateDrag,
+    endDrag,
+    setMainWindowResizable
   }
 }
