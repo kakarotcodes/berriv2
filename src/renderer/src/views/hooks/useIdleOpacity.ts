@@ -7,7 +7,7 @@ import { useEffect, useRef } from 'react'
  * @param idleAlpha - Opacity when user is idle (default: 0.3)
  * @param idleDelay - Time in ms before considering user idle (default: 5000)
  */
-export function useIdleOpacity(activeAlpha = 1, idleAlpha = 0.5, idleDelay = 7000) {
+export function useIdleOpacity(activeAlpha = 1, idleAlpha = 0.3, idleDelay = 7000) {
   const idleTimerRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {

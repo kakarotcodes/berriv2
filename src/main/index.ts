@@ -53,7 +53,7 @@ function createWindow(): void {
   })
 
   // Load the Vite dev server
-  mainWindow.loadURL('http://localhost:5173')
+  mainWindow.loadURL('http://localhost:7777')
 
   // Make window visible on all workspaces
   mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
