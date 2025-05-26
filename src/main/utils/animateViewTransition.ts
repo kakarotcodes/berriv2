@@ -154,9 +154,20 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
           isFirstTransitionToPill = false
         } 
         // Coming from hover view - special handling for subsequent transitions
-        else if (currentBounds.width > WIDTH.PILL && currentBounds.height > HEIGHT.PILL) {
+        else if (currentBounds.width === viewDimensions.hover.width && currentBounds.height === viewDimensions.hover.height) {
           targetY = currentBounds.y
           logPositionInfo('Coming from hover view, setting pill at hover Y position', targetY)
+        }
+        // Coming from default view - use saved pill position (don't use default view's position)
+        else if (currentBounds.width === viewDimensions.default.width && currentBounds.height === viewDimensions.default.height) {
+          if (lastKnownPillY !== null) {
+            targetY = lastKnownPillY
+            logPositionInfo('Coming from default view, using saved pill position', targetY)
+          } else {
+            // Fallback if no saved position
+            targetY = workArea.y + PILL_FIRST_TOP_MARGIN
+            logPositionInfo('Coming from default view, no saved pill position, using 130px top margin', targetY)
+          }
         }
         else if (lastKnownPillY !== null) {
           // Use the last known position from this session
