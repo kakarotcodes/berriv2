@@ -1,19 +1,12 @@
-import { ipcMain, BrowserWindow, screen, shell, clipboard } from 'electron'
-import { setWindowOpacity } from '../utils/windowOpacity'
-import { animateWindowResize } from './windowResize'
-import { prefs } from './prefs'
-import { OFFSET, WIDTH, HEIGHT } from '../../constants/constants'
-import {
-  getClipboardHistory,
-  startClipboardPolling,
-  stopClipboardPolling
-} from './clipboardMonitor'
+import { ipcMain, BrowserWindow, screen } from 'electron'
+import { setWindowOpacity } from '../../utils/windowOpacity'
+import { animateWindowResize } from '../../utils/windowResize'
+import { prefs } from '../../utils/prefs'
+import { OFFSET, WIDTH, HEIGHT } from '../../../constants/constants'
+import { getSavedHoverSize, saveHoverSize } from '../../utils/hoverSize'
 
-// Notes
-import { NotesDB } from '../../renderer/src/features/notes/db/notesDB'
-import { getSavedHoverSize, saveHoverSize } from './hoverSize'
-
-export function registerIpcHandlers(mainWindow: BrowserWindow) {
+export function registerWindowHandlers(mainWindow: BrowserWindow) {
+  // Window resize handler
   ipcMain.on('resize-window', (_event, { width, height }) => {
     if (!mainWindow || mainWindow.isDestroyed()) return
     animateWindowResize({
@@ -23,10 +16,6 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
       duration: 10
     })
   })
-
-  // ------------------------------------------------------------
-  // Vertical drag
-  // ------------------------------------------------------------
 
   // Drag state
   const dragState = {
@@ -40,6 +29,7 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
     startWindowX: 0
   }
 
+  // Vertical drag handlers
   ipcMain.on('start-vertical-drag', (_e, mouseY: number) => {
     if (!mainWindow || mainWindow.isDestroyed()) return
     const bounds = mainWindow.getBounds()
@@ -49,7 +39,6 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
     dragState.windowWidth = bounds.width
     dragState.windowHeight = bounds.height
 
-    // Get cursor position for X tracking as well
     const cursor = screen.getCursorScreenPoint()
     dragState.startMouseX = cursor.x
     dragState.startWindowX = bounds.x
@@ -60,67 +49,47 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
   })
 
   let lastUpdate = 0
-  ipcMain.on('update-vertical-drag', (_e, _: number) => {
+  ipcMain.on('update-vertical-drag', () => {
     if (!dragState.isDragging || !mainWindow) return
 
     const now = Date.now()
     if (now - lastUpdate < 16) return // ~60fps
+    lastUpdate = now
 
     try {
-      // Get cursor position directly from the main process
-      // This is more accurate than the passed mouseY from renderer
       const cursor = screen.getCursorScreenPoint()
       const disp = screen.getDisplayNearestPoint(cursor)
       const area = disp.workArea
-
-      // Get current window bounds
       const bounds = mainWindow.getBounds()
 
-      // Calculate target position based on window type (pill or hover)
       let newX
       const isPillView = bounds.width === WIDTH.PILL
       const isHoverView = bounds.width === WIDTH.HOVER
 
-      // Use appropriate offset based on window type
       if (isPillView) {
-        // Use pill offset for pill view (50px from right edge)
         const pillOffset = OFFSET.PILLOFFSET
         newX = area.x + area.width - pillOffset
       } else if (isHoverView) {
-        // For hover view, allow free horizontal movement
-
-        // Calculate relative mouse movement
         const dx = cursor.x - dragState.startMouseX
-        // Apply the movement to the original window position
-        let calculatedX = dragState.startWindowX + dx
-
-        // Ensure window stays within screen bounds
+        const calculatedX = dragState.startWindowX + dx
         const minX = area.x
         const maxX = area.x + area.width - bounds.width
         newX = Math.max(minX, Math.min(maxX, calculatedX))
       } else {
-        // For other views, maintain current X position
         newX = bounds.x
       }
 
-      // Use cursor position for vertical position
       const dragHandleOffset = 10
       const rawY = cursor.y - dragHandleOffset
-
-      // Apply bounds limiting
       const minY = area.y
       const maxY = area.y + area.height - dragState.windowHeight
       const newY = Math.max(minY, Math.min(maxY, rawY))
 
-      // Skip if position hasn't changed (improves performance)
       if (bounds.x === newX && bounds.y === newY) {
         return
       }
 
-      // Set position directly - avoid animation
       mainWindow.setPosition(newX, newY, false)
-
-      // Track display ID for transitions
       dragState.currentDisplayId = disp.id
     } catch (err) {
       console.error('drag update error', err)
@@ -130,21 +99,17 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
   ipcMain.on('end-vertical-drag', () => {
     if (!mainWindow || mainWindow.isDestroyed()) return
     const bounds = mainWindow.getBounds()
-    const [_, y] = mainWindow.getPosition()
+    const [, y] = mainWindow.getPosition()
 
-    // Save position based on window type
     const isPillView = bounds.width === WIDTH.PILL
     const isHoverView = bounds.width > WIDTH.PILL && bounds.height > HEIGHT.PILL
 
     if (isPillView) {
-      // Save pill position directly
       prefs.set('pillY', y)
       console.log('[POSITION] Saved pill Y position after drag:', y)
     } else if (isHoverView) {
-      // Only update pillY if it's a significant change to avoid erratic behavior
       const currentPillY = prefs.get('pillY') as number | null
       if (currentPillY === null || Math.abs(currentPillY - y) > 20) {
-        // Save hover Y position as pill position, but only for significant changes
         prefs.set('pillY', y)
         console.log('[POSITION] Updated pill Y position from hover position:', y)
       } else {
@@ -158,9 +123,7 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
       .catch(console.error)
   })
 
-  // ------------------------------------------------------------
-  // --- Full drag support (horizontal + vertical) ---
-  // ------------------------------------------------------------
+  // Full drag handlers (horizontal + vertical)
   ipcMain.on('start-drag', (_e, { mouseX, mouseY }) => {
     if (!mainWindow || mainWindow.isDestroyed()) return
     const bounds = mainWindow.getBounds()
@@ -205,169 +168,13 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
       mainWindow.setResizable(resizable)
       console.log(`[RESIZE] Window resizability set to: ${resizable}`)
 
-      // Important: If we're making the window resizable, make sure it has minimum dimensions
       if (resizable) {
         mainWindow.setMinimumSize(200, 200)
       } else {
-        // When disabling resizable mode, clear minimum size constraints
         mainWindow.setMinimumSize(1, 1)
       }
     } catch (err) {
       console.error('[RESIZE] Failed to set resizability:', err)
-    }
-  })
-
-  // Register IPC handler for opening external links
-  ipcMain.on('open-external', (_event, url) => {
-    // Only allow specific trusted URLs
-    shell.openExternal(url)
-    // if (url === 'https://meet.google.com/new') {
-    //   shell.openExternal(url)
-    // } else {
-    //   console.error('Attempted to open untrusted URL:', url)
-    // }
-  })
-
-  // Register IPC handler for creating new Google Meet
-  ipcMain.handle('start-google-meet', async () => {
-    const meetStartUrl = 'https://meet.google.com/new'
-
-    // Open in user's default browser
-    shell.openExternal(meetStartUrl)
-
-    // Open hidden browser window to capture redirect
-    return new Promise((resolve, reject) => {
-      const hiddenWin = new BrowserWindow({
-        show: false,
-        webPreferences: { sandbox: true }
-      })
-
-      hiddenWin.loadURL(meetStartUrl)
-
-      const cleanup = () => {
-        if (!hiddenWin.isDestroyed()) hiddenWin.destroy()
-      }
-
-      hiddenWin.webContents.on('did-redirect-navigation', (_e, url) => {
-        if (url.includes('https://meet.google.com/')) {
-          clipboard.writeText(url)
-          cleanup()
-          resolve(url)
-        }
-      })
-
-      hiddenWin.webContents.on('did-navigate', (_e, url) => {
-        if (url.includes('https://meet.google.com/')) {
-          clipboard.writeText(url)
-          cleanup()
-          resolve(url)
-        }
-      })
-
-      setTimeout(() => {
-        cleanup()
-        reject(new Error('Meet link fetch timeout'))
-      }, 10000)
-    })
-  })
-
-  // Register IPC handler for window opacity
-  ipcMain.on('pill:set-opacity', (_e, alpha: number) => {
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      setWindowOpacity(mainWindow, alpha)
-    }
-  })
-
-  // Register IPC handler for persisting last view before sleep
-  ipcMain.on('persist-last-view', (_event, view) => {
-    console.log('Persisting last view for sleep/wake:', view)
-    prefs.set('lastViewAfterSleep', view)
-  })
-
-  // ------------------------------------------------------------
-  // Clipboard history
-  // ------------------------------------------------------------
-
-  // Register IPC handler for clipboard history
-  ipcMain.handle('clipboard:get-history', () => {
-    return getClipboardHistory()
-  })
-
-  // Start clipboard polling with a callback that sends updates to renderer
-  startClipboardPolling((entry) => {
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send('clipboard:update', entry)
-    }
-  })
-
-  // Clean up polling on window close
-  if (mainWindow) {
-    mainWindow.on('closed', () => {
-      stopClipboardPolling()
-    })
-  }
-
-  // ------------------------------------------------------------
-  // Notes API
-  // ------------------------------------------------------------
-
-  ipcMain.handle('notes:getAll', () => {
-    return NotesDB.getAllNotes()
-  })
-
-  ipcMain.handle('notes:getTrashed', () => {
-    return NotesDB.getTrashedNotes()
-  })
-
-  ipcMain.handle('notes:insert', (_event, note) => {
-    return NotesDB.insertNote(note)
-  })
-
-  ipcMain.handle('notes:update', (_event, { id, fields }) => {
-    return NotesDB.updateNote(id, fields)
-  })
-
-  ipcMain.handle('notes:trash', (_event, id) => {
-    return NotesDB.trashNote(id)
-  })
-
-  ipcMain.handle('notes:restore', (_event, id) => {
-    return NotesDB.restoreNote(id)
-  })
-
-  ipcMain.handle('notes:deleteForever', (_event, id) => {
-    return NotesDB.permanentlyDeleteNote(id)
-  })
-
-  ipcMain.handle('notes:saveImage', async (_event, { filename, file }) => {
-    try {
-      const { app } = require('electron')
-      const path = require('path')
-      const fs = require('fs').promises
-
-      // Create images directory if it doesn't exist
-      const imagesDir = path.join(app.getPath('userData'), 'images')
-      await fs.mkdir(imagesDir, { recursive: true })
-
-      // Generate a unique filename
-      const timestamp = Date.now()
-      const extension = path.extname(filename) || '.png'
-      const uniqueFilename = `${timestamp}_${path.basename(filename, extension)}${extension}`
-      const filePath = path.join(imagesDir, uniqueFilename)
-
-      // Convert ArrayBuffer to Buffer
-      const buffer = Buffer.from(file)
-
-      // Save the file
-      await fs.writeFile(filePath, buffer)
-
-      console.log('[IMAGES] Saved image to:', filePath)
-
-      // Return the file path for use in the editor
-      return `file://${filePath}`
-    } catch (error) {
-      console.error('[IMAGES] Error saving image:', error)
-      return null
     }
   })
 
@@ -382,7 +189,14 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
     }
   })
 
-  // Add handler to get current window bounds
+  // Window opacity handler
+  ipcMain.on('pill:set-opacity', (_e, alpha: number) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      setWindowOpacity(mainWindow, alpha)
+    }
+  })
+
+  // Get current window bounds
   ipcMain.handle('get-window-bounds', () => {
     if (!mainWindow || mainWindow.isDestroyed()) {
       console.warn('[DEBUG] get-window-bounds called but window is not available')
@@ -393,7 +207,7 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
     return bounds
   })
 
-  // Handler for saving hover view size
+  // Hover size management handlers
   ipcMain.on('save-hover-size', (_event, dimensions) => {
     console.log('[HOVER] save-hover-size called with dimensions:', dimensions)
     if (!dimensions || typeof dimensions !== 'object') {
@@ -406,7 +220,6 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
       console.log('[HOVER] Saving hover dimensions:', { width, height })
       saveHoverSize(width, height)
 
-      // Debug: read back from prefs to confirm
       const savedSize = getSavedHoverSize()
       console.log('[HOVER] Confirmed saved dimensions:', savedSize)
     } else {
@@ -414,22 +227,18 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
     }
   })
 
-  // Handler for getting saved hover size
   ipcMain.handle('get-hover-size', () => {
     const size = getSavedHoverSize()
     console.log('[HOVER] Retrieved saved hover dimensions:', size)
     return size
   })
 
-  // Add a dedicated function to apply hover view dimensions
   ipcMain.on('fix-hover-dimensions', () => {
     if (!mainWindow || mainWindow.isDestroyed()) return
 
     const { width, height } = getSavedHoverSize()
     console.log('[HOVER] Fixing hover dimensions to:', { width, height })
 
-    // Validate dimensions - only apply if they're reasonable hover dimensions
-    // This helps prevent applying pill dimensions to hover view
     if (width === WIDTH.PILL || height === HEIGHT.PILL || width < 100 || height < 100) {
       console.log('[HOVER] Invalid hover dimensions (too small), using defaults:', {
         width: WIDTH.HOVER,
@@ -447,17 +256,22 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
         false
       )
     } else {
-      // Apply the validated dimensions
       const bounds = mainWindow.getBounds()
       mainWindow.setBounds(
         {
           x: bounds.x,
           y: bounds.y,
-          width,
-          height
+          width: width,
+          height: height
         },
         false
       )
     }
+  })
+
+  // Persist last view before sleep
+  ipcMain.on('persist-last-view', (_event, view) => {
+    console.log('Persisting last view for sleep/wake:', view)
+    prefs.set('lastViewAfterSleep', view)
   })
 }
