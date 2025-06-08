@@ -8,11 +8,11 @@ import BulletList from '@tiptap/extension-bullet-list'
 import ListItem from '@tiptap/extension-list-item'
 
 import { useNotesStore } from '../store/notesStore'
-import { 
-  Bold, 
-  Italic, 
-  List, 
-  CheckSquare, 
+import {
+  Bold,
+  Italic,
+  List,
+  CheckSquare,
   ImageIcon,
   Heading1,
   Heading2,
@@ -30,47 +30,53 @@ const NotesEditor: React.FC = () => {
     extensions: [
       StarterKit.configure({
         bulletList: false, // We'll use our custom one
-        listItem: false,   // We'll use our custom one
+        listItem: false // We'll use our custom one
       }),
       BulletList.configure({
         HTMLAttributes: {
-          class: 'bullet-list',
-        },
+          class: 'bullet-list'
+        }
       }),
       ListItem,
       TaskList.configure({
         HTMLAttributes: {
-          class: 'task-list',
-        },
+          class: 'task-list'
+        }
       }),
       TaskItem.configure({
         nested: true,
         HTMLAttributes: {
-          class: 'task-item',
-        },
+          class: 'task-item'
+        }
       }),
       Image.configure({
         HTMLAttributes: {
-          class: 'editor-image',
-        },
-      }),
+          class: 'editor-image'
+        }
+      })
     ],
     content: note?.content || '',
     editorProps: {
       attributes: {
-        class: 'prose prose-invert max-w-none focus:outline-none min-h-[400px] p-4',
-      },
+        class: 'prose prose-invert max-w-none focus:outline-none min-h-[400px] p-4'
+      }
     },
     onUpdate: ({ editor }) => {
       const content = editor.getHTML()
       autoSave({ content })
-    },
+    }
   })
 
   const autoSave = (field: { content?: string; title?: string }) => {
     if (!note) return
     if (debounceRef.current) clearTimeout(debounceRef.current)
     debounceRef.current = setTimeout(() => {
+      console.log('[EDITOR] Auto-saving:', {
+        noteId: note.id,
+        field,
+        contentLength: field.content?.length || 0,
+        hasImage: field.content?.includes('<img') || false
+      })
       updateNote(note.id, {
         ...field,
         updatedAt: new Date().toISOString()
@@ -83,9 +89,22 @@ const NotesEditor: React.FC = () => {
       // Update editor content when note changes
       const currentContent = editor.getHTML()
       const noteContent = typeof note.content === 'string' ? note.content : ''
-      
+
+      console.log('[EDITOR] Loading note content:', {
+        noteId: note.id,
+        noteType: note.type,
+        currentContentLength: currentContent.length,
+        noteContentLength: noteContent.length,
+        currentHasImage: currentContent.includes('<img'),
+        noteHasImage: noteContent.includes('<img'),
+        contentPreview: noteContent.substring(0, 200) + (noteContent.length > 200 ? '...' : '')
+      })
+
       if (currentContent !== noteContent) {
+        console.log('[EDITOR] Setting new content')
         editor.commands.setContent(noteContent)
+      } else {
+        console.log('[EDITOR] Content unchanged, skipping setContent')
       }
     }
   }, [note?.id, editor])
@@ -101,21 +120,38 @@ const NotesEditor: React.FC = () => {
     const input = document.createElement('input')
     input.type = 'file'
     input.accept = 'image/*'
-    
-    input.onchange = (e) => {
+
+    input.onchange = async (e) => {
       const file = (e.target as HTMLInputElement).files?.[0]
       if (file && editor) {
-        const reader = new FileReader()
-        reader.onload = (event) => {
-          const result = event.target?.result as string
-          if (result) {
-            editor.chain().focus().setImage({ src: result }).run()
+        try {
+          console.log('[EDITOR] Processing image file:', {
+            name: file.name,
+            size: file.size,
+            type: file.type
+          })
+
+          // Convert file to ArrayBuffer for IPC transfer
+          const arrayBuffer = await file.arrayBuffer()
+
+          // Save the image file and get the path
+          const imagePath = await window.electronAPI.notesAPI.saveImage(file.name, arrayBuffer)
+
+          if (imagePath) {
+            console.log('[EDITOR] Image saved to:', imagePath)
+            // Use the file path instead of base64
+            editor.chain().focus().setImage({ src: imagePath }).run()
+          } else {
+            console.error('[EDITOR] Failed to save image')
+            alert('Failed to save image. Please try again.')
           }
+        } catch (error) {
+          console.error('[EDITOR] Error processing image:', error)
+          alert('Error processing image. Please try again.')
         }
-        reader.readAsDataURL(file)
       }
     }
-    
+
     // Also offer URL option
     const choice = window.confirm('Upload image file? (Cancel for URL)')
     if (choice) {
@@ -123,6 +159,7 @@ const NotesEditor: React.FC = () => {
     } else {
       const url = window.prompt('Enter image URL:')
       if (url && editor) {
+        console.log('[EDITOR] Adding image from URL:', url)
         editor.chain().focus().setImage({ src: url }).run()
       }
     }
@@ -130,17 +167,13 @@ const NotesEditor: React.FC = () => {
 
   if (!note) {
     return (
-      <div className="flex-1 flex items-center justify-center text-zinc-400">
-        No note selected
-      </div>
+      <div className="flex-1 flex items-center justify-center text-zinc-400">No note selected</div>
     )
   }
 
   if (!editor) {
     return (
-      <div className="flex-1 flex items-center justify-center text-zinc-400">
-        Loading editor...
-      </div>
+      <div className="flex-1 flex items-center justify-center text-zinc-400">Loading editor...</div>
     )
   }
 
@@ -172,7 +205,7 @@ const NotesEditor: React.FC = () => {
           >
             <Bold size={16} />
           </button>
-          
+
           <button
             onClick={() => editor.chain().focus().toggleItalic().run()}
             className={`p-2 rounded hover:bg-zinc-600 transition-colors ${
@@ -264,15 +297,13 @@ const NotesEditor: React.FC = () => {
 
       {/* Editor */}
       <div className="flex-1 overflow-y-auto">
-        <EditorContent 
-          editor={editor} 
-          className="h-full text-white"
-        />
+        <EditorContent editor={editor} className="h-full text-white" />
       </div>
 
       {/* Custom styles */}
-      <style dangerouslySetInnerHTML={{
-        __html: `
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
           .ProseMirror {
             outline: none;
             color: white;
@@ -388,7 +419,8 @@ const NotesEditor: React.FC = () => {
             margin: 0.25rem 0;
           }
         `
-      }} />
+        }}
+      />
     </div>
   )
 }

@@ -339,6 +339,38 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
     return NotesDB.permanentlyDeleteNote(id)
   })
 
+  ipcMain.handle('notes:saveImage', async (_event, { filename, file }) => {
+    try {
+      const { app } = require('electron')
+      const path = require('path')
+      const fs = require('fs').promises
+      
+      // Create images directory if it doesn't exist
+      const imagesDir = path.join(app.getPath('userData'), 'images')
+      await fs.mkdir(imagesDir, { recursive: true })
+      
+      // Generate a unique filename
+      const timestamp = Date.now()
+      const extension = path.extname(filename) || '.png'
+      const uniqueFilename = `${timestamp}_${path.basename(filename, extension)}${extension}`
+      const filePath = path.join(imagesDir, uniqueFilename)
+      
+      // Convert ArrayBuffer to Buffer
+      const buffer = Buffer.from(file)
+      
+      // Save the file
+      await fs.writeFile(filePath, buffer)
+      
+      console.log('[IMAGES] Saved image to:', filePath)
+      
+      // Return the file path for use in the editor
+      return `file://${filePath}`
+    } catch (error) {
+      console.error('[IMAGES] Error saving image:', error)
+      return null
+    }
+  })
+
   ipcMain.on('set-main-window-resizable', (_event, resizable: boolean) => {
     if (mainWindow && !mainWindow.isDestroyed()) {
       try {

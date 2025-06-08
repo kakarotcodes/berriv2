@@ -27,7 +27,7 @@ const NotesSidebar: React.FC = () => {
     const newNote: Note = {
       id: crypto.randomUUID(),
       title: '',
-      type: 'text',
+      type: 'richtext',
       content: '',
       createdAt: now,
       updatedAt: now
@@ -52,7 +52,7 @@ const NotesSidebar: React.FC = () => {
       </div>
 
       {/* Grouped Notes */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto dark-scrollbar">
         {groupedNotes.map((section) => (
           <div key={section.label}>
             <div className="text-sm text-zinc-400 uppercase font-semibold px-4 pt-3 pb-1">

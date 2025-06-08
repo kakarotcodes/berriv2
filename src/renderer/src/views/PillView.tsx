@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
 // views/PillView.tsx
 import { useState, useEffect } from 'react'
 import { LayoutGrid, ClipboardPen, History, Video, CalendarDays } from 'lucide-react'

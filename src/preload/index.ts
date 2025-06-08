@@ -119,7 +119,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     updateNote: (id, fields) => ipcRenderer.invoke('notes:update', { id, fields }),
     trashNote: (id) => ipcRenderer.invoke('notes:trash', id),
     restoreNote: (id) => ipcRenderer.invoke('notes:restore', id),
-    permanentlyDeleteNote: (id) => ipcRenderer.invoke('notes:deleteForever', id)
+    permanentlyDeleteNote: (id) => ipcRenderer.invoke('notes:deleteForever', id),
+    saveImage: (filename, arrayBuffer) => ipcRenderer.invoke('notes:saveImage', { filename, file: arrayBuffer })
   },
 
   // Fix hover dimensions
