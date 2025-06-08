@@ -1,2 +1,2 @@
 // Clipboard utility functions
-export * from './formatters' 
+export * from './formatters'

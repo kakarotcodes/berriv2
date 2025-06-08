@@ -8,4 +8,4 @@ export interface ClipboardState {
   history: ClipboardEntry[]
   isLoading: boolean
   error: string | null
-} 
+}

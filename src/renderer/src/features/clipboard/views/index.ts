@@ -1,1 +1,1 @@
-export { default as ClipboardViewHover } from './ClipboardViewHover' 
+export { default as ClipboardViewHover } from './ClipboardViewHover'

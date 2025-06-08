@@ -1,8 +1,4 @@
-import React from 'react'
-
-type Props = {}
-
-const NoteItem = (props: Props) => {
+const NoteItem = () => {
   return <div>NoteItem</div>
 }
 

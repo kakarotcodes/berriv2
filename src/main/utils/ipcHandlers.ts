@@ -59,7 +59,7 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
       .catch(console.error)
   })
 
-  let lastUpdate = 0
+  const lastUpdate = 0
   ipcMain.on('update-vertical-drag', (_e, _: number) => {
     if (!dragState.isDragging || !mainWindow) return
 
@@ -92,7 +92,7 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
         // Calculate relative mouse movement
         const dx = cursor.x - dragState.startMouseX
         // Apply the movement to the original window position
-        let calculatedX = dragState.startWindowX + dx
+        const calculatedX = dragState.startWindowX + dx
 
         // Ensure window stays within screen bounds
         const minX = area.x

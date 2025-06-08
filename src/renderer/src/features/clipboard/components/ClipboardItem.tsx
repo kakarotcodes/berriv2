@@ -1,6 +1,6 @@
 // dependencies
 import { useEffect, useRef, useState, memo } from 'react'
-import { Copy, ChevronDown, ChevronUp, Check } from 'lucide-react'
+import { Copy, ChevronDown, Check } from 'lucide-react'
 import { DateTime } from 'luxon'
 
 type ClipboardItemProps = {
@@ -38,12 +38,14 @@ const ClipboardItem = memo(({ content, timestamp }: ClipboardItemProps) => {
   }
 
   // Check if content is likely code
-  const isCode = content.includes('{') && content.includes('}') && 
-                 (content.includes('function') || 
-                  content.includes('=>') || 
-                  content.includes('const') || 
-                  content.includes('let') || 
-                  content.includes('var'))
+  const isCode =
+    content.includes('{') &&
+    content.includes('}') &&
+    (content.includes('function') ||
+      content.includes('=>') ||
+      content.includes('const') ||
+      content.includes('let') ||
+      content.includes('var'))
 
   // Handler for clicking on the item
   const handleItemClick = () => {
@@ -52,14 +54,14 @@ const ClipboardItem = memo(({ content, timestamp }: ClipboardItemProps) => {
       setExpanded(true)
       return
     }
-    
+
     // If expanded and text is selected, don't collapse
     const selection = window.getSelection()
     if (selection && selection.toString().trim() !== '') {
       // User is selecting text, don't collapse
       return
     }
-    
+
     // Otherwise toggle expanded state
     setExpanded((prev) => !prev)
   }
@@ -72,18 +74,20 @@ const ClipboardItem = memo(({ content, timestamp }: ClipboardItemProps) => {
       onClick={handleItemClick}
     >
       <div className="flex justify-between items-start gap-2">
-        <div 
-          ref={textRef} 
+        <div
+          ref={textRef}
           className={`pr-2 text-sm ${!expanded ? 'truncate' : ''} ${
             isCode && expanded ? 'font-mono text-xs whitespace-pre-wrap' : ''
           } max-w-full break-words ${!expanded ? 'overflow-hidden' : 'overflow-auto'}`}
-          style={{ 
+          style={{
             wordBreak: 'break-word',
             overflowWrap: 'break-word'
           }}
         >
           {content}
-          <p className="text-[8px] text-zinc-400 mt-1">{DateTime.fromMillis(timestamp).toFormat('dd MMM yyyy HH:mm')}</p>
+          <p className="text-[8px] text-zinc-400 mt-1">
+            {DateTime.fromMillis(timestamp).toFormat('dd MMM yyyy HH:mm')}
+          </p>
         </div>
 
         <div className="flex-shrink-0 flex items-center gap-2">

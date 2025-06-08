@@ -81,18 +81,19 @@ const serializeContent = (note: Note): string => {
     // Fallback - stringify anything else
     result = JSON.stringify(note.content)
   }
-  
+
   console.log('[DB] Serializing content:', {
     noteId: note.id,
     noteType: note.type,
     contentType: typeof note.content,
     isArray: Array.isArray(note.content),
-    originalLength: typeof note.content === 'string' ? note.content.length : JSON.stringify(note.content).length,
+    originalLength:
+      typeof note.content === 'string' ? note.content.length : JSON.stringify(note.content).length,
     serializedLength: result.length,
     hasImage: result.includes('<img'),
     preview: result.substring(0, 200) + (result.length > 200 ? '...' : '')
   })
-  
+
   return result
 }
 
@@ -113,16 +114,22 @@ const deserializeContent = (rawNote: any): Note => {
         content: rawNote.content
       }
     }
-    
+
     console.log('[DB] Deserializing content:', {
       noteId: rawNote.id,
       noteType: rawNote.type,
       rawContentLength: rawNote.content?.length || 0,
-      resultContentLength: typeof result.content === 'string' ? result.content.length : JSON.stringify(result.content).length,
+      resultContentLength:
+        typeof result.content === 'string'
+          ? result.content.length
+          : JSON.stringify(result.content).length,
       hasImage: typeof result.content === 'string' && result.content.includes('<img'),
-      preview: typeof result.content === 'string' ? result.content.substring(0, 200) + (result.content.length > 200 ? '...' : '') : 'Array content'
+      preview:
+        typeof result.content === 'string'
+          ? result.content.substring(0, 200) + (result.content.length > 200 ? '...' : '')
+          : 'Array content'
     })
-    
+
     return result
   } catch (err) {
     console.warn(`Failed to parse content for note ${rawNote.id}, using raw content`, err)
@@ -164,12 +171,16 @@ export const NotesDB = {
 
   updateNote: (id: string, fields: Partial<Omit<Note, 'id'>>) => {
     // Get the current note to determine type for content serialization
-    const currentNote = db.prepare(`SELECT type FROM notes WHERE id = ?`).get(id) as { type: string } | undefined
-    
+    const currentNote = db.prepare(`SELECT type FROM notes WHERE id = ?`).get(id) as
+      | { type: string }
+      | undefined
+
     const preparedFields = {
       ...fields,
       ...(fields.content !== undefined && {
-        content: currentNote ? serializeContent({ ...fields, type: currentNote.type } as Note) : JSON.stringify(fields.content)
+        content: currentNote
+          ? serializeContent({ ...fields, type: currentNote.type } as Note)
+          : JSON.stringify(fields.content)
       })
     }
 

@@ -46,7 +46,11 @@ const NotesSidebar: React.FC = () => {
       {/* Header */}
       <div className="p-4 flex items-center justify-start border-b border-zinc-800">
         <h2 className="text-lg font-semibold">Notes</h2>
-        <button onClick={handleAddNote} className="p-1 hover:bg-zinc-700 rounded ml-4" title="New Note">
+        <button
+          onClick={handleAddNote}
+          className="p-1 hover:bg-zinc-700 rounded ml-4"
+          title="New Note"
+        >
           <Plus size={18} />
         </button>
       </div>

@@ -66,9 +66,11 @@ export function prepareForInsert<T extends Omit<DatabaseEntity, 'createdAt' | 'u
 /**
  * Prepare entity for update (set updatedAt)
  */
-export function prepareForUpdate<T extends Partial<DatabaseEntity>>(entity: T): T & { updatedAt: string } {
+export function prepareForUpdate<T extends Partial<DatabaseEntity>>(
+  entity: T
+): T & { updatedAt: string } {
   return {
     ...entity,
     updatedAt: getCurrentTimestamp()
   }
-} 
+}

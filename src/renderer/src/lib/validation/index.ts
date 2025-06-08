@@ -24,7 +24,11 @@ export function createValidationState(): ValidationState {
 /**
  * Check if value is required (not null, undefined, or empty string)
  */
-export function required(state: ValidationState, value: unknown, fieldName: string): ValidationState {
+export function required(
+  state: ValidationState,
+  value: unknown,
+  fieldName: string
+): ValidationState {
   if (value === null || value === undefined || value === '') {
     state.errors.push(`${fieldName} is required`)
   }
@@ -34,7 +38,13 @@ export function required(state: ValidationState, value: unknown, fieldName: stri
 /**
  * Check string length
  */
-export function stringLength(state: ValidationState, value: string, min: number, max: number, fieldName: string): ValidationState {
+export function stringLength(
+  state: ValidationState,
+  value: string,
+  min: number,
+  max: number,
+  fieldName: string
+): ValidationState {
   if (typeof value === 'string') {
     if (value.length < min) {
       state.errors.push(`${fieldName} must be at least ${min} characters`)
@@ -72,7 +82,11 @@ export function url(state: ValidationState, value: string, fieldName: string): V
 /**
  * Custom validation function
  */
-export function custom(state: ValidationState, predicate: boolean, errorMessage: string): ValidationState {
+export function custom(
+  state: ValidationState,
+  predicate: boolean,
+  errorMessage: string
+): ValidationState {
   if (!predicate) {
     state.errors.push(errorMessage)
   }
@@ -121,4 +135,4 @@ export const validate = {
     stringLength(state, content, 1, 10000, 'Clipboard content')
     return getResult(state)
   }
-} 
+}

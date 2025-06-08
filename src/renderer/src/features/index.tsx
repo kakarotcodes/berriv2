@@ -52,13 +52,13 @@ export const features: FeatureModule[] = [
 
 // Helper to get feature by id
 export function getFeatureById(id: string): FeatureModule | undefined {
-  return features.find(feature => feature.id === id)
+  return features.find((feature) => feature.id === id)
 }
 
 // Initialize all features
 export async function initializeFeatures(): Promise<void> {
   console.log('[FEATURES] Initializing all features...')
-  
+
   for (const feature of features) {
     try {
       if (feature.initialize) {
@@ -69,14 +69,14 @@ export async function initializeFeatures(): Promise<void> {
       console.error(`[FEATURES] Failed to initialize ${feature.name}:`, error)
     }
   }
-  
+
   console.log('[FEATURES] All features initialized')
 }
 
 // Cleanup all features
 export function cleanupFeatures(): void {
   console.log('[FEATURES] Cleaning up all features...')
-  
+
   for (const feature of features) {
     try {
       if (feature.cleanup) {
@@ -87,6 +87,6 @@ export function cleanupFeatures(): void {
       console.error(`[FEATURES] Failed to cleanup ${feature.name}:`, error)
     }
   }
-  
+
   console.log('[FEATURES] All features cleaned up')
-} 
+}

@@ -120,13 +120,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
     trashNote: (id) => ipcRenderer.invoke('notes:trash', id),
     restoreNote: (id) => ipcRenderer.invoke('notes:restore', id),
     permanentlyDeleteNote: (id) => ipcRenderer.invoke('notes:deleteForever', id),
-    saveImage: (filename, arrayBuffer) => ipcRenderer.invoke('notes:saveImage', { filename, file: arrayBuffer })
+    saveImage: (filename, arrayBuffer) =>
+      ipcRenderer.invoke('notes:saveImage', { filename, file: arrayBuffer })
   },
 
   // Fix hover dimensions
   fixHoverDimensions: () => ipcRenderer.send('fix-hover-dimensions'),
-  
+
   // Hover size management
   saveHoverSize: (dimensions) => ipcRenderer.send('save-hover-size', dimensions),
-  getSavedHoverSize: () => ipcRenderer.invoke('get-hover-size'),
+  getSavedHoverSize: () => ipcRenderer.invoke('get-hover-size')
 })

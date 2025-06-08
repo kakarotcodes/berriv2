@@ -10,7 +10,7 @@ import { DefaultView, PillView, HoverView, ExpandedView } from '@/views'
 /**
  * OverlayContainer - With all animations removed
  */
-const App: React.FC = memo(() => {
+const App = memo(() => {
   const { currentView, isTransitioning, setView } = useViewStore()
 
   // Memoized view component mapping
@@ -60,9 +60,7 @@ const App: React.FC = memo(() => {
   // If transitioning to or from a view, or transitioning in general,
   // show an empty window without any content
   if (isTransitioning) {
-    return (
-      <main className="w-screen h-screen animated-gradient"></main>
-    )
+    return <main className="w-screen h-screen animated-gradient"></main>
   }
 
   // Regular rendering without animations for all views
@@ -74,5 +72,7 @@ const App: React.FC = memo(() => {
     </main>
   )
 })
+
+App.displayName = 'App'
 
 export default App

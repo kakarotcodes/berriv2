@@ -49,4 +49,4 @@ export function isFeatureEnabled(feature: keyof AppConfig['features']): boolean 
 
 export function getWindowSize(type: keyof AppConfig['ui']['windowSizes']) {
   return config.ui.windowSizes[type]
-} 
+}

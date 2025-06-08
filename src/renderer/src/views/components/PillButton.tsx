@@ -30,9 +30,7 @@ const PillButton: React.FC<PillButtonProps> = ({
       id={draggable ? 'drag-handle' : undefined}
       style={{ willChange: 'transform, background-color' }}
     >
-      <div className="pill-icon-hover">
-        {icon}
-      </div>
+      <div className="pill-icon-hover">{icon}</div>
     </button>
   )
 }

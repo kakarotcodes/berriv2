@@ -49,4 +49,4 @@ export function registerExternalHandlers() {
       }, 10000)
     })
   })
-} 
+}

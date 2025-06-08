@@ -1,1 +1,1 @@
-export * from './clipboardHooks' 
+export * from './clipboardHooks'

@@ -1,1 +1,1 @@
-export * from './clipboardStore' 
+export * from './clipboardStore'

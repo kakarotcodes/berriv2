@@ -35,7 +35,7 @@ const PillLayout: React.FC<PillLayoutProps> = ({ children }) => {
       id="pill-container"
       className="w-full h-full text-white flex flex-col gap-y-[15px] hardware-accelerated rounded-lg pill-glow"
       style={{
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        backgroundColor: 'rgba(0, 0, 0, 0.8)'
       }}
     >
       <FuturisticGradientDef />

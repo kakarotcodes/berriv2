@@ -18,11 +18,7 @@ const HoverView: React.FC = () => {
 
   return (
     <HoverLayout>
-      {feature ? (
-        React.createElement(feature.component)
-      ) : (
-        <div>No View Found</div>
-      )}
+      {feature ? React.createElement(feature.component) : <div>No View Found</div>}
     </HoverLayout>
   )
 }
