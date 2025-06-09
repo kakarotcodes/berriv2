@@ -62,6 +62,7 @@ interface ElectronAPI {
     trashNote: (id: string) => Promise<void>
     restoreNote: (id: string) => Promise<void>
     permanentlyDeleteNote: (id: string) => Promise<void>
+    saveImage: (filename: string, arrayBuffer: ArrayBuffer) => Promise<string | null>
   }
 
   // Main window resizability

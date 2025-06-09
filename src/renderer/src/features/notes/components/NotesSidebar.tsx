@@ -27,7 +27,7 @@ const NotesSidebar: React.FC = () => {
     const newNote: Note = {
       id: crypto.randomUUID(),
       title: '',
-      type: 'text',
+      type: 'richtext',
       content: '',
       createdAt: now,
       updatedAt: now
@@ -46,13 +46,17 @@ const NotesSidebar: React.FC = () => {
       {/* Header */}
       <div className="p-4 flex items-center justify-start border-b border-zinc-800">
         <h2 className="text-lg font-semibold">Notes</h2>
-        <button onClick={handleAddNote} className="p-1 hover:bg-zinc-700 rounded ml-4" title="New Note">
+        <button
+          onClick={handleAddNote}
+          className="p-1 hover:bg-zinc-700 rounded ml-4"
+          title="New Note"
+        >
           <Plus size={18} />
         </button>
       </div>
 
       {/* Grouped Notes */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto dark-scrollbar">
         {groupedNotes.map((section) => (
           <div key={section.label}>
             <div className="text-sm text-zinc-400 uppercase font-semibold px-4 pt-3 pb-1">

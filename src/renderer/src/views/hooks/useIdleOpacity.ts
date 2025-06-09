@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 
 /**
  * React hook that manages window opacity based on user activity
- * 
+ *
  * @param activeAlpha - Opacity when user is active (default: 1)
  * @param idleAlpha - Opacity when user is idle (default: 0.3)
  * @param idleDelay - Time in ms before considering user idle (default: 5000)
@@ -29,13 +29,7 @@ export function useIdleOpacity(activeAlpha = 1, idleAlpha = 0.3, idleDelay = 700
     }
 
     // Activity events that should reset the idle timer
-    const activityEvents = [
-      'mousemove',
-      'mousedown',
-      'wheel',
-      'keydown',
-      'touchstart'
-    ]
+    const activityEvents = ['mousemove', 'mousedown', 'wheel', 'keydown', 'touchstart']
 
     // Add event listeners for all activity events
     activityEvents.forEach((eventType) => {
@@ -67,4 +61,4 @@ export function useIdleOpacity(activeAlpha = 1, idleAlpha = 0.3, idleDelay = 700
       }
     }
   }, [activeAlpha, idleAlpha, idleDelay])
-} 
+}

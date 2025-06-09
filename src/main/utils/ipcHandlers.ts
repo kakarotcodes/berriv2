@@ -59,7 +59,7 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
       .catch(console.error)
   })
 
-  let lastUpdate = 0
+  const lastUpdate = 0
   ipcMain.on('update-vertical-drag', (_e, _: number) => {
     if (!dragState.isDragging || !mainWindow) return
 
@@ -92,7 +92,7 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
         // Calculate relative mouse movement
         const dx = cursor.x - dragState.startMouseX
         // Apply the movement to the original window position
-        let calculatedX = dragState.startWindowX + dx
+        const calculatedX = dragState.startWindowX + dx
 
         // Ensure window stays within screen bounds
         const minX = area.x
@@ -142,8 +142,8 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
       console.log('[POSITION] Saved pill Y position after drag:', y)
     } else if (isHoverView) {
       // Only update pillY if it's a significant change to avoid erratic behavior
-      const currentPillY = prefs.get('pillY') as number | null;
-      if (currentPillY === null || Math.abs(currentPillY - y) > 20) { 
+      const currentPillY = prefs.get('pillY') as number | null
+      if (currentPillY === null || Math.abs(currentPillY - y) > 20) {
         // Save hover Y position as pill position, but only for significant changes
         prefs.set('pillY', y)
         console.log('[POSITION] Updated pill Y position from hover position:', y)
@@ -204,13 +204,13 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
     try {
       mainWindow.setResizable(resizable)
       console.log(`[RESIZE] Window resizability set to: ${resizable}`)
-      
+
       // Important: If we're making the window resizable, make sure it has minimum dimensions
       if (resizable) {
-        mainWindow.setMinimumSize(200, 200);
+        mainWindow.setMinimumSize(200, 200)
       } else {
         // When disabling resizable mode, clear minimum size constraints
-        mainWindow.setMinimumSize(1, 1);
+        mainWindow.setMinimumSize(1, 1)
       }
     } catch (err) {
       console.error('[RESIZE] Failed to set resizability:', err)
@@ -339,6 +339,38 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
     return NotesDB.permanentlyDeleteNote(id)
   })
 
+  ipcMain.handle('notes:saveImage', async (_event, { filename, file }) => {
+    try {
+      const { app } = require('electron')
+      const path = require('path')
+      const fs = require('fs').promises
+
+      // Create images directory if it doesn't exist
+      const imagesDir = path.join(app.getPath('userData'), 'images')
+      await fs.mkdir(imagesDir, { recursive: true })
+
+      // Generate a unique filename
+      const timestamp = Date.now()
+      const extension = path.extname(filename) || '.png'
+      const uniqueFilename = `${timestamp}_${path.basename(filename, extension)}${extension}`
+      const filePath = path.join(imagesDir, uniqueFilename)
+
+      // Convert ArrayBuffer to Buffer
+      const buffer = Buffer.from(file)
+
+      // Save the file
+      await fs.writeFile(filePath, buffer)
+
+      console.log('[IMAGES] Saved image to:', filePath)
+
+      // Return the file path for use in the editor
+      return `file://${filePath}`
+    } catch (error) {
+      console.error('[IMAGES] Error saving image:', error)
+      return null
+    }
+  })
+
   ipcMain.on('set-main-window-resizable', (_event, resizable: boolean) => {
     if (mainWindow && !mainWindow.isDestroyed()) {
       try {
@@ -368,12 +400,12 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
       console.error('[HOVER] Invalid dimensions provided to save-hover-size:', dimensions)
       return
     }
-    
+
     const { width, height } = dimensions
     if (typeof width === 'number' && typeof height === 'number') {
       console.log('[HOVER] Saving hover dimensions:', { width, height })
       saveHoverSize(width, height)
-      
+
       // Debug: read back from prefs to confirm
       const savedSize = getSavedHoverSize()
       console.log('[HOVER] Confirmed saved dimensions:', savedSize)
@@ -381,44 +413,51 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
       console.error('[HOVER] Invalid width or height in save-hover-size:', dimensions)
     }
   })
-  
+
   // Handler for getting saved hover size
   ipcMain.handle('get-hover-size', () => {
     const size = getSavedHoverSize()
     console.log('[HOVER] Retrieved saved hover dimensions:', size)
     return size
   })
-  
+
   // Add a dedicated function to apply hover view dimensions
   ipcMain.on('fix-hover-dimensions', () => {
     if (!mainWindow || mainWindow.isDestroyed()) return
-    
+
     const { width, height } = getSavedHoverSize()
     console.log('[HOVER] Fixing hover dimensions to:', { width, height })
-    
+
     // Validate dimensions - only apply if they're reasonable hover dimensions
     // This helps prevent applying pill dimensions to hover view
-    if (width === WIDTH.PILL || height === HEIGHT.PILL || 
-        width < 100 || height < 100) {
-      console.log('[HOVER] Invalid hover dimensions (too small), using defaults:', 
-                  { width: WIDTH.HOVER, height: HEIGHT.HOVER })
-      
-      const bounds = mainWindow.getBounds()
-      mainWindow.setBounds({
-        x: bounds.x,
-        y: bounds.y,
+    if (width === WIDTH.PILL || height === HEIGHT.PILL || width < 100 || height < 100) {
+      console.log('[HOVER] Invalid hover dimensions (too small), using defaults:', {
         width: WIDTH.HOVER,
         height: HEIGHT.HOVER
-      }, false)
+      })
+
+      const bounds = mainWindow.getBounds()
+      mainWindow.setBounds(
+        {
+          x: bounds.x,
+          y: bounds.y,
+          width: WIDTH.HOVER,
+          height: HEIGHT.HOVER
+        },
+        false
+      )
     } else {
       // Apply the validated dimensions
       const bounds = mainWindow.getBounds()
-      mainWindow.setBounds({
-        x: bounds.x,
-        y: bounds.y,
-        width,
-        height
-      }, false)
+      mainWindow.setBounds(
+        {
+          x: bounds.x,
+          y: bounds.y,
+          width,
+          height
+        },
+        false
+      )
     }
   })
 }

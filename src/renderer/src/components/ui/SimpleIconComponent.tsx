@@ -17,7 +17,7 @@ const SimpleIconComponent: React.FC<SimpleIconProps> = ({ slug, size = 24 }) => 
       fill={`#ffffff`}
       xmlns="http://www.w3.org/2000/svg"
     >
-      {/* @ts-ignore */}
+      {/* @ts-ignore - simple-icons library has complex type definitions */}
       <path d={icon.path} />
     </svg>
   )

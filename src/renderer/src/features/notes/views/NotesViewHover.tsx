@@ -9,7 +9,7 @@ import NotesEditor from '../components/NotesEditor'
 import { useNotesStore } from '../store/notesStore'
 import { useElectron } from '../../../hooks/useElectron'
 import { useViewStore } from '../../../globalStore/viewStore'
-import { Maximize2, Minimize2 } from 'lucide-react'
+
 
 // Force interval-based window size checking
 const WINDOW_SIZE_CHECK_INTERVAL = 500 // Check every half second when resizable
@@ -209,7 +209,7 @@ const NotesViewHover: React.FC = () => {
   return (
     <div className="w-full h-full flex text-white text-sm animated-gradient" ref={containerRef}>
       {/* Sidebar */}
-      <div style={{ width: `${leftWidth}%` }} className="h-full overflow-hidden">
+      <div style={{ width: `${leftWidth}%` }} className="h-full">
         <NotesSidebar />
       </div>
 

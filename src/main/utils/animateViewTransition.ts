@@ -43,31 +43,34 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
   // At startup, ALWAYS set isFirstTransitionToPill to true
   // to ensure we use the 130px top margin on first transition
   isFirstTransitionToPill = true
-  
+
   // Still load saved pill position for subsequent transitions
   const savedPillY = prefs.get('pillY') as number | undefined
   if (savedPillY !== undefined) {
-    logPositionInfo('Loaded saved pill position at startup, but will use 130px margin for first transition', savedPillY)
+    logPositionInfo(
+      'Loaded saved pill position at startup, but will use 130px margin for first transition',
+      savedPillY
+    )
     lastKnownPillY = savedPillY
   }
-  
+
   // Load saved hover positions
   const savedHoverX = prefs.get('hoverX') as number | undefined
   const savedHoverY = prefs.get('hoverY') as number | undefined
-  
+
   // Debug log for hover position
-  console.log('[POSITION] Raw hover position from prefs:', { 
-    hoverX: savedHoverX, 
+  console.log('[POSITION] Raw hover position from prefs:', {
+    hoverX: savedHoverX,
     hoverY: savedHoverY
   })
-  
+
   if (savedHoverX !== undefined) {
     lastKnownHoverX = savedHoverX
     logPositionInfo('Loaded saved hover X position at startup', savedHoverX)
   } else {
     console.log('[POSITION] No saved hover X position found')
   }
-  
+
   if (savedHoverY !== undefined) {
     lastKnownHoverY = savedHoverY
     logPositionInfo('Loaded saved hover Y position at startup', savedHoverY)
@@ -88,23 +91,32 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
         console.error('Invalid view type:', view)
         return false
       }
-      
+
       // Special case for hover view - load saved dimensions
       if (view === 'hover') {
         // Get hover dimensions from prefs
         const savedWidth = prefs.get('hoverWidth') as number | undefined
         const savedHeight = prefs.get('hoverHeight') as number | undefined
-        
+
         if (savedWidth && savedHeight) {
           // Validate dimensions - ensure we're not using pill dimensions for hover
-          if (savedWidth !== WIDTH.PILL && savedHeight !== HEIGHT.PILL &&
-              savedWidth > 100 && savedHeight > 100) { // Minimum reasonable size 
-            console.log('[POSITION] Using saved hover dimensions:', { width: savedWidth, height: savedHeight })
+          if (
+            savedWidth !== WIDTH.PILL &&
+            savedHeight !== HEIGHT.PILL &&
+            savedWidth > 100 &&
+            savedHeight > 100
+          ) {
+            // Minimum reasonable size
+            console.log('[POSITION] Using saved hover dimensions:', {
+              width: savedWidth,
+              height: savedHeight
+            })
             dimensions = { width: savedWidth, height: savedHeight }
           } else {
-            console.log('[POSITION] Saved hover dimensions invalid, using defaults:', 
-              { saved: { width: savedWidth, height: savedHeight }, 
-                using: viewDimensions.hover })
+            console.log('[POSITION] Saved hover dimensions invalid, using defaults:', {
+              saved: { width: savedWidth, height: savedHeight },
+              using: viewDimensions.hover
+            })
             dimensions = viewDimensions.hover
           }
         } else {
@@ -148,33 +160,43 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
         if (isFirstTransitionToPill) {
           // First transition to pill after app launch - ALWAYS use 130px from top
           targetY = workArea.y + PILL_FIRST_TOP_MARGIN
-          logPositionInfo('First transition to pill view - positioning with 130px top margin', targetY)
+          logPositionInfo(
+            'First transition to pill view - positioning with 130px top margin',
+            targetY
+          )
 
           // Reset the flag so subsequent transitions use saved position
           isFirstTransitionToPill = false
-        } 
+        }
         // Coming from hover view - special handling for subsequent transitions
-        else if (currentBounds.width === viewDimensions.hover.width && currentBounds.height === viewDimensions.hover.height) {
+        else if (
+          currentBounds.width === viewDimensions.hover.width &&
+          currentBounds.height === viewDimensions.hover.height
+        ) {
           targetY = currentBounds.y
           logPositionInfo('Coming from hover view, setting pill at hover Y position', targetY)
         }
         // Coming from default view - use saved pill position (don't use default view's position)
-        else if (currentBounds.width === viewDimensions.default.width && currentBounds.height === viewDimensions.default.height) {
+        else if (
+          currentBounds.width === viewDimensions.default.width &&
+          currentBounds.height === viewDimensions.default.height
+        ) {
           if (lastKnownPillY !== null) {
             targetY = lastKnownPillY
             logPositionInfo('Coming from default view, using saved pill position', targetY)
           } else {
             // Fallback if no saved position
             targetY = workArea.y + PILL_FIRST_TOP_MARGIN
-            logPositionInfo('Coming from default view, no saved pill position, using 130px top margin', targetY)
+            logPositionInfo(
+              'Coming from default view, no saved pill position, using 130px top margin',
+              targetY
+            )
           }
-        }
-        else if (lastKnownPillY !== null) {
+        } else if (lastKnownPillY !== null) {
           // Use the last known position from this session
           targetY = lastKnownPillY
           logPositionInfo('Using last known pill position', targetY)
-        } 
-        else {
+        } else {
           // Fallback - should rarely happen
           targetY = workArea.y + PILL_FIRST_TOP_MARGIN
           logPositionInfo('Using fallback pill position with 130px top margin', targetY)
@@ -194,50 +216,51 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
         // If we're leaving hover view, save its position for next time and update pill's position
         if (currentBounds.width === viewDimensions.hover.width) {
           // Save hover Y position to be used for pill's position next time
-          lastKnownPillY = currentBounds.y;
-          prefs.set('pillY', currentBounds.y);
-          logPositionInfo('Saved hover Y position to be used for pill', currentBounds.y);
+          lastKnownPillY = currentBounds.y
+          prefs.set('pillY', currentBounds.y)
+          logPositionInfo('Saved hover Y position to be used for pill', currentBounds.y)
         }
 
         // Position hover view at the pill's location if coming from pill view
         if (currentBounds.width === viewDimensions.pill.width) {
           // Use pill position with an offset from the right edge
-          const rightEdgeOffset = 20; // Space between hover view and right edge
-          
+          const rightEdgeOffset = 20 // Space between hover view and right edge
+
           // Use pill's Y position
-          targetY = currentBounds.y;
-          
+          targetY = currentBounds.y
+
           // Check if this is coming from the right side pill
           // The pill is typically positioned at the right edge
-          const isPillAtRightEdge = Math.abs((workArea.x + workArea.width - PILL_OFFSET) - currentBounds.x) < 5;
-          
+          const isPillAtRightEdge =
+            Math.abs(workArea.x + workArea.width - PILL_OFFSET - currentBounds.x) < 5
+
           if (isPillAtRightEdge) {
             // Position hover with space from right edge
-            targetX = workArea.x + workArea.width - dimensions.width - rightEdgeOffset;
-            logPositionInfo('Positioning hover with space from right edge', { targetX, targetY });
+            targetX = workArea.x + workArea.width - dimensions.width - rightEdgeOffset
+            logPositionInfo('Positioning hover with space from right edge', { targetX, targetY })
           } else {
             // Just use pill's exact position
-            targetX = currentBounds.x;
-            logPositionInfo('Positioning hover at exact pill location', { targetX, targetY });
+            targetX = currentBounds.x
+            logPositionInfo('Positioning hover at exact pill location', { targetX, targetY })
           }
         } else {
           // Otherwise use saved position or fallback to current position
-          targetX = currentBounds.x;
-          targetY = currentBounds.y;
-          logPositionInfo('Keeping current position for hover', { targetX, targetY });
+          targetX = currentBounds.x
+          targetY = currentBounds.y
+          logPositionInfo('Keeping current position for hover', { targetX, targetY })
         }
 
         // Ensure the position is within screen bounds
-        const minX = workArea.x;
-        const maxX = workArea.x + workArea.width - dimensions.width;
-        targetX = Math.max(minX, Math.min(maxX, targetX));
+        const minX = workArea.x
+        const maxX = workArea.x + workArea.width - dimensions.width
+        targetX = Math.max(minX, Math.min(maxX, targetX))
 
         // Ensure Y is within bounds for the hover size
-        const minY = workArea.y;
-        const maxY = workArea.y + workArea.height - dimensions.height;
-        targetY = Math.min(maxY, Math.max(minY, targetY));
+        const minY = workArea.y
+        const maxY = workArea.y + workArea.height - dimensions.height
+        targetY = Math.min(maxY, Math.max(minY, targetY))
 
-        logPositionInfo('Final hover view position', { targetX, targetY });
+        logPositionInfo('Final hover view position', { targetX, targetY })
       } else {
         // Other views: Centered in display
         targetX = workArea.x + (workArea.width - dimensions.width) / 2

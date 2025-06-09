@@ -22,13 +22,13 @@ const Switch: React.FC<SwitchProps> = ({ checked, onChange, size = 'default' }) 
       handleDiameter: 16
     }
   }
-  
+
   const { width, height, handleDiameter } = dimensions[size]
-  
+
   return (
-    <ReactSwitch 
-      onChange={onChange} 
-      checked={checked} 
+    <ReactSwitch
+      onChange={onChange}
+      checked={checked}
       className="react-switch"
       width={width}
       height={height}

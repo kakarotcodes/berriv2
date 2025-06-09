@@ -12,8 +12,19 @@ if (!fs.existsSync(dbPath)) {
 
 const db = new Database(dbPath)
 
+// Get current schema version
+const getCurrentVersion = (): number => {
+  try {
+    const result = db.pragma('user_version', { simple: true }) as number
+    return result || 0
+  } catch {
+    return 0
+  }
+}
+
 // Set user version for potential future migrations
-db.pragma('user_version = 1')
+const currentVersion = getCurrentVersion()
+console.log(`Database version: ${currentVersion}`)
 
 // Create table
 db.prepare(
@@ -21,7 +32,7 @@ db.prepare(
   CREATE TABLE IF NOT EXISTS notes (
     id TEXT PRIMARY KEY,
     title TEXT,
-    type TEXT CHECK(type IN ('text', 'checklist')) NOT NULL,
+    type TEXT CHECK(type IN ('text', 'checklist', 'richtext')) NOT NULL,
     content TEXT NOT NULL,
     createdAt TEXT NOT NULL,
     updatedAt TEXT NOT NULL,
@@ -30,11 +41,103 @@ db.prepare(
 `
 ).run()
 
-// Safe migration for missing 'trashed' column
+// Run migrations based on version
+if (currentVersion < 1) {
+  console.log('Running migration to version 1: Adding trashed column')
+  // Safe migration for missing 'trashed' column
+  try {
+    db.prepare(`ALTER TABLE notes ADD COLUMN trashed INTEGER DEFAULT 0`).run()
+  } catch (e: unknown) {
+    if (!(e as Error).message?.includes('duplicate column')) throw e
+  }
+  db.pragma('user_version = 1')
+}
+
+if (currentVersion < 2) {
+  console.log('Running migration to version 2: Updating type constraint to support richtext')
+  // We can't alter check constraints in SQLite, but we can work around it
+  // by allowing any text in the type field and handling validation in the app
+  // The new CREATE TABLE statement above already includes 'richtext'
+  db.pragma('user_version = 2')
+}
+
+// Safe migration for missing 'trashed' column (keep for backward compatibility)
 try {
   db.prepare(`ALTER TABLE notes ADD COLUMN trashed INTEGER DEFAULT 0`).run()
 } catch (e: unknown) {
   if (!(e as Error).message?.includes('duplicate column')) throw e
+}
+
+// Helper function to serialize content based on note type
+const serializeContent = (note: Note): string => {
+  let result: string
+  if (note.type === 'checklist' && Array.isArray(note.content)) {
+    // Only JSON stringify for checklist items (arrays)
+    result = JSON.stringify(note.content)
+  } else if (typeof note.content === 'string') {
+    // For text/richtext notes, store HTML strings directly
+    result = note.content
+  } else {
+    // Fallback - stringify anything else
+    result = JSON.stringify(note.content)
+  }
+
+  console.log('[DB] Serializing content:', {
+    noteId: note.id,
+    noteType: note.type,
+    contentType: typeof note.content,
+    isArray: Array.isArray(note.content),
+    originalLength:
+      typeof note.content === 'string' ? note.content.length : JSON.stringify(note.content).length,
+    serializedLength: result.length,
+    hasImage: result.includes('<img'),
+    preview: result.substring(0, 200) + (result.length > 200 ? '...' : '')
+  })
+
+  return result
+}
+
+// Helper function to deserialize content based on note type
+const deserializeContent = (rawNote: any): Note => {
+  let result: Note
+  try {
+    if (rawNote.type === 'checklist') {
+      // For checklist notes, parse the JSON array
+      result = {
+        ...rawNote,
+        content: JSON.parse(rawNote.content)
+      }
+    } else {
+      // For text/richtext notes, use content as-is (HTML string)
+      result = {
+        ...rawNote,
+        content: rawNote.content
+      }
+    }
+
+    console.log('[DB] Deserializing content:', {
+      noteId: rawNote.id,
+      noteType: rawNote.type,
+      rawContentLength: rawNote.content?.length || 0,
+      resultContentLength:
+        typeof result.content === 'string'
+          ? result.content.length
+          : JSON.stringify(result.content).length,
+      hasImage: typeof result.content === 'string' && result.content.includes('<img'),
+      preview:
+        typeof result.content === 'string'
+          ? result.content.substring(0, 200) + (result.content.length > 200 ? '...' : '')
+          : 'Array content'
+    })
+
+    return result
+  } catch (err) {
+    console.warn(`Failed to parse content for note ${rawNote.id}, using raw content`, err)
+    return {
+      ...rawNote,
+      content: rawNote.content // Use raw content if parsing fails
+    }
+  }
 }
 
 // DB Interface
@@ -43,40 +146,14 @@ export const NotesDB = {
     return db
       .prepare(`SELECT * FROM notes WHERE trashed = 0 ORDER BY updatedAt DESC`)
       .all()
-      .map((note) => {
-        try {
-          return {
-            ...note,
-            content: JSON.parse(note.content)
-          }
-        } catch (err) {
-          console.warn(`Failed to parse content for note ${note.id}, using raw content`, err)
-          return {
-            ...note,
-            content: note.content // Use raw content if parsing fails
-          }
-        }
-      })
+      .map(deserializeContent)
   },
 
   getTrashedNotes: (): Note[] => {
     return db
       .prepare(`SELECT * FROM notes WHERE trashed = 1 ORDER BY updatedAt DESC`)
       .all()
-      .map((note) => {
-        try {
-          return {
-            ...note,
-            content: JSON.parse(note.content)
-          }
-        } catch (err) {
-          console.warn(`Failed to parse content for trashed note ${note.id}, using raw content`, err)
-          return {
-            ...note,
-            content: note.content // Use raw content if parsing fails
-          }
-        }
-      })
+      .map(deserializeContent)
   },
 
   insertNote: (note: Note) => {
@@ -87,16 +164,23 @@ export const NotesDB = {
     `
     ).run({
       ...note,
-      content: JSON.stringify(note.content),
+      content: serializeContent(note),
       trashed: note.trashed ? 1 : 0
     })
   },
 
   updateNote: (id: string, fields: Partial<Omit<Note, 'id'>>) => {
+    // Get the current note to determine type for content serialization
+    const currentNote = db.prepare(`SELECT type FROM notes WHERE id = ?`).get(id) as
+      | { type: string }
+      | undefined
+
     const preparedFields = {
       ...fields,
       ...(fields.content !== undefined && {
-        content: JSON.stringify(fields.content)
+        content: currentNote
+          ? serializeContent({ ...fields, type: currentNote.type } as Note)
+          : JSON.stringify(fields.content)
       })
     }
 

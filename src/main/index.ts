@@ -3,7 +3,7 @@ import path from 'path'
 import { electronApp, optimizer } from '@electron-toolkit/utils'
 
 // utiles
-import { registerIpcHandlers } from './utils/ipcHandlers'
+import { registerAllHandlers } from './registerHandlers'
 import { registerViewHandlers } from './utils/animateViewTransition'
 import { cancelWindowResize } from './utils/windowResize'
 import { setupPowerMonitoring } from './utils/powerMonitor'
@@ -59,7 +59,7 @@ function createWindow(): void {
   mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
 
   // Register IPC handlers
-  registerIpcHandlers(mainWindow)
+  registerAllHandlers(mainWindow)
 
   // register view handlers
   registerViewHandlers(mainWindow)
