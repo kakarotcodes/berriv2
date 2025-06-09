@@ -11,11 +11,6 @@ interface AppConfig {
   ui: {
     defaultView: string
     animationDuration: number
-    windowSizes: {
-      pill: { width: number; height: number }
-      hover: { width: number; height: number }
-      default: { width: number; height: number }
-    }
   }
 }
 
@@ -31,12 +26,7 @@ const config: AppConfig = {
   },
   ui: {
     defaultView: 'pill',
-    animationDuration: 300,
-    windowSizes: {
-      pill: { width: 50, height: 200 },
-      hover: { width: 800, height: 500 },
-      default: { width: 400, height: 288 }
-    }
+    animationDuration: 300
   }
 }
 
@@ -47,6 +37,4 @@ export function isFeatureEnabled(feature: keyof AppConfig['features']): boolean 
   return config.features[feature]
 }
 
-export function getWindowSize(type: keyof AppConfig['ui']['windowSizes']) {
-  return config.ui.windowSizes[type]
-}
+// Window dimensions are managed in src/constants/constants.ts
