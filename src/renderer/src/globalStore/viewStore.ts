@@ -89,30 +89,26 @@ export const useViewStore = create<ViewState>()(
           // 2️⃣ Start the native window animation
           await window.electronAPI.animateViewTransition(view)
 
-          // 3️⃣ Wait for the real "done" signal instead of setTimeout
-          console.log(`[VIEW] Waiting for transition-done event for ${view}`)
+          // 3️⃣ Wait for the real "done" signal with fast fallback
           await new Promise<void>((resolve) => {
             let resolved = false
             
             const cleanup = window.electronAPI.onViewTransitionDone((completedView) => {
-              console.log(`[VIEW] Received transition-done event for: ${completedView}, expected: ${view}`)
               if (completedView === view && !resolved) {
                 resolved = true
                 cleanup()
-                console.log(`[VIEW] Resolving Promise for ${view}`)
                 resolve()
               }
             })
 
-            // Fallback timeout in case the event doesn't fire
+            // Quick fallback for snappy content loading
             setTimeout(() => {
               if (!resolved) {
-                console.warn(`[VIEW] Fallback timeout triggered for ${view} transition - resolving anyway`)
                 resolved = true
                 cleanup()
                 resolve()
               }
-            }, 1000)
+            }, 100) // Very fast fallback - 100ms
           })
 
           // Apply saved dimensions for hover view after animation completes

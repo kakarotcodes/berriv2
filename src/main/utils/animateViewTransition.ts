@@ -292,11 +292,11 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
         console.log(`[MAIN] Sent view-transition-done event for ${view}`)
       })
 
-      // Also add a fallback in case 'resized' doesn't fire
+      // Quick fallback for fast content loading
       setTimeout(() => {
         console.log(`[MAIN] Fallback timer for ${view} transition`)
         mainWindow.webContents.send('view-transition-done', view)
-      }, 500)
+      }, 80) // Very fast fallback
 
       return true
     } catch (error) {
