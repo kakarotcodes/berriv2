@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState, useCallback } from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import TaskList from '@tiptap/extension-task-list'
@@ -21,10 +21,11 @@ import {
 } from 'lucide-react'
 
 const NotesEditor: React.FC = () => {
-  const { getSelectedNote, updateNote } = useNotesStore()
+  const { getSelectedNote } = useNotesStore()
   const note = getSelectedNote()
   const debounceRef = useRef<NodeJS.Timeout | null>(null)
   const [title, setTitle] = useState('')
+  const [content, setContent] = useState('')
 
   const editor = useEditor({
     extensions: [
@@ -63,58 +64,69 @@ const NotesEditor: React.FC = () => {
     },
     onUpdate: ({ editor }) => {
       const content = editor.getHTML()
+      setContent(content)
       autoSave({ content })
     }
   })
 
-  const autoSave = (field: { content?: string; title?: string }) => {
-    if (!note) return
-    if (debounceRef.current) clearTimeout(debounceRef.current)
-    debounceRef.current = setTimeout(() => {
-      console.log('[EDITOR] Auto-saving:', {
-        noteId: note.id,
-        field,
-        contentLength: field.content?.length || 0,
-        hasImage: field.content?.includes('<img') || false
+  const autoSave = useCallback(
+    (field: { content?: string; title?: string }) => {
+      if (!note) return
+
+      clearTimeout(debounceRef.current || undefined)
+      debounceRef.current = setTimeout(async () => {
+        try {
+          const { updateNote } = useNotesStore.getState()
+          await updateNote(note.id, field)
+          console.log('[EDITOR] Auto-saved field:', field)
+        } catch (error) {
+          console.error('[EDITOR] Auto-save failed:', error)
+        }
+      }, 300)
+    },
+    [note]
+  )
+
+  const handleSave = useCallback(() => {
+    if (note) {
+      autoSave({
+        content: content,
+        title: title
       })
-      updateNote(note.id, {
-        ...field,
-        updatedAt: new Date().toISOString()
-      })
-    }, 300)
-  }
+    }
+  }, [note, content, title, autoSave])
 
   useEffect(() => {
-    if (note && editor) {
-      // Update editor content when note changes
-      const currentContent = editor.getHTML()
+    if (note?.id) {
+      setTitle(note.title || '')
       const noteContent = typeof note.content === 'string' ? note.content : ''
-
-      console.log('[EDITOR] Loading note content:', {
-        noteId: note.id,
-        noteType: note.type,
-        currentContentLength: currentContent.length,
-        noteContentLength: noteContent.length,
-        currentHasImage: currentContent.includes('<img'),
-        noteHasImage: noteContent.includes('<img'),
-        contentPreview: noteContent.substring(0, 200) + (noteContent.length > 200 ? '...' : '')
-      })
-
-      if (currentContent !== noteContent) {
-        console.log('[EDITOR] Setting new content')
-        editor.commands.setContent(noteContent)
-      } else {
-        console.log('[EDITOR] Content unchanged, skipping setContent')
-      }
+      setContent(noteContent)
+      editor?.commands.setContent(noteContent)
     }
-  }, [note?.id, editor])
+  }, [note?.id, note?.title, note?.content, editor])
 
-  // Sync title when note changes
+  // Auto-save effect
   useEffect(() => {
     if (note) {
-      setTitle(note.title || '')
+      const timer = setTimeout(() => {
+        const noteContent = typeof note.content === 'string' ? note.content : ''
+        if (content !== noteContent && content.trim() !== '') {
+          handleSave()
+        }
+      }, 500)
+
+      return () => clearTimeout(timer)
     }
-  }, [note?.id])
+  }, [content, note?.content, handleSave, note])
+
+  // Title change effect
+  useEffect(() => {
+    if (note) {
+      if (title !== note.title && title.trim() !== '') {
+        handleSave()
+      }
+    }
+  }, [title, note?.title, handleSave, note])
 
   const addImage = () => {
     const input = document.createElement('input')

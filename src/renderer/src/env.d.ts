@@ -1,7 +1,5 @@
 /// <reference types="vite/client" />
 
-import { ViewType } from '../../types/types'
-
 interface ClipboardEntry {
   id: string
   content: string
@@ -25,6 +23,29 @@ interface AuthCallbackData {
   url: string
   tokens?: AuthTokens | null
   error?: string
+}
+
+interface NoteFields {
+  title?: string
+  content?: string
+  tags?: string[]
+  isActive?: boolean
+  isTrashed?: boolean
+  updatedAt?: string
+}
+
+interface Note {
+  id: string
+  title: string
+  type: 'text' | 'checklist' | 'richtext'
+  content: string | Array<{ id: string; text: string; checked: boolean }>
+  tags: string[]
+  isActive: boolean
+  isTrashed: boolean
+  createdAt: string
+  updatedAt: string
+  pinned?: boolean
+  trashed?: boolean
 }
 
 interface ElectronAPI {
@@ -76,10 +97,10 @@ interface ElectronAPI {
 
   // Notes API
   notesAPI: {
-    getAllNotes: () => Promise<any[]>
-    getTrashedNotes: () => Promise<any[]>
-    insertNote: (note: any) => Promise<any>
-    updateNote: (id: string, fields: any) => Promise<any>
+    getAllNotes: () => Promise<Note[]>
+    getTrashedNotes: () => Promise<Note[]>
+    insertNote: (note: Omit<Note, 'id' | 'createdAt' | 'updatedAt'>) => Promise<Note>
+    updateNote: (id: string, fields: NoteFields) => Promise<Note>
     trashNote: (id: string) => Promise<void>
     restoreNote: (id: string) => Promise<void>
     permanentlyDeleteNote: (id: string) => Promise<void>
@@ -99,8 +120,6 @@ interface ElectronAPI {
   onViewTransitionDone: (callback: (view: string) => void) => () => void
 }
 
-declare global {
-  interface Window {
-    electronAPI: ElectronAPI
-  }
+interface Window {
+  electronAPI: ElectronAPI
 }

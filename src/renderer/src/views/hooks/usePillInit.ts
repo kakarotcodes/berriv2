@@ -1,19 +1,13 @@
 import { useEffect } from 'react'
 
-export function usePillInit(
-  savePillPosition: () => void,
-  resizeWindow: (dims: any) => void,
-  dimensions: any
-) {
+export const usePillInit = () => {
   useEffect(() => {
-    setTimeout(savePillPosition, 100)
-  }, [savePillPosition])
+    // Basic pill initialization
+    console.log('[PILL] Pill view initialized')
 
-  useEffect(() => {
-    try {
-      resizeWindow(dimensions)
-    } catch (e) {
-      console.error('Window resize error:', e)
+    // Set up any necessary event listeners here if needed
+    return () => {
+      // Cleanup
     }
-  }, [dimensions, resizeWindow])
+  }, [])
 }

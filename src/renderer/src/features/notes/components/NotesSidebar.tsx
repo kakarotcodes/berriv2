@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import { Plus } from 'lucide-react'
 import { groupNotesByDate } from '../utils/groupNotesByDate'
 import { useNotesStore } from '../store/notesStore'
@@ -16,30 +16,29 @@ const NotesSidebar: React.FC = () => {
   } = useNotesStore()
   const [groupedNotes, setGroupedNotes] = useState<{ label: string; notes: Note[] }[]>([])
 
-  const refreshNotes = async () => {
+  const refreshNotes = useCallback(async () => {
     const raw = await window.electronAPI.notesAPI.getAllNotes()
     setNotes(raw)
     setGroupedNotes(groupNotesByDate(raw))
-  }
+  }, [setNotes])
 
   const handleAddNote = async () => {
-    const now = new Date().toISOString()
-    const newNote: Note = {
-      id: crypto.randomUUID(),
+    const newNote = {
       title: '',
-      type: 'richtext',
+      type: 'richtext' as const,
       content: '',
-      createdAt: now,
-      updatedAt: now
+      tags: [],
+      isActive: true,
+      isTrashed: false
     }
-    await window.electronAPI.notesAPI.insertNote(newNote)
+    const savedNote = await window.electronAPI.notesAPI.insertNote(newNote)
     await refreshNotes()
-    setSelectedNoteId(newNote.id)
+    setSelectedNoteId(savedNote.id)
   }
 
   useEffect(() => {
     refreshNotes()
-  }, [])
+  }, [refreshNotes])
 
   return (
     <aside className="w-72 animated-gradient text-white border-r border-zinc-800 flex flex-col">

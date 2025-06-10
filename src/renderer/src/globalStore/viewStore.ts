@@ -92,7 +92,7 @@ export const useViewStore = create<ViewState>()(
           // 3️⃣ Wait for the real "done" signal with fast fallback
           await new Promise<void>((resolve) => {
             let resolved = false
-            
+
             const cleanup = window.electronAPI.onViewTransitionDone((completedView) => {
               if (completedView === view && !resolved) {
                 resolved = true

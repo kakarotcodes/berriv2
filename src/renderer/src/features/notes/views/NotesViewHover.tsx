@@ -7,25 +7,21 @@ import NotesEditor from '../components/NotesEditor'
 
 // store
 import { useNotesStore } from '../store/notesStore'
-import { useElectron } from '../../../hooks/useElectron'
 import { useViewStore } from '../../../globalStore/viewStore'
 
-
-// Force interval-based window size checking
-const WINDOW_SIZE_CHECK_INTERVAL = 500 // Check every half second when resizable
-const RESIZE_END_DELAY = 1000 // Delay after resize seems to have stopped
+// Constants for timing
+const WINDOW_SIZE_CHECK_INTERVAL = 100 // Check every 100ms while resizable
+const RESIZE_END_DELAY = 500 // Wait 500ms after last resize before final save
 
 const NotesViewHover: React.FC = () => {
-  const [leftWidth, setLeftWidth] = useState<number>(40)
-  const [isResizable, setIsResizable] = useState<boolean>(false)
-  const resizerRef = useRef<HTMLDivElement>(null)
-  const containerRef = useRef<HTMLDivElement>(null)
-  const isDraggingRef = useRef<boolean>(false)
-  const lastKnownSize = useRef<{ width: number; height: number } | null>(null)
+  const [leftWidth, setLeftWidth] = useState(40) // 40% for sidebar
+  const [isResizable] = useState(true)
   const resizeTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-
+  const lastKnownSize = useRef<{ width: number; height: number } | null>(null)
+  const isDraggingRef = useRef(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const resizerRef = useRef<HTMLDivElement>(null)
   const { setNotes, setTrashed } = useNotesStore()
-  const { setResizable } = useElectron()
 
   // Add a manual sync function that can be called from multiple places
   const syncWindowSizeToStore = async (source: string = 'unknown') => {
@@ -147,7 +143,7 @@ const NotesViewHover: React.FC = () => {
       setTrashed(trash)
     }
     loadNotes()
-  }, [])
+  }, [setNotes, setTrashed])
 
   useEffect(() => {
     const handleMouseDown = (e: MouseEvent) => {
@@ -184,27 +180,6 @@ const NotesViewHover: React.FC = () => {
       document.removeEventListener('mousemove', handleMouseMove)
     }
   }, [])
-
-  // Toggle window resizability
-  const toggleResizable = async () => {
-    const newState = !isResizable
-    console.log('[HOVER] Toggle resizable:', newState)
-
-    // Update component state
-    setIsResizable(newState)
-
-    // Update window resizability
-    setResizable(newState)
-
-    // Sync sizes at toggle points
-    if (!newState) {
-      // When disabling resize mode, ensure we save the final dimensions
-      await syncWindowSizeToStore('toggle_resize_off')
-    } else {
-      // When enabling resize mode, record baseline dimensions
-      await syncWindowSizeToStore('toggle_resize_on')
-    }
-  }
 
   return (
     <div className="w-full h-full flex text-white text-sm animated-gradient" ref={containerRef}>

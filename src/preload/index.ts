@@ -1,5 +1,5 @@
 // preload/index.js
-const { contextBridge, ipcRenderer } = require('electron')
+import { contextBridge, ipcRenderer } from 'electron'
 
 // CSS opacity fallback handler
 ipcRenderer.on('pill:set-css-opacity', (_event, alpha) => {

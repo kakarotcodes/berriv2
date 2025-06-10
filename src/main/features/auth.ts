@@ -15,4 +15,4 @@ export function closeAuthWindow(): void {
 export function getAuthWindow(): null {
   // No longer needed since we're using external browser
   return null
-} 
+}

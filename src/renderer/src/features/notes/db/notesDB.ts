@@ -98,27 +98,27 @@ const serializeContent = (note: Note): string => {
 }
 
 // Helper function to deserialize content based on note type
-const deserializeContent = (rawNote: any): Note => {
+const deserializeContent = (rawNote: Record<string, unknown>): Note => {
   let result: Note
   try {
     if (rawNote.type === 'checklist') {
       // For checklist notes, parse the JSON array
       result = {
         ...rawNote,
-        content: JSON.parse(rawNote.content)
-      }
+        content: JSON.parse(rawNote.content as string)
+      } as Note
     } else {
       // For text/richtext notes, use content as-is (HTML string)
       result = {
         ...rawNote,
         content: rawNote.content
-      }
+      } as Note
     }
 
     console.log('[DB] Deserializing content:', {
       noteId: rawNote.id,
       noteType: rawNote.type,
-      rawContentLength: rawNote.content?.length || 0,
+      rawContentLength: (rawNote.content as string)?.length || 0,
       resultContentLength:
         typeof result.content === 'string'
           ? result.content.length
@@ -136,7 +136,7 @@ const deserializeContent = (rawNote: any): Note => {
     return {
       ...rawNote,
       content: rawNote.content // Use raw content if parsing fails
-    }
+    } as Note
   }
 }
 

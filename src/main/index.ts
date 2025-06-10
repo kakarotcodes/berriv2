@@ -34,9 +34,11 @@ function handleProtocolUrl(url: string): void {
 
       // ③ Persist tokens securely (for now, store in memory - TODO: use keytar/secure storage)
       if (access) {
-        ;(global as any).authTokens = {
+        ;(
+          global as { authTokens?: { access: string; refresh?: string; timestamp: number } }
+        ).authTokens = {
           access,
-          refresh,
+          refresh: refresh || undefined,
           timestamp: Date.now()
         }
         console.log('Tokens stored successfully')
@@ -142,7 +144,7 @@ if (!app.isDefaultProtocolClient(PROTOCOL)) {
 }
 
 // Handle protocol URLs on Windows/Linux
-app.on('second-instance', (event, commandLine, workingDirectory) => {
+app.on('second-instance', (_event, commandLine) => {
   // Find protocol URL in command line arguments
   const protocolUrl = commandLine.find((arg) => arg.startsWith(`${PROTOCOL}://`))
   if (protocolUrl) {

@@ -62,9 +62,9 @@ const App = memo(() => {
   if (isTransitioning) {
     return (
       <main className="w-screen h-screen relative">
-        <div 
+        <div
           className="absolute inset-0"
-          style={{ 
+          style={{
             backgroundColor: '#000000', // Fully opaque black
             zIndex: 9999,
             position: 'fixed',
