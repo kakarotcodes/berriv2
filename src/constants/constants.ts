@@ -13,3 +13,6 @@ export const HEIGHT = {
 export const OFFSET = {
   PILLOFFSET: 50
 }
+
+// Protocol configuration
+export const PROTOCOL = 'berri'

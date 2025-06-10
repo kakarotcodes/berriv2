@@ -22,6 +22,30 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getWindowBounds: () => ipcRenderer.invoke('get-window-bounds'),
 
   // ------------------------------------------------------------
+  // Authentication API
+  // ------------------------------------------------------------
+
+  auth: {
+    openGoogleLogin: () => ipcRenderer.invoke('auth:open-google-login'),
+    getTokens: () => ipcRenderer.invoke('auth:get-tokens'),
+    logout: () => ipcRenderer.invoke('auth:logout'),
+    onAuthCallback: (callback) => {
+      // Remove existing listeners to prevent memory leaks
+      ipcRenderer.removeAllListeners('protocol-url')
+
+      // Add the new listener
+      ipcRenderer.on('protocol-url', (_event, data) => {
+        callback(data)
+      })
+
+      // Return a cleanup function
+      return () => {
+        ipcRenderer.removeAllListeners('protocol-url')
+      }
+    }
+  },
+
+  // ------------------------------------------------------------
   // Vertical Drag
   // ------------------------------------------------------------
 

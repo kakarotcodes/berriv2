@@ -5,33 +5,54 @@ import { ViewType } from '../../types/types'
 interface ClipboardEntry {
   id: string
   content: string
+  type: 'text' | 'image'
   timestamp: number
+}
+
+interface AuthTokens {
+  access: string
+  refresh?: string
+  timestamp?: number
+}
+
+interface AuthResponse {
+  success: boolean
+  tokens?: AuthTokens | null
+  error?: string
+}
+
+interface AuthCallbackData {
+  url: string
+  tokens?: AuthTokens | null
+  error?: string
 }
 
 interface ElectronAPI {
   resizeWindow: (dimensions: { width: number; height: number }) => void
-  animateViewTransition: (view: ViewType) => Promise<boolean>
+  animateViewTransition: (view: string) => Promise<void>
+  getWindowBounds: () => Promise<{ width: number; height: number; x: number; y: number }>
 
-  // Get current window bounds
-  getWindowBounds: () => Promise<{ x: number; y: number; width: number; height: number } | null>
+  // Authentication API
+  auth: {
+    openGoogleLogin: () => Promise<AuthResponse>
+    getTokens: () => Promise<AuthResponse>
+    logout: () => Promise<AuthResponse>
+    onAuthCallback: (callback: (data: AuthCallbackData) => void) => () => void
+  }
 
-  // Vertical drag
+  // Vertical Drag
   startVerticalDrag: (mouseY: number) => void
   updateVerticalDrag: (mouseY: number) => void
   endVerticalDrag: () => void
 
-  // Full drag (horizontal + vertical)
+  // Full Drag
   startDrag: (mouseX: number, mouseY: number) => void
   updateDrag: (mouseX: number, mouseY: number) => void
   endDrag: () => void
 
   setResizable: (resizable: boolean) => void
+  setMainWindowResizable: (resizable: boolean) => void
   savePillPosition: () => void
-
-  // Hover view size management
-  saveHoverSize: (dimensions: { width: number; height: number }) => void
-  getSavedHoverSize: () => Promise<{ width: number; height: number }>
-  fixHoverDimensions: () => void
 
   // Opacity control
   setPillOpacity: (alpha: number) => void
@@ -41,13 +62,13 @@ interface ElectronAPI {
   openExternal: (url: string) => void
 
   // Google Meet
-  startGoogleMeet: () => Promise<string>
+  startGoogleMeet: () => Promise<void>
 
   // Sleep/wake handlers
-  requestCurrentView: (callback: () => ViewType) => () => void
-  onResumeFromSleep: (callback: (view: ViewType) => void) => () => void
+  requestCurrentView: (callback: () => string) => () => void
+  onResumeFromSleep: (callback: (view: string) => void) => () => void
 
-  // Clipboard history
+  // Clipboard
   clipboard: {
     getHistory: () => Promise<ClipboardEntry[]>
     onUpdate: (callback: (entry: ClipboardEntry) => void) => () => void
@@ -55,18 +76,20 @@ interface ElectronAPI {
 
   // Notes API
   notesAPI: {
-    getAllNotes: () => Promise<Note[]>
-    getTrashedNotes: () => Promise<Note[]>
-    insertNote: (note: Note) => Promise<void>
-    updateNote: (id: string, fields: Partial<Omit<Note, 'id'>>) => Promise<void>
+    getAllNotes: () => Promise<any[]>
+    getTrashedNotes: () => Promise<any[]>
+    insertNote: (note: any) => Promise<any>
+    updateNote: (id: string, fields: any) => Promise<any>
     trashNote: (id: string) => Promise<void>
     restoreNote: (id: string) => Promise<void>
     permanentlyDeleteNote: (id: string) => Promise<void>
-    saveImage: (filename: string, arrayBuffer: ArrayBuffer) => Promise<string | null>
+    saveImage: (filename: string, arrayBuffer: ArrayBuffer) => Promise<string>
   }
 
-  // Main window resizability
-  setMainWindowResizable: (resizable: boolean) => void
+  // Hover management
+  fixHoverDimensions: () => void
+  saveHoverSize: (dimensions: { width: number; height: number }) => void
+  getSavedHoverSize: () => Promise<{ width: number; height: number } | null>
 }
 
 declare global {
