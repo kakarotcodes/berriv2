@@ -80,7 +80,7 @@ const App = memo(() => {
 
   // Regular rendering without animations for all views
   return (
-    <main className="w-screen h-screen animated-gradient">
+    <main className="w-screen h-screen">
       <div
         className="absolute inset-0 flex items-center justify-center"
         style={{

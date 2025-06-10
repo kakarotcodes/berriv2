@@ -232,7 +232,7 @@
 
 .pill-button-hover:hover {
   transform: scale(1.15);
-  background-color: rgba(168, 85, 247, 0.1);
+  /* background-color: rgba(168, 85, 247, 0.1); */
 }
 
 .pill-icon-hover {
