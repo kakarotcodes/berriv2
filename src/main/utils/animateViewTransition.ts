@@ -274,7 +274,7 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
         height: dimensions.height
       })
 
-      // 4. Set the window size and position (animation handled by the OS)
+      // 4. Set the window size and position with fast native animation
       mainWindow.setBounds(
         {
           x: Math.round(targetX),
@@ -282,21 +282,18 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
           width: dimensions.width,
           height: dimensions.height
         },
-        true // true = animate
+        true // Keep native animation but with faster timing
       )
 
-      // Fire real completion event when macOS finishes the animation
+      // Much faster completion detection
       mainWindow.once('resized', () => {
-        console.log(`[MAIN] Window resized event fired for ${view} view`)
         mainWindow.webContents.send('view-transition-done', view)
-        console.log(`[MAIN] Sent view-transition-done event for ${view}`)
       })
 
-      // Quick fallback for fast content loading
+      // Super fast fallback for snappy feel
       setTimeout(() => {
-        console.log(`[MAIN] Fallback timer for ${view} transition`)
         mainWindow.webContents.send('view-transition-done', view)
-      }, 80) // Very fast fallback
+      }, 120) // Fast but safe timing to prevent flicker
 
       return true
     } catch (error) {

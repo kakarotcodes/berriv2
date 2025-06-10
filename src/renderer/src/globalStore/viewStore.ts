@@ -108,7 +108,7 @@ export const useViewStore = create<ViewState>()(
                 cleanup()
                 resolve()
               }
-            }, 100) // Very fast fallback - 100ms
+            }, 140) // Fast but safe - prevents flicker
           })
 
           // Apply saved dimensions for hover view after animation completes

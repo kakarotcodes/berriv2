@@ -63,10 +63,15 @@ const App = memo(() => {
     return (
       <main className="w-screen h-screen relative">
         <div 
-          className="absolute inset-0 bg-gray-900"
+          className="absolute inset-0"
           style={{ 
-            backgroundColor: '#111111',
-            zIndex: 50
+            backgroundColor: '#000000', // Fully opaque black
+            zIndex: 9999,
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0
           }}
         />
       </main>
