@@ -153,5 +153,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // Hover size management
   saveHoverSize: (dimensions) => ipcRenderer.send('save-hover-size', dimensions),
-  getSavedHoverSize: () => ipcRenderer.invoke('get-hover-size')
+  getSavedHoverSize: () => ipcRenderer.invoke('get-hover-size'),
+
+  // Window visibility for flicker-free transitions
+  hideWindowTemporarily: () => ipcRenderer.invoke('window:hide-temporarily'),
+  showWindow: () => ipcRenderer.invoke('window:show')
 })

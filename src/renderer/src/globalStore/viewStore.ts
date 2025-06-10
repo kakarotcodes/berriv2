@@ -43,37 +43,57 @@ export const useViewStore = create<ViewState>()(
           // Save current hover size BEFORE starting the transition
           const state = get()
 
-          // Start transition - show blank state AFTER getting current dimensions
-          set({
-            targetView: view,
-            isTransitioning: true
-          })
+          // AGGRESSIVE anti-flicker for hover -> pill transition
+          if (state.currentView === 'hover' && view === 'pill') {
+            // Immediately hide all content
+            set({
+              targetView: view,
+              isTransitioning: true
+            })
+
+            // Disable all CSS transitions during resize
+            const style = document.createElement('style')
+            style.id = 'disable-transitions'
+            style.innerHTML =
+              '*, *::before, *::after { transition: none !important; animation: none !important; }'
+            document.head.appendChild(style)
+
+            // Force immediate render of blank state
+            await new Promise((resolve) => setTimeout(resolve, 32)) // Two frames
+
+            console.log('[VIEW] Hover->Pill: Hiding content and starting window resize')
+          } else if (state.currentView === 'hover' && view !== 'hover') {
+            set({
+              targetView: view,
+              isTransitioning: true
+            })
+            await new Promise((resolve) => setTimeout(resolve, 16))
+          } else {
+            set({
+              targetView: view,
+              isTransitioning: true
+            })
+          }
 
           // IMPORTANT: Save hover dimensions ONLY when leaving hover view
-          // AND do it before any window resize happens
           if (state.currentView === 'hover' && view !== 'hover') {
             console.log('[VIEW] Switching from hover view, saving dimensions')
             try {
-              // Get current window bounds before any transitions happen
               const bounds = await window.electronAPI.getWindowBounds()
 
               if (bounds?.width && bounds?.height) {
-                // Verify we're actually still in hover view (checks size is not pill size)
                 if (bounds.width !== WIDTH.PILL && bounds.height !== HEIGHT.PILL) {
                   console.log('[VIEW] Saving hover dimensions:', {
                     width: bounds.width,
                     height: bounds.height
                   })
 
-                  // First save directly to electron-store
                   window.electronAPI.saveHoverSize({ width: bounds.width, height: bounds.height })
 
-                  // For transition to pill view, ensure pill appears at a sensible position
                   if (view === 'pill') {
                     console.log(
                       '[VIEW] Transitioning to pill view, ensuring smooth position transition'
                     )
-                    // Position will be handled by animateViewTransition
                   }
                 } else {
                   console.log('[VIEW] Skip saving - window already changed to non-hover size')
@@ -94,7 +114,6 @@ export const useViewStore = create<ViewState>()(
               const savedSize = await window.electronAPI.getSavedHoverSize()
 
               if (savedSize?.width && savedSize?.height) {
-                // Additional validation - don't use pill dimensions as hover dimensions
                 if (savedSize.width !== WIDTH.PILL && savedSize.height !== HEIGHT.PILL) {
                   console.log('[VIEW] Using saved hover dimensions:', savedSize)
                   updatedDimensions = savedSize
@@ -120,27 +139,42 @@ export const useViewStore = create<ViewState>()(
 
           // For hover view, explicitly apply the saved dimensions
           if (view === 'hover') {
-            // Small delay to ensure the animation completes first
             setTimeout(() => {
               window.electronAPI.fixHoverDimensions()
             }, 100)
           }
 
-          // Wait for resize animation to complete
-          await new Promise((resolve) => setTimeout(resolve, 200))
+          // Extended wait for hover->pill to ensure window is fully resized
+          const waitTime = state.currentView === 'hover' && view === 'pill' ? 400 : 200
+          await new Promise((resolve) => setTimeout(resolve, waitTime))
 
           // Update to the new view
           set({ currentView: view })
 
-          // End transition - show the actual content
+          // Re-enable CSS transitions after resize is complete
+          if (state.currentView === 'hover' && view === 'pill') {
+            const disableStyle = document.getElementById('disable-transitions')
+            if (disableStyle) {
+              document.head.removeChild(disableStyle)
+            }
+            console.log('[VIEW] Hover->Pill: Re-enabled CSS transitions')
+          }
+
+          // Very short delay before showing content
+          const endTransitionDelay = state.currentView === 'hover' && view === 'pill' ? 20 : 50
           setTimeout(() => {
             set({
               isTransitioning: false,
               targetView: null
             })
-          }, 50)
+          }, endTransitionDelay)
         } catch (error) {
           console.error('[VIEW] View transition failed:', error)
+          // Clean up disabled transitions in case of error
+          const disableStyle = document.getElementById('disable-transitions')
+          if (disableStyle) {
+            document.head.removeChild(disableStyle)
+          }
           set({
             targetView: null,
             isTransitioning: false

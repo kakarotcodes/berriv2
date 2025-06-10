@@ -90,6 +90,10 @@ interface ElectronAPI {
   fixHoverDimensions: () => void
   saveHoverSize: (dimensions: { width: number; height: number }) => void
   getSavedHoverSize: () => Promise<{ width: number; height: number } | null>
+
+  // Window visibility for flicker-free transitions
+  hideWindowTemporarily: () => Promise<{ success: boolean; error?: string }>
+  showWindow: () => Promise<{ success: boolean; error?: string }>
 }
 
 declare global {

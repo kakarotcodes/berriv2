@@ -282,8 +282,8 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
           width: dimensions.width,
           height: dimensions.height
         },
-        true
-      ) // true = animate
+        true // true = animate
+      )
 
       return true
     } catch (error) {
