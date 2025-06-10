@@ -7,20 +7,16 @@ import { Note } from '../types/noteTypes'
 
 const NotesSidebar: React.FC = () => {
   const {
+    notes,
     selectedNoteId,
     setSelectedNoteId,
-    setNotes,
     trashed,
+    loadNotes,
+    addNote,
     restoreNote,
     permanentlyDeleteNote
   } = useNotesStore()
   const [groupedNotes, setGroupedNotes] = useState<{ label: string; notes: Note[] }[]>([])
-
-  const refreshNotes = useCallback(async () => {
-    const raw = await window.electronAPI.notesAPI.getAllNotes()
-    setNotes(raw)
-    setGroupedNotes(groupNotesByDate(raw))
-  }, [setNotes])
 
   const handleAddNote = async () => {
     const now = new Date().toISOString()
@@ -33,14 +29,19 @@ const NotesSidebar: React.FC = () => {
       updatedAt: now,
       trashed: false
     }
-    const savedNote = await window.electronAPI.notesAPI.insertNote(newNote)
-    await refreshNotes()
-    setSelectedNoteId(savedNote.id)
+    await addNote(newNote)
+    setSelectedNoteId(newNote.id)
   }
 
+  // Load notes once on mount
   useEffect(() => {
-    refreshNotes()
-  }, [refreshNotes])
+    loadNotes()
+  }, [loadNotes])
+
+  // Update grouped notes when notes change
+  useEffect(() => {
+    setGroupedNotes(groupNotesByDate(notes))
+  }, [notes])
 
   return (
     <aside className="w-72 animated-gradient text-white border-r border-zinc-800 flex flex-col">

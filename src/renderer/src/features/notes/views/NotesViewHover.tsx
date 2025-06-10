@@ -6,7 +6,6 @@ import NotesSidebar from '../components/NotesSidebar'
 import NotesEditor from '../components/NotesEditor'
 
 // store
-import { useNotesStore } from '../store/notesStore'
 import { useViewStore } from '../../../globalStore/viewStore'
 
 // Constants for timing
@@ -19,8 +18,6 @@ const NotesViewHover: React.FC = () => {
   const isDraggingRef = useRef(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const resizerRef = useRef<HTMLDivElement>(null)
-  const { setNotes, setTrashed } = useNotesStore()
-
   // Add a manual sync function that can be called from multiple places
   const syncWindowSizeToStore = async (source: string = 'unknown') => {
     console.log(`[HOVER] Syncing window size to store (source: ${source})`)
@@ -128,18 +125,7 @@ const NotesViewHover: React.FC = () => {
     }
   }, [])
 
-  // Load notes
-  useEffect(() => {
-    async function loadNotes() {
-      const [all, trash] = await Promise.all([
-        window.electronAPI.notesAPI.getAllNotes(),
-        window.electronAPI.notesAPI.getTrashedNotes()
-      ])
-      setNotes(all)
-      setTrashed(trash)
-    }
-    loadNotes()
-  }, [setNotes, setTrashed])
+  // Notes loading is now handled by the store in NotesSidebar
 
   useEffect(() => {
     const handleMouseDown = (e: MouseEvent) => {

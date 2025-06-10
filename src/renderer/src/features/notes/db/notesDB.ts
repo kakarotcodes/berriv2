@@ -203,5 +203,20 @@ export const NotesDB = {
 
   permanentlyDeleteNote: (id: string) => {
     db.prepare(`DELETE FROM notes WHERE id = ?`).run(id)
+  },
+
+  // Remove duplicate notes based on title, content, and createdAt
+  removeDuplicates: () => {
+    console.log('[DB] Removing duplicate notes...')
+    const result = db.prepare(`
+      DELETE FROM notes 
+      WHERE id NOT IN (
+        SELECT MIN(id) 
+        FROM notes 
+        GROUP BY title, content, createdAt, trashed
+      )
+    `).run()
+    console.log(`[DB] Removed ${result.changes} duplicate notes`)
+    return result.changes
   }
 }

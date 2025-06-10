@@ -101,6 +101,7 @@ interface ElectronAPI {
     trashNote: (id: string) => Promise<void>
     restoreNote: (id: string) => Promise<void>
     permanentlyDeleteNote: (id: string) => Promise<void>
+    removeDuplicates: () => Promise<number>
     saveImage: (filename: string, arrayBuffer: ArrayBuffer) => Promise<string>
   }
 

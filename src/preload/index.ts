@@ -144,6 +144,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     trashNote: (id) => ipcRenderer.invoke('notes:trash', id),
     restoreNote: (id) => ipcRenderer.invoke('notes:restore', id),
     permanentlyDeleteNote: (id) => ipcRenderer.invoke('notes:deleteForever', id),
+    removeDuplicates: () => ipcRenderer.invoke('notes:removeDuplicates'),
     saveImage: (filename, arrayBuffer) =>
       ipcRenderer.invoke('notes:saveImage', { filename, file: arrayBuffer })
   },

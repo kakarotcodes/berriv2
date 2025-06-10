@@ -39,6 +39,11 @@ export function registerNotesHandlers() {
     return NotesDB.permanentlyDeleteNote(id)
   })
 
+  // Remove duplicate notes
+  ipcMain.handle('notes:removeDuplicates', () => {
+    return NotesDB.removeDuplicates()
+  })
+
   // Save image for notes
   ipcMain.handle('notes:saveImage', async (_event, { filename, file }) => {
     try {

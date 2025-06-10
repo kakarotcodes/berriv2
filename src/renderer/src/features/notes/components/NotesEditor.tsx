@@ -26,6 +26,9 @@ const NotesEditor: React.FC = () => {
   const debounceRef = useRef<NodeJS.Timeout | null>(null)
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
+  const skipNextUpdateRef = useRef(false)
+  const lastNoteIdRef = useRef<string | null>(null)
+  const isLoadingNoteRef = useRef(false)
 
   const editor = useEditor({
     extensions: [
@@ -63,15 +66,21 @@ const NotesEditor: React.FC = () => {
       }
     },
     onUpdate: ({ editor }) => {
-      const content = editor.getHTML()
-      setContent(content)
-      autoSave({ content })
+      if (skipNextUpdateRef.current) {
+        skipNextUpdateRef.current = false
+        return
+      }
+
+      const html = editor.getHTML()
+      setContent(html)
+      autoSave({ content: html })
     }
   })
 
   const autoSave = useCallback(
     (field: { content?: string; title?: string }) => {
       if (!note) return
+      if (isLoadingNoteRef.current) return
 
       clearTimeout(debounceRef.current || undefined)
       debounceRef.current = setTimeout(async () => {
@@ -97,17 +106,37 @@ const NotesEditor: React.FC = () => {
   }, [note, content, title, autoSave])
 
   useEffect(() => {
-    if (note?.id) {
+    if (note?.id && editor) {
+      const noteChanged = lastNoteIdRef.current !== note.id
+      lastNoteIdRef.current = note.id
+
+      if (noteChanged) {
+        isLoadingNoteRef.current = true
+      }
+
       setTitle(note.title || '')
+
       const noteContent = typeof note.content === 'string' ? note.content : ''
+      if (editor.getHTML() !== noteContent) {
+        skipNextUpdateRef.current = true
+        editor.commands.setContent(noteContent)
+      }
+
       setContent(noteContent)
-      editor?.commands.setContent(noteContent)
+
+      if (noteChanged) {
+        setTimeout(() => {
+          isLoadingNoteRef.current = false
+        }, 100)
+      }
     }
   }, [note?.id, note?.title, note?.content, editor])
 
   // Auto-save effect
   useEffect(() => {
     if (note) {
+      if (isLoadingNoteRef.current) return
+
       const timer = setTimeout(() => {
         const noteContent = typeof note.content === 'string' ? note.content : ''
         if (content !== noteContent && content.trim() !== '') {
@@ -122,6 +151,8 @@ const NotesEditor: React.FC = () => {
   // Title change effect
   useEffect(() => {
     if (note) {
+      if (isLoadingNoteRef.current) return
+
       if (title !== note.title && title.trim() !== '') {
         handleSave()
       }
