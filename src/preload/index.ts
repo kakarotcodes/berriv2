@@ -157,5 +157,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // Window visibility for flicker-free transitions
   hideWindowTemporarily: () => ipcRenderer.invoke('window:hide-temporarily'),
-  showWindow: () => ipcRenderer.invoke('window:show')
+  showWindow: () => ipcRenderer.invoke('window:show'),
+
+  // Listen for real transition completion events
+  onViewTransitionDone: (callback) => {
+    ipcRenderer.removeAllListeners('view-transition-done')
+    ipcRenderer.on('view-transition-done', (_event, view) => {
+      callback(view)
+    })
+    return () => ipcRenderer.removeAllListeners('view-transition-done')
+  }
 })

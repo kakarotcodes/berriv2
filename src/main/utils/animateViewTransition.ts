@@ -285,6 +285,19 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
         true // true = animate
       )
 
+      // Fire real completion event when macOS finishes the animation
+      mainWindow.once('resized', () => {
+        console.log(`[MAIN] Window resized event fired for ${view} view`)
+        mainWindow.webContents.send('view-transition-done', view)
+        console.log(`[MAIN] Sent view-transition-done event for ${view}`)
+      })
+
+      // Also add a fallback in case 'resized' doesn't fire
+      setTimeout(() => {
+        console.log(`[MAIN] Fallback timer for ${view} transition`)
+        mainWindow.webContents.send('view-transition-done', view)
+      }, 500)
+
       return true
     } catch (error) {
       console.error('Error during view transition:', error)

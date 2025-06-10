@@ -94,6 +94,9 @@ interface ElectronAPI {
   // Window visibility for flicker-free transitions
   hideWindowTemporarily: () => Promise<{ success: boolean; error?: string }>
   showWindow: () => Promise<{ success: boolean; error?: string }>
+
+  // Listen for real transition completion events
+  onViewTransitionDone: (callback: (view: string) => void) => () => void
 }
 
 declare global {

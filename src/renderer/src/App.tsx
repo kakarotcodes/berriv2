@@ -61,19 +61,15 @@ const App = memo(() => {
   // show an empty window without any content
   if (isTransitioning) {
     return (
-      <main
-        className="w-screen h-screen"
-        style={{
-          opacity: 1,
-          backgroundColor: '#000000', // Completely opaque black
-          zIndex: 9999, // Ensure it's on top
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0
-        }}
-      ></main>
+      <main className="w-screen h-screen relative">
+        <div 
+          className="absolute inset-0 bg-gray-900"
+          style={{ 
+            backgroundColor: '#111111',
+            zIndex: 50
+          }}
+        />
+      </main>
     )
   }
 

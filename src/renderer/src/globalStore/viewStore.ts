@@ -40,63 +40,26 @@ export const useViewStore = create<ViewState>()(
 
       setView: async (view) => {
         try {
-          // Save current hover size BEFORE starting the transition
           const state = get()
 
-          // AGGRESSIVE anti-flicker for hover -> pill transition
-          if (state.currentView === 'hover' && view === 'pill') {
-            // Immediately hide all content
-            set({
-              targetView: view,
-              isTransitioning: true
-            })
+          // 1️⃣ Start transition immediately - no forced delays
+          set({
+            targetView: view,
+            isTransitioning: true
+          })
 
-            // Disable all CSS transitions during resize
-            const style = document.createElement('style')
-            style.id = 'disable-transitions'
-            style.innerHTML =
-              '*, *::before, *::after { transition: none !important; animation: none !important; }'
-            document.head.appendChild(style)
-
-            // Force immediate render of blank state
-            await new Promise((resolve) => setTimeout(resolve, 32)) // Two frames
-
-            console.log('[VIEW] Hover->Pill: Hiding content and starting window resize')
-          } else if (state.currentView === 'hover' && view !== 'hover') {
-            set({
-              targetView: view,
-              isTransitioning: true
-            })
-            await new Promise((resolve) => setTimeout(resolve, 16))
-          } else {
-            set({
-              targetView: view,
-              isTransitioning: true
-            })
-          }
-
-          // IMPORTANT: Save hover dimensions ONLY when leaving hover view
+          // Save hover dimensions before leaving hover view
           if (state.currentView === 'hover' && view !== 'hover') {
             console.log('[VIEW] Switching from hover view, saving dimensions')
             try {
               const bounds = await window.electronAPI.getWindowBounds()
-
               if (bounds?.width && bounds?.height) {
                 if (bounds.width !== WIDTH.PILL && bounds.height !== HEIGHT.PILL) {
                   console.log('[VIEW] Saving hover dimensions:', {
                     width: bounds.width,
                     height: bounds.height
                   })
-
                   window.electronAPI.saveHoverSize({ width: bounds.width, height: bounds.height })
-
-                  if (view === 'pill') {
-                    console.log(
-                      '[VIEW] Transitioning to pill view, ensuring smooth position transition'
-                    )
-                  }
-                } else {
-                  console.log('[VIEW] Skip saving - window already changed to non-hover size')
                 }
               }
             } catch (e) {
@@ -104,77 +67,70 @@ export const useViewStore = create<ViewState>()(
             }
           }
 
-          // Get dimensions for the target view
+          // Get target dimensions
           let updatedDimensions = viewDimensions[view]
 
-          // Special handling for hover view
+          // Load saved hover dimensions
           if (view === 'hover') {
             console.log('[VIEW] Switching to hover view, loading saved dimensions')
             try {
               const savedSize = await window.electronAPI.getSavedHoverSize()
-
               if (savedSize?.width && savedSize?.height) {
                 if (savedSize.width !== WIDTH.PILL && savedSize.height !== HEIGHT.PILL) {
                   console.log('[VIEW] Using saved hover dimensions:', savedSize)
                   updatedDimensions = savedSize
-                } else {
-                  console.log('[VIEW] Ignoring invalid saved dimensions (pill size)')
                 }
-              } else {
-                console.log(
-                  '[VIEW] No valid saved dimensions, using defaults:',
-                  viewDimensions.hover
-                )
               }
             } catch (e) {
               console.error('[VIEW] Error loading saved hover size:', e)
             }
           }
 
-          // Update dimensions to match the target view
-          set({ dimensions: updatedDimensions })
-
-          // Animate window transition
+          // 2️⃣ Start the native window animation
           await window.electronAPI.animateViewTransition(view)
 
-          // For hover view, explicitly apply the saved dimensions
-          if (view === 'hover') {
-            setTimeout(() => {
-              window.electronAPI.fixHoverDimensions()
-            }, 100)
-          }
-
-          // Extended wait for hover->pill to ensure window is fully resized
-          const waitTime = state.currentView === 'hover' && view === 'pill' ? 400 : 200
-          await new Promise((resolve) => setTimeout(resolve, waitTime))
-
-          // Update to the new view
-          set({ currentView: view })
-
-          // Re-enable CSS transitions after resize is complete
-          if (state.currentView === 'hover' && view === 'pill') {
-            const disableStyle = document.getElementById('disable-transitions')
-            if (disableStyle) {
-              document.head.removeChild(disableStyle)
-            }
-            console.log('[VIEW] Hover->Pill: Re-enabled CSS transitions')
-          }
-
-          // Very short delay before showing content
-          const endTransitionDelay = state.currentView === 'hover' && view === 'pill' ? 20 : 50
-          setTimeout(() => {
-            set({
-              isTransitioning: false,
-              targetView: null
+          // 3️⃣ Wait for the real "done" signal instead of setTimeout
+          console.log(`[VIEW] Waiting for transition-done event for ${view}`)
+          await new Promise<void>((resolve) => {
+            let resolved = false
+            
+            const cleanup = window.electronAPI.onViewTransitionDone((completedView) => {
+              console.log(`[VIEW] Received transition-done event for: ${completedView}, expected: ${view}`)
+              if (completedView === view && !resolved) {
+                resolved = true
+                cleanup()
+                console.log(`[VIEW] Resolving Promise for ${view}`)
+                resolve()
+              }
             })
-          }, endTransitionDelay)
+
+            // Fallback timeout in case the event doesn't fire
+            setTimeout(() => {
+              if (!resolved) {
+                console.warn(`[VIEW] Fallback timeout triggered for ${view} transition - resolving anyway`)
+                resolved = true
+                cleanup()
+                resolve()
+              }
+            }, 1000)
+          })
+
+          // Apply saved dimensions for hover view after animation completes
+          if (view === 'hover') {
+            window.electronAPI.fixHoverDimensions()
+          }
+
+          // 4️⃣ NOW update React state — one clean update, no flicker
+          set({
+            dimensions: updatedDimensions,
+            currentView: view,
+            isTransitioning: false,
+            targetView: null
+          })
+
+          console.log(`[VIEW] Transition to ${view} completed successfully`)
         } catch (error) {
           console.error('[VIEW] View transition failed:', error)
-          // Clean up disabled transitions in case of error
-          const disableStyle = document.getElementById('disable-transitions')
-          if (disableStyle) {
-            document.head.removeChild(disableStyle)
-          }
           set({
             targetView: null,
             isTransitioning: false
