@@ -156,7 +156,7 @@ export const NotesDB = {
       .map(deserializeContent)
   },
 
-  insertNote: (note: Note) => {
+  insertNote: (note: Note): Note => {
     db.prepare(
       `
       INSERT INTO notes (id, title, type, content, createdAt, updatedAt, trashed)
@@ -167,6 +167,9 @@ export const NotesDB = {
       content: serializeContent(note),
       trashed: note.trashed ? 1 : 0
     })
+
+    // Return the note that was inserted
+    return note
   },
 
   updateNote: (id: string, fields: Partial<Omit<Note, 'id'>>) => {

@@ -39,9 +39,6 @@ interface Note {
   title: string
   type: 'text' | 'checklist' | 'richtext'
   content: string | Array<{ id: string; text: string; checked: boolean }>
-  tags: string[]
-  isActive: boolean
-  isTrashed: boolean
   createdAt: string
   updatedAt: string
   pinned?: boolean
@@ -99,7 +96,7 @@ interface ElectronAPI {
   notesAPI: {
     getAllNotes: () => Promise<Note[]>
     getTrashedNotes: () => Promise<Note[]>
-    insertNote: (note: Omit<Note, 'id' | 'createdAt' | 'updatedAt'>) => Promise<Note>
+    insertNote: (note: Note) => Promise<Note>
     updateNote: (id: string, fields: NoteFields) => Promise<Note>
     trashNote: (id: string) => Promise<void>
     restoreNote: (id: string) => Promise<void>

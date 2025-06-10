@@ -2,80 +2,17 @@ import { app, BrowserWindow, screen } from 'electron'
 import path from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 
-// utiles
+// utilities
 import { registerAllHandlers } from './registerHandlers'
 import { registerViewHandlers } from './utils/animateViewTransition'
 import { cancelWindowResize } from './utils/windowResize'
 import { setupPowerMonitoring } from './utils/powerMonitor'
+import { handleProtocolUrl, setupProtocolHandling } from './features/auth/protocolHandler'
 
 // constants
 import { WIDTH, HEIGHT, PROTOCOL } from '../constants/constants'
 
 let mainWindow: BrowserWindow | null = null
-
-// Handle deeplink URLs
-function handleProtocolUrl(url: string): void {
-  console.log('Protocol URL received:', url)
-
-  try {
-    // ① Parse tokens from the URL
-    const parsed = new URL(url)
-    const access = parsed.searchParams.get('access')
-    const refresh = parsed.searchParams.get('refresh')
-    const error = parsed.searchParams.get('error')
-
-    console.log('access', access)
-    console.log('refresh', refresh)
-    console.log('error', error)
-
-    // ② Handle authentication response
-    if (access || error) {
-      console.log('Authentication response received')
-
-      // ③ Persist tokens securely (for now, store in memory - TODO: use keytar/secure storage)
-      if (access) {
-        ;(
-          global as { authTokens?: { access: string; refresh?: string; timestamp: number } }
-        ).authTokens = {
-          access,
-          refresh: refresh || undefined,
-          timestamp: Date.now()
-        }
-        console.log('Tokens stored successfully')
-      }
-
-      // ④ Forward to renderer so React can update UI
-      if (mainWindow) {
-        mainWindow.webContents.send('protocol-url', {
-          url,
-          tokens: access ? { access, refresh } : null,
-          error
-        })
-      }
-
-      // Note: No need to close auth window since we're using external browser
-    } else {
-      // Handle other protocol URLs (non-auth)
-      if (mainWindow) {
-        mainWindow.webContents.send('protocol-url', { url })
-      }
-    }
-  } catch (parseError) {
-    console.error('Error parsing protocol URL:', parseError)
-    if (mainWindow) {
-      mainWindow.webContents.send('protocol-url', {
-        url,
-        error: 'Failed to parse authentication response'
-      })
-    }
-  }
-
-  // ⑥ Focus the main window
-  if (mainWindow) {
-    if (mainWindow.isMinimized()) mainWindow.restore()
-    mainWindow.focus()
-  }
-}
 
 function createWindow(): void {
   // Get the display nearest to the cursor instead of primary display
@@ -136,33 +73,15 @@ function createWindow(): void {
 
   // Set up sleep/wake handlers
   setupPowerMonitoring(mainWindow)
+
+  // Setup protocol handling
+  setupProtocolHandling(mainWindow)
 }
 
 // Register as default protocol client
 if (!app.isDefaultProtocolClient(PROTOCOL)) {
   app.setAsDefaultProtocolClient(PROTOCOL)
 }
-
-// Handle protocol URLs on Windows/Linux
-app.on('second-instance', (_event, commandLine) => {
-  // Find protocol URL in command line arguments
-  const protocolUrl = commandLine.find((arg) => arg.startsWith(`${PROTOCOL}://`))
-  if (protocolUrl) {
-    handleProtocolUrl(protocolUrl)
-  }
-
-  // Focus the main window
-  if (mainWindow) {
-    if (mainWindow.isMinimized()) mainWindow.restore()
-    mainWindow.focus()
-  }
-})
-
-// Handle protocol URLs on macOS
-app.on('open-url', (event, url) => {
-  event.preventDefault()
-  handleProtocolUrl(url)
-})
 
 // Ensure single instance
 const gotTheLock = app.requestSingleInstanceLock()
@@ -187,7 +106,7 @@ if (!gotTheLock) {
 
     // Handle any pending protocol URL from app launch
     if (process.env.PENDING_PROTOCOL_URL) {
-      handleProtocolUrl(process.env.PENDING_PROTOCOL_URL)
+      handleProtocolUrl(process.env.PENDING_PROTOCOL_URL, mainWindow)
       delete process.env.PENDING_PROTOCOL_URL
     }
 
@@ -195,7 +114,7 @@ if (!gotTheLock) {
     if (process.platform !== 'darwin') {
       const protocolUrl = process.argv.find((arg) => arg.startsWith(`${PROTOCOL}://`))
       if (protocolUrl) {
-        handleProtocolUrl(protocolUrl)
+        handleProtocolUrl(protocolUrl, mainWindow)
       }
     }
 

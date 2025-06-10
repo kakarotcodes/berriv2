@@ -23,13 +23,15 @@ const NotesSidebar: React.FC = () => {
   }, [setNotes])
 
   const handleAddNote = async () => {
+    const now = new Date().toISOString()
     const newNote = {
+      id: crypto.randomUUID(),
       title: '',
       type: 'richtext' as const,
       content: '',
-      tags: [],
-      isActive: true,
-      isTrashed: false
+      createdAt: now,
+      updatedAt: now,
+      trashed: false
     }
     const savedNote = await window.electronAPI.notesAPI.insertNote(newNote)
     await refreshNotes()
