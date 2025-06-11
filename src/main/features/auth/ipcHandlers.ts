@@ -1,5 +1,5 @@
 import { ipcMain } from 'electron'
-import { openGoogleLoginWindow, closeAuthWindow } from '../auth'
+import { openGoogleLoginWindow, closeAuthWindow, requestCalendarPermissions } from '../auth'
 
 interface AuthResponse {
   success: boolean
@@ -17,7 +17,30 @@ export function registerAuthHandlers(): void {
       console.error('Failed to open Google login window:', error)
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Failed to open login window'
+      }
+    }
+  })
+
+  // Handle calendar permission request
+  ipcMain.handle('auth:request-calendar', async (): Promise<AuthResponse> => {
+    console.log('[IPC] auth:request-calendar handler called')
+    try {
+      requestCalendarPermissions()
+      console.log('[IPC] requestCalendarPermissions completed successfully')
+      return {
+        success: true
+      }
+    } catch (error) {
+      console.error('[IPC] Failed to request calendar permissions:', error)
+      console.error('[IPC] Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        type: typeof error
+      })
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to open calendar permission request'
       }
     }
   })

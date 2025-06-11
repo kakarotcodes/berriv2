@@ -27,6 +27,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   auth: {
     openGoogleLogin: () => ipcRenderer.invoke('auth:open-google-login'),
+    requestCalendarPermissions: () => ipcRenderer.invoke('auth:request-calendar'),
     getTokens: () => ipcRenderer.invoke('auth:get-tokens'),
     logout: () => ipcRenderer.invoke('auth:logout'),
     onAuthCallback: (callback) => {
@@ -43,6 +44,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
         ipcRenderer.removeAllListeners('protocol-url')
       }
     }
+  },
+
+  // ------------------------------------------------------------
+  // Calendar API
+  // ------------------------------------------------------------
+
+  calendar: {
+    getEvents: (options) => ipcRenderer.invoke('calendar:get-events', options)
   },
 
   // ------------------------------------------------------------

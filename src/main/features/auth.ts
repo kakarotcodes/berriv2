@@ -16,3 +16,10 @@ export function getAuthWindow(): null {
   // No longer needed since we're using external browser
   return null
 }
+
+export function requestCalendarPermissions(): void {
+  // Open calendar permissions request URL in the user's default browser
+  const calendarPermissionUrl = 'http://localhost:3000/auth/calendar?source=electron'
+  shell.openExternal(calendarPermissionUrl)
+  console.log('Opened calendar permissions request in external browser:', calendarPermissionUrl)
+}

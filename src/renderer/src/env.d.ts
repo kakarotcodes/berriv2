@@ -53,9 +53,27 @@ interface ElectronAPI {
   // Authentication API
   auth: {
     openGoogleLogin: () => Promise<AuthResponse>
+    requestCalendarPermissions: () => Promise<AuthResponse>
     getTokens: () => Promise<AuthResponse>
     logout: () => Promise<AuthResponse>
     onAuthCallback: (callback: (data: AuthCallbackData) => void) => () => void
+  }
+
+  // Calendar API
+  calendar: {
+    getEvents: (options?: { timeMin?: string; timeMax?: string; maxResults?: number }) => Promise<{
+      success: boolean
+      events?: Array<{
+        id: string
+        title: string
+        start: string
+        end: string
+        description?: string
+        location?: string
+        htmlLink?: string
+      }>
+      error?: string
+    }>
   }
 
   // Vertical Drag
