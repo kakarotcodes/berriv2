@@ -51,7 +51,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // ------------------------------------------------------------
 
   calendar: {
-    getEvents: (options) => ipcRenderer.invoke('calendar:get-events', options)
+    getEvents: (options) => ipcRenderer.invoke('calendar:get-events', options),
+    createEvent: (event) => ipcRenderer.invoke('calendar:create-event', event)
   },
 
   // ------------------------------------------------------------

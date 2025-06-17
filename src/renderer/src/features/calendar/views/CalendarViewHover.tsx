@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '../../../hooks/useAuth'
-import { CalendarIcon, ClockIcon, MapPinIcon, RefreshCwIcon, ExternalLinkIcon } from 'lucide-react'
+import { CalendarIcon, ClockIcon, UserPlusIcon, RefreshCwIcon, VideoIcon, MapPinIcon } from 'lucide-react'
 
 interface CalendarEvent {
   id: string
@@ -18,6 +18,19 @@ const CalendarViewHover: React.FC = () => {
   const [events, setEvents] = useState<CalendarEvent[]>([])
   const [isLoadingEvents, setIsLoadingEvents] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  
+  // Form state
+  const [eventType, setEventType] = useState<'event' | 'meeting'>('event')
+  const [eventForm, setEventForm] = useState({
+    title: '',
+    date: new Date().toISOString().split('T')[0],
+    startTime: '09:00',
+    endTime: '10:00',
+    description: '',
+    location: '',
+    attendees: ''
+  })
+  const [isCreating, setIsCreating] = useState(false)
 
   // Fetch calendar events when authenticated
   useEffect(() => {
@@ -68,25 +81,6 @@ const CalendarViewHover: React.FC = () => {
     }
   }
 
-  const formatEventDate = (dateString: string) => {
-    const date = new Date(dateString)
-    const today = new Date()
-    const tomorrow = new Date(today)
-    tomorrow.setDate(tomorrow.getDate() + 1)
-    
-    const isToday = date.toDateString() === today.toDateString()
-    const isTomorrow = date.toDateString() === tomorrow.toDateString()
-    
-    if (isToday) return 'Today'
-    if (isTomorrow) return 'Tomorrow'
-    
-    return date.toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric',
-      weekday: 'short'
-    })
-  }
-
   const formatEventTime = (startString: string, endString: string) => {
     const start = new Date(startString)
     const end = new Date(endString)
@@ -102,23 +96,82 @@ const CalendarViewHover: React.FC = () => {
     return `${formatTime(start)} - ${formatTime(end)}`
   }
 
-  const isEventSoon = (startString: string) => {
-    const start = new Date(startString)
-    const now = new Date()
-    const diffMinutes = (start.getTime() - now.getTime()) / (1000 * 60)
-    return diffMinutes <= 30 && diffMinutes > 0
+  const isToday = (dateString: string) => {
+    const eventDate = new Date(dateString).toDateString()
+    const today = new Date().toDateString()
+    return eventDate === today
   }
 
-  const openEventLink = (htmlLink?: string) => {
-    if (htmlLink) {
-      window.electronAPI.openExternal(htmlLink)
+  const handleCreateEvent = async () => {
+    if (!eventForm.title.trim()) return
+    
+    setIsCreating(true)
+    setError(null)
+    
+    try {
+      // Combine date and time for start/end
+      const startDateTime = `${eventForm.date}T${eventForm.startTime}:00`
+      const endDateTime = `${eventForm.date}T${eventForm.endTime}:00`
+      
+      // Prepare event data
+      const eventData = {
+        title: eventForm.title,
+        start: startDateTime,
+        end: endDateTime,
+        description: eventType === 'meeting' 
+          ? `${eventForm.description ? eventForm.description + '\n\n' : ''}Meeting scheduled via Berri`
+          : eventForm.description,
+        location: eventType === 'meeting' && !eventForm.location
+          ? 'Google Meet (link will be generated)'
+          : eventForm.location,
+        attendees: eventForm.attendees 
+          ? eventForm.attendees.split(',').map(email => email.trim()).filter(email => email)
+          : []
+      }
+      
+      const result = await window.electronAPI.calendar.createEvent(eventData)
+      
+      if (result.success) {
+        // Reset form after successful creation
+        setEventForm({
+          title: '',
+          date: new Date().toISOString().split('T')[0],
+          startTime: '09:00',
+          endTime: '10:00',
+          description: '',
+          location: '',
+          attendees: ''
+        })
+        
+        // Refresh events list
+        await fetchCalendarEvents()
+        
+        // Show success message
+        console.log('Event created successfully:', result.event)
+      } else {
+        setError(result.error || 'Failed to create event')
+      }
+    } catch (err) {
+      console.error('Error creating event:', err)
+      setError('Failed to create event')
+    } finally {
+      setIsCreating(false)
     }
+  }
+
+  const formatDateForDisplay = (dateString: string) => {
+    const date = new Date(dateString)
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    })
   }
 
   if (authLoading) {
     return (
-      <div className="calendar-hover-view p-6 bg-gradient-to-br from-blue-50 to-indigo-50 min-h-[200px]">
-        <div className="flex items-center justify-center h-32">
+      <div className="calendar-hover-view p-6 bg-gray-100 min-h-[400px] rounded-2xl">
+        <div className="flex items-center justify-center h-full">
           <div className="flex items-center space-x-3 text-gray-600">
             <RefreshCwIcon className="w-5 h-5 animate-spin" />
             <span className="text-sm font-medium">Loading...</span>
@@ -130,7 +183,7 @@ const CalendarViewHover: React.FC = () => {
 
   if (!isAuthenticated) {
     return (
-      <div className="calendar-hover-view p-6 bg-gradient-to-br from-blue-50 to-indigo-50">
+      <div className="calendar-hover-view p-6 bg-gray-100 rounded-2xl">
         <div className="text-center">
           <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
             <CalendarIcon className="w-8 h-8 text-blue-600" />
@@ -138,7 +191,7 @@ const CalendarViewHover: React.FC = () => {
           
           <h3 className="text-lg font-semibold text-gray-900 mb-2">Connect Your Calendar</h3>
           <p className="text-sm text-gray-600 mb-6 leading-relaxed">
-            Connect your Google Calendar to view upcoming events and get timely notifications.
+            Connect your Google Calendar to view upcoming events and create new ones.
           </p>
           
           <button
@@ -170,95 +223,180 @@ const CalendarViewHover: React.FC = () => {
   }
 
   return (
-    <div className="calendar-hover-view bg-gradient-to-br from-blue-50 to-indigo-50">
-      <div className="p-4 border-b border-blue-100 bg-white/50 backdrop-blur-sm">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center space-x-2">
-            <CalendarIcon className="w-5 h-5 text-blue-600" />
-            <h3 className="text-lg font-semibold text-gray-900">Upcoming Events</h3>
+    <div className="calendar-hover-view w-[550px] h-[450px]">
+      <div className="flex h-full space-x-4">
+        {/* Left Panel - Upcoming Events */}
+        <div className="w-[200px] bg-gray-200 rounded-xl p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-lg font-semibold text-gray-900">Upcoming Events</h2>
+            <button
+              onClick={fetchCalendarEvents}
+              disabled={isLoadingEvents}
+              className="p-1 text-gray-500 hover:text-gray-700 rounded"
+            >
+              <RefreshCwIcon className={`w-4 h-4 ${isLoadingEvents ? 'animate-spin' : ''}`} />
+            </button>
           </div>
-          <button
-            onClick={fetchCalendarEvents}
-            disabled={isLoadingEvents}
-            className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
-            title="Refresh events"
-          >
-            <RefreshCwIcon className={`w-4 h-4 ${isLoadingEvents ? 'animate-spin' : ''}`} />
-          </button>
-        </div>
-      </div>
-      
-      <div className="p-4 max-h-80 overflow-y-auto">
-        {isLoadingEvents ? (
-          <div className="flex items-center justify-center py-8">
-            <div className="flex items-center space-x-3 text-gray-600">
-              <RefreshCwIcon className="w-5 h-5 animate-spin" />
-              <span className="text-sm font-medium">Loading events...</span>
-            </div>
-          </div>
-        ) : error ? (
-          <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-sm text-red-600">{error}</p>
-          </div>
-        ) : events.length === 0 ? (
-          <div className="text-center py-8">
-            <div className="mx-auto w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-3">
-              <CalendarIcon className="w-6 h-6 text-gray-400" />
-            </div>
-            <p className="text-sm text-gray-500 font-medium">No upcoming events</p>
-            <p className="text-xs text-gray-400 mt-1">Your schedule is clear for the next 7 days</p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {events.map((event) => (
-              <div 
-                key={event.id} 
-                className={`group relative bg-white border rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer ${
-                  isEventSoon(event.start) ? 'ring-2 ring-orange-200 bg-orange-50' : 'hover:bg-gray-50'
-                }`}
-                onClick={() => openEventLink(event.htmlLink)}
-              >
-                {isEventSoon(event.start) && (
-                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-orange-400 rounded-full animate-pulse"></div>
-                )}
-                
-                <div className="flex items-start justify-between">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center space-x-2 text-xs text-gray-500 mb-1">
-                      <span className="font-medium">{formatEventDate(event.start)}</span>
-                      <span>•</span>
-                      <div className="flex items-center space-x-1">
-                        <ClockIcon className="w-3 h-3" />
-                        <span>{formatEventTime(event.start, event.end)}</span>
-                      </div>
-                    </div>
-                    
-                    <h4 className="font-medium text-gray-900 mb-1 truncate pr-2" title={event.title}>
-                      {event.title}
-                    </h4>
-                    
-                    {event.location && (
-                      <div className="flex items-center space-x-1 text-xs text-gray-500 mb-1">
-                        <MapPinIcon className="w-3 h-3" />
-                        <span className="truncate">{event.location}</span>
-                      </div>
-                    )}
-                    
-                    {event.description && (
-                      <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed">
-                        {event.description}
-                      </p>
-                    )}
-                  </div>
-                  
-                  {event.htmlLink && (
-                    <ExternalLinkIcon className="w-4 h-4 text-gray-400 group-hover:text-blue-600 transition-colors flex-shrink-0 ml-2" />
-                  )}
-                </div>
+
+          <div className="space-y-3 overflow-y-auto max-h-[350px]">
+            {isLoadingEvents ? (
+              <div className="flex items-center justify-center py-8">
+                <RefreshCwIcon className="w-5 h-5 animate-spin text-gray-500" />
               </div>
-            ))}
+            ) : error ? (
+              <div className="text-red-600 text-sm">{error}</div>
+            ) : events.length === 0 ? (
+              <div className="text-gray-500 text-sm text-center py-8">
+                No upcoming events
+              </div>
+            ) : (
+              <>
+                {isToday(events[0]?.start) && (
+                  <div className="text-sm font-medium text-gray-700 mb-2">Today</div>
+                )}
+                {events.map((event) => (
+                  <div key={event.id} className="space-y-1">
+                    <div className="font-medium text-gray-900 text-sm">{event.title}</div>
+                    <div className="text-xs text-gray-600">
+                      {formatEventTime(event.start, event.end)}
+                    </div>
+                  </div>
+                ))}
+              </>
+            )}
           </div>
-        )}
+        </div>
+
+        {/* Right Panel - Add Event/Schedule Meeting */}
+        <div className="flex-1 bg-gray-200 rounded-xl p-4">
+          {/* Event Type Selector */}
+          <div className="flex mb-3 bg-gray-300 rounded-lg p-1">
+            <button
+              onClick={() => setEventType('event')}
+              className={`flex-1 py-1.5 px-3 rounded-md text-sm font-medium transition-colors ${
+                eventType === 'event'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <CalendarIcon className="w-4 h-4 inline-block mr-2" />
+              Add Event
+            </button>
+            <button
+              onClick={() => setEventType('meeting')}
+              className={`flex-1 py-1.5 px-3 rounded-md text-sm font-medium transition-colors ${
+                eventType === 'meeting'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <VideoIcon className="w-4 h-4 inline-block mr-2" />
+              Schedule Meeting
+            </button>
+          </div>
+
+          <h2 className="text-lg font-semibold text-gray-900 mb-3">
+            {eventType === 'event' ? 'Add Event' : 'Schedule Meeting'}
+          </h2>
+          
+          <div className="space-y-3">
+            {/* Date Field */}
+            <div className="relative">
+              <input
+                type="date"
+                value={eventForm.date}
+                onChange={(e) => setEventForm({...eventForm, date: e.target.value})}
+                className="w-full px-3 py-1.5 bg-gray-300 border-none rounded-lg text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <CalendarIcon className="absolute right-3 top-2 w-4 h-4 text-gray-600 pointer-events-none" />
+            </div>
+
+            {/* Time Fields */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <input
+                  type="time"
+                  value={eventForm.startTime}
+                  onChange={(e) => setEventForm({...eventForm, startTime: e.target.value})}
+                  className="w-full px-3 py-1.5 bg-gray-300 border-none rounded-lg text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <div className="text-xs text-gray-600 mt-1">Start time</div>
+              </div>
+              <div>
+                <input
+                  type="time"
+                  value={eventForm.endTime}
+                  onChange={(e) => setEventForm({...eventForm, endTime: e.target.value})}
+                  className="w-full px-3 py-1.5 bg-gray-300 border-none rounded-lg text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <div className="text-xs text-gray-600 mt-1">End time</div>
+              </div>
+            </div>
+
+            {/* Event Title */}
+            <input
+              type="text"
+              placeholder={eventType === 'event' ? 'Event title' : 'Meeting title'}
+              value={eventForm.title}
+              onChange={(e) => setEventForm({...eventForm, title: e.target.value})}
+              className="w-full px-3 py-1.5 bg-gray-300 border-none rounded-lg text-gray-900 text-sm placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+
+            {/* Description (for meetings) */}
+            {eventType === 'meeting' && (
+              <textarea
+                placeholder="Meeting agenda or description"
+                value={eventForm.description}
+                onChange={(e) => setEventForm({...eventForm, description: e.target.value})}
+                className="w-full px-3 py-1.5 bg-gray-300 border-none rounded-lg text-gray-900 text-sm placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                rows={2}
+              />
+            )}
+
+            {/* Location */}
+            <div className="relative">
+              <input
+                type="text"
+                placeholder={eventType === 'meeting' ? 'Location (optional)' : 'Location'}
+                value={eventForm.location}
+                onChange={(e) => setEventForm({...eventForm, location: e.target.value})}
+                className="w-full px-3 py-1.5 bg-gray-300 border-none rounded-lg text-gray-900 text-sm placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <MapPinIcon className="absolute right-3 top-2 w-4 h-4 text-gray-600 pointer-events-none" />
+            </div>
+
+            {/* Add Guests */}
+            <div>
+              <input
+                type="text"
+                placeholder="Add guests (email addresses)"
+                value={eventForm.attendees}
+                onChange={(e) => setEventForm({...eventForm, attendees: e.target.value})}
+                className="w-full px-3 py-1.5 bg-gray-300 border-none rounded-lg text-gray-900 text-sm placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <div className="flex items-center space-x-2 text-gray-600 mt-1">
+                <UserPlusIcon className="w-3 h-3" />
+                <span className="text-xs">Separate multiple emails with commas</span>
+              </div>
+            </div>
+
+            {/* Error Message */}
+            {error && (
+              <div className="p-2 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-xs text-red-600">{error}</p>
+              </div>
+            )}
+
+            {/* Create Button */}
+            <button
+              onClick={handleCreateEvent}
+              disabled={!eventForm.title.trim() || isCreating}
+              className="w-full py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white text-sm font-medium rounded-lg transition-colors disabled:cursor-not-allowed"
+            >
+              {isCreating ? 'Creating...' : eventType === 'event' ? 'Create Event' : 'Schedule Meeting'}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   )

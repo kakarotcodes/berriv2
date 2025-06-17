@@ -16,10 +16,31 @@ interface CalendarAPIResponse {
   error?: string
 }
 
+interface CreateEventResponse {
+  success: boolean
+  event?: {
+    id: string
+    title: string
+    start: string
+    end: string
+    htmlLink?: string
+  }
+  error?: string
+}
+
 interface GetEventsOptions {
   timeMin?: string
   timeMax?: string
   maxResults?: number
+}
+
+interface CreateEventOptions {
+  title: string
+  start: string
+  end: string
+  description?: string
+  location?: string
+  attendees?: string[]
 }
 
 export class CalendarAPI {
@@ -80,6 +101,53 @@ export class CalendarAPI {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to fetch calendar events'
+      }
+    }
+  }
+
+  async createEvent(accessToken: string, eventData: CreateEventOptions, refreshToken?: string): Promise<CreateEventResponse> {
+    try {
+      this.setCredentials(accessToken, refreshToken)
+
+      const calendar = google.calendar({ version: 'v3', auth: this.oauth2Client })
+
+      const eventResource = {
+        summary: eventData.title,
+        start: {
+          dateTime: eventData.start,
+          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        },
+        end: {
+          dateTime: eventData.end,
+          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        },
+        description: eventData.description || '',
+        location: eventData.location || '',
+        attendees: eventData.attendees?.map(email => ({ email })) || [],
+      }
+
+      const response = await calendar.events.insert({
+        calendarId: 'primary',
+        requestBody: eventResource,
+      })
+
+      const createdEvent = response.data
+
+      return {
+        success: true,
+        event: {
+          id: createdEvent.id || '',
+          title: createdEvent.summary || '',
+          start: createdEvent.start?.dateTime || createdEvent.start?.date || '',
+          end: createdEvent.end?.dateTime || createdEvent.end?.date || '',
+          htmlLink: createdEvent.htmlLink || ''
+        }
+      }
+    } catch (error) {
+      console.error('Calendar create event error:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to create calendar event'
       }
     }
   }

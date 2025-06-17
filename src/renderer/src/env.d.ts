@@ -74,6 +74,24 @@ interface ElectronAPI {
       }>
       error?: string
     }>
+    createEvent: (event: {
+      title: string
+      start: string
+      end: string
+      description?: string
+      location?: string
+      attendees?: string[]
+    }) => Promise<{
+      success: boolean
+      event?: {
+        id: string
+        title: string
+        start: string
+        end: string
+        htmlLink?: string
+      }
+      error?: string
+    }>
   }
 
   // Vertical Drag
