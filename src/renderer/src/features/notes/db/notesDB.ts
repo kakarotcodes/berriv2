@@ -98,27 +98,27 @@ const serializeContent = (note: Note): string => {
 }
 
 // Helper function to deserialize content based on note type
-const deserializeContent = (rawNote: any): Note => {
+const deserializeContent = (rawNote: Record<string, unknown>): Note => {
   let result: Note
   try {
     if (rawNote.type === 'checklist') {
       // For checklist notes, parse the JSON array
       result = {
         ...rawNote,
-        content: JSON.parse(rawNote.content)
-      }
+        content: JSON.parse(rawNote.content as string)
+      } as Note
     } else {
       // For text/richtext notes, use content as-is (HTML string)
       result = {
         ...rawNote,
         content: rawNote.content
-      }
+      } as Note
     }
 
     console.log('[DB] Deserializing content:', {
       noteId: rawNote.id,
       noteType: rawNote.type,
-      rawContentLength: rawNote.content?.length || 0,
+      rawContentLength: (rawNote.content as string)?.length || 0,
       resultContentLength:
         typeof result.content === 'string'
           ? result.content.length
@@ -136,7 +136,7 @@ const deserializeContent = (rawNote: any): Note => {
     return {
       ...rawNote,
       content: rawNote.content // Use raw content if parsing fails
-    }
+    } as Note
   }
 }
 
@@ -156,7 +156,7 @@ export const NotesDB = {
       .map(deserializeContent)
   },
 
-  insertNote: (note: Note) => {
+  insertNote: (note: Note): Note => {
     db.prepare(
       `
       INSERT INTO notes (id, title, type, content, createdAt, updatedAt, trashed)
@@ -167,6 +167,9 @@ export const NotesDB = {
       content: serializeContent(note),
       trashed: note.trashed ? 1 : 0
     })
+
+    // Return the note that was inserted
+    return note
   },
 
   updateNote: (id: string, fields: Partial<Omit<Note, 'id'>>) => {
@@ -200,5 +203,20 @@ export const NotesDB = {
 
   permanentlyDeleteNote: (id: string) => {
     db.prepare(`DELETE FROM notes WHERE id = ?`).run(id)
+  },
+
+  // Remove duplicate notes based on title, content, and createdAt
+  removeDuplicates: () => {
+    console.log('[DB] Removing duplicate notes...')
+    const result = db.prepare(`
+      DELETE FROM notes 
+      WHERE id NOT IN (
+        SELECT MIN(id) 
+        FROM notes 
+        GROUP BY title, content, createdAt, trashed
+      )
+    `).run()
+    console.log(`[DB] Removed ${result.changes} duplicate notes`)
+    return result.changes
   }
 }

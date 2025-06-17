@@ -6,27 +6,18 @@ import NotesSidebar from '../components/NotesSidebar'
 import NotesEditor from '../components/NotesEditor'
 
 // store
-import { useNotesStore } from '../store/notesStore'
-import { useElectron } from '../../../hooks/useElectron'
 import { useViewStore } from '../../../globalStore/viewStore'
 
-
-// Force interval-based window size checking
-const WINDOW_SIZE_CHECK_INTERVAL = 500 // Check every half second when resizable
-const RESIZE_END_DELAY = 1000 // Delay after resize seems to have stopped
+// Constants for timing
+const RESIZE_END_DELAY = 500 // Wait 500ms after last resize before final save
 
 const NotesViewHover: React.FC = () => {
-  const [leftWidth, setLeftWidth] = useState<number>(40)
-  const [isResizable, setIsResizable] = useState<boolean>(false)
-  const resizerRef = useRef<HTMLDivElement>(null)
-  const containerRef = useRef<HTMLDivElement>(null)
-  const isDraggingRef = useRef<boolean>(false)
-  const lastKnownSize = useRef<{ width: number; height: number } | null>(null)
+  const [leftWidth, setLeftWidth] = useState(40) // 40% for sidebar
   const resizeTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-
-  const { setNotes, setTrashed } = useNotesStore()
-  const { setResizable } = useElectron()
-
+  const lastKnownSize = useRef<{ width: number; height: number } | null>(null)
+  const isDraggingRef = useRef(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const resizerRef = useRef<HTMLDivElement>(null)
   // Add a manual sync function that can be called from multiple places
   const syncWindowSizeToStore = async (source: string = 'unknown') => {
     console.log(`[HOVER] Syncing window size to store (source: ${source})`)
@@ -75,32 +66,30 @@ const NotesViewHover: React.FC = () => {
     }
   }
 
-  // Better resize detection - handle both polling and delayed final save
+  // Use proper window resize event listeners instead of constant polling
   useEffect(() => {
-    if (!isResizable) return
+    console.log('[HOVER] Setting up window resize listeners')
 
-    console.log('[HOVER] Starting window size polling')
-
-    // Poll for changes while resizable is enabled
-    const intervalId = setInterval(async () => {
-      const changed = await syncWindowSizeToStore('interval')
-
-      // If size changed, schedule a final update
-      if (changed && resizeTimeoutRef.current) {
+    const handleResize = () => {
+      // Clear any existing timeout
+      if (resizeTimeoutRef.current) {
         clearTimeout(resizeTimeoutRef.current)
       }
 
-      // Set a new timeout for final size update
+      // Set a debounced timeout for final size update
       resizeTimeoutRef.current = setTimeout(async () => {
-        console.log('[HOVER] Final size update after resize pause')
-        await syncWindowSizeToStore('resize_end')
+        console.log('[HOVER] Window resize detected, syncing size')
+        await syncWindowSizeToStore('window_resize')
         resizeTimeoutRef.current = null
       }, RESIZE_END_DELAY)
-    }, WINDOW_SIZE_CHECK_INTERVAL)
+    }
+
+    // Listen for window resize events
+    window.addEventListener('resize', handleResize)
 
     return () => {
-      console.log('[HOVER] Stopping window size polling')
-      clearInterval(intervalId)
+      console.log('[HOVER] Cleaning up window resize listeners')
+      window.removeEventListener('resize', handleResize)
 
       // Clear any pending resize timeout
       if (resizeTimeoutRef.current) {
@@ -108,7 +97,7 @@ const NotesViewHover: React.FC = () => {
         resizeTimeoutRef.current = null
       }
     }
-  }, [isResizable])
+  }, [])
 
   // On component mount, initialize with saved dimensions and get current size
   useEffect(() => {
@@ -136,18 +125,7 @@ const NotesViewHover: React.FC = () => {
     }
   }, [])
 
-  // Load notes
-  useEffect(() => {
-    async function loadNotes() {
-      const [all, trash] = await Promise.all([
-        window.electronAPI.notesAPI.getAllNotes(),
-        window.electronAPI.notesAPI.getTrashedNotes()
-      ])
-      setNotes(all)
-      setTrashed(trash)
-    }
-    loadNotes()
-  }, [])
+  // Notes loading is now handled by the store in NotesSidebar
 
   useEffect(() => {
     const handleMouseDown = (e: MouseEvent) => {
@@ -184,27 +162,6 @@ const NotesViewHover: React.FC = () => {
       document.removeEventListener('mousemove', handleMouseMove)
     }
   }, [])
-
-  // Toggle window resizability
-  const toggleResizable = async () => {
-    const newState = !isResizable
-    console.log('[HOVER] Toggle resizable:', newState)
-
-    // Update component state
-    setIsResizable(newState)
-
-    // Update window resizability
-    setResizable(newState)
-
-    // Sync sizes at toggle points
-    if (!newState) {
-      // When disabling resize mode, ensure we save the final dimensions
-      await syncWindowSizeToStore('toggle_resize_off')
-    } else {
-      // When enabling resize mode, record baseline dimensions
-      await syncWindowSizeToStore('toggle_resize_on')
-    }
-  }
 
   return (
     <div className="w-full h-full flex text-white text-sm animated-gradient" ref={containerRef}>

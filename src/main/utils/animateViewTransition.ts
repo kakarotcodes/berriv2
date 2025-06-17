@@ -11,15 +11,11 @@ import { WIDTH, HEIGHT, OFFSET } from '../../constants/constants'
 // Keep track of the last known good pill position for the current session
 let lastKnownPillY: number | null = null
 
-// Keep track of the last known hover position
-let lastKnownHoverX: number | null = null
-let lastKnownHoverY: number | null = null
-
 // Flag to track if this is the first transition to pill after app launch
 let isFirstTransitionToPill = true
 
 // Debug helper
-const logPositionInfo = (message: string, data: any) => {
+const logPositionInfo = (message: string, data: unknown) => {
   console.log(`[POSITION] ${message}:`, data)
 }
 
@@ -64,19 +60,8 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
     hoverY: savedHoverY
   })
 
-  if (savedHoverX !== undefined) {
-    lastKnownHoverX = savedHoverX
-    logPositionInfo('Loaded saved hover X position at startup', savedHoverX)
-  } else {
-    console.log('[POSITION] No saved hover X position found')
-  }
-
-  if (savedHoverY !== undefined) {
-    lastKnownHoverY = savedHoverY
-    logPositionInfo('Loaded saved hover Y position at startup', savedHoverY)
-  } else {
-    console.log('[POSITION] No saved hover Y position found')
-  }
+  // Note: Hover positions are saved but not used in startup positioning
+  // They are loaded when transitioning to hover view dynamically
 
   // Handle IPC calls for view transitions
   ipcMain.handle('animate-view-transition', async (_event, view: ViewType) => {
@@ -274,7 +259,7 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
         height: dimensions.height
       })
 
-      // 4. Set the window size and position (animation handled by the OS)
+      // 4. Set the window size and position with fast native animation
       mainWindow.setBounds(
         {
           x: Math.round(targetX),
@@ -282,8 +267,18 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
           width: dimensions.width,
           height: dimensions.height
         },
-        true
-      ) // true = animate
+        true // Keep native animation but with faster timing
+      )
+
+      // Much faster completion detection
+      mainWindow.once('resized', () => {
+        mainWindow.webContents.send('view-transition-done', view)
+      })
+
+      // Super fast fallback for snappy feel
+      setTimeout(() => {
+        mainWindow.webContents.send('view-transition-done', view)
+      }, 120) // Fast but safe timing to prevent flicker
 
       return true
     } catch (error) {

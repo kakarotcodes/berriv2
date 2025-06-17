@@ -274,4 +274,31 @@ export function registerWindowHandlers(mainWindow: BrowserWindow) {
     console.log('Persisting last view for sleep/wake:', view)
     prefs.set('lastViewAfterSleep', view)
   })
+
+  // Handle temporary window hiding for flicker-free transitions
+  ipcMain.handle('window:hide-temporarily', async () => {
+    try {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.hide()
+        return { success: true }
+      }
+      return { success: false, error: 'Window not available' }
+    } catch (error) {
+      console.error('Failed to hide window:', error)
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
+    }
+  })
+
+  ipcMain.handle('window:show', async () => {
+    try {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.show()
+        return { success: true }
+      }
+      return { success: false, error: 'Window not available' }
+    } catch (error) {
+      console.error('Failed to show window:', error)
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
+    }
+  })
 }

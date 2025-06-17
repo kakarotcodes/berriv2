@@ -12,6 +12,7 @@ export interface FeatureModule {
 // Feature imports
 import ClipboardViewHover from './clipboard/views/ClipboardViewHover'
 import NotesViewHover from './notes/views/NotesViewHover'
+import CalendarViewHover from './calendar/views/CalendarViewHover'
 
 // Feature definitions
 export const clipboardFeature: FeatureModule = {
@@ -32,7 +33,7 @@ export const calendarFeature: FeatureModule = {
   id: 'calendar',
   name: 'Calendar',
   icon: null, // Will be set by the consuming component
-  component: () => <div>Calendar View</div>
+  component: CalendarViewHover
 }
 
 export const mailFeature: FeatureModule = {

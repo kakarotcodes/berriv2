@@ -1,4 +1,4 @@
-@import "tailwindcss/preflight";
+@import 'tailwindcss/preflight';
 @tailwind utilities;
 
 /* Forcefully disable all animations and transitions in the app */
@@ -8,4 +8,4 @@
   animation-duration: 0s !important;
   transition-duration: 0s !important;
   transition-delay: 0s !important;
-} 
+}

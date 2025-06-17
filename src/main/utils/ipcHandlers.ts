@@ -59,12 +59,13 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
       .catch(console.error)
   })
 
-  const lastUpdate = 0
-  ipcMain.on('update-vertical-drag', (_e, _: number) => {
+  let lastUpdate = 0
+  ipcMain.on('update-vertical-drag', () => {
     if (!dragState.isDragging || !mainWindow) return
 
     const now = Date.now()
     if (now - lastUpdate < 16) return // ~60fps
+    lastUpdate = now
 
     try {
       // Get cursor position directly from the main process
@@ -130,7 +131,7 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
   ipcMain.on('end-vertical-drag', () => {
     if (!mainWindow || mainWindow.isDestroyed()) return
     const bounds = mainWindow.getBounds()
-    const [_, y] = mainWindow.getPosition()
+    const [, y] = mainWindow.getPosition()
 
     // Save position based on window type
     const isPillView = bounds.width === WIDTH.PILL
@@ -341,9 +342,9 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
 
   ipcMain.handle('notes:saveImage', async (_event, { filename, file }) => {
     try {
-      const { app } = require('electron')
-      const path = require('path')
-      const fs = require('fs').promises
+      const { app } = await import('electron')
+      const path = await import('path')
+      const fs = await import('fs/promises')
 
       // Create images directory if it doesn't exist
       const imagesDir = path.join(app.getPath('userData'), 'images')

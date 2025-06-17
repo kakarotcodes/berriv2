@@ -1,5 +1,5 @@
 // preload/index.js
-const { contextBridge, ipcRenderer } = require('electron')
+import { contextBridge, ipcRenderer } from 'electron'
 
 // CSS opacity fallback handler
 ipcRenderer.on('pill:set-css-opacity', (_event, alpha) => {
@@ -20,6 +20,40 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // Get current window bounds
   getWindowBounds: () => ipcRenderer.invoke('get-window-bounds'),
+
+  // ------------------------------------------------------------
+  // Authentication API
+  // ------------------------------------------------------------
+
+  auth: {
+    openGoogleLogin: () => ipcRenderer.invoke('auth:open-google-login'),
+    requestCalendarPermissions: () => ipcRenderer.invoke('auth:request-calendar'),
+    getTokens: () => ipcRenderer.invoke('auth:get-tokens'),
+    logout: () => ipcRenderer.invoke('auth:logout'),
+    onAuthCallback: (callback) => {
+      // Remove existing listeners to prevent memory leaks
+      ipcRenderer.removeAllListeners('protocol-url')
+
+      // Add the new listener
+      ipcRenderer.on('protocol-url', (_event, data) => {
+        callback(data)
+      })
+
+      // Return a cleanup function
+      return () => {
+        ipcRenderer.removeAllListeners('protocol-url')
+      }
+    }
+  },
+
+  // ------------------------------------------------------------
+  // Calendar API
+  // ------------------------------------------------------------
+
+  calendar: {
+    getEvents: (options) => ipcRenderer.invoke('calendar:get-events', options),
+    createEvent: (event) => ipcRenderer.invoke('calendar:create-event', event)
+  },
 
   // ------------------------------------------------------------
   // Vertical Drag
@@ -120,6 +154,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     trashNote: (id) => ipcRenderer.invoke('notes:trash', id),
     restoreNote: (id) => ipcRenderer.invoke('notes:restore', id),
     permanentlyDeleteNote: (id) => ipcRenderer.invoke('notes:deleteForever', id),
+    removeDuplicates: () => ipcRenderer.invoke('notes:removeDuplicates'),
     saveImage: (filename, arrayBuffer) =>
       ipcRenderer.invoke('notes:saveImage', { filename, file: arrayBuffer })
   },
@@ -129,5 +164,18 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // Hover size management
   saveHoverSize: (dimensions) => ipcRenderer.send('save-hover-size', dimensions),
-  getSavedHoverSize: () => ipcRenderer.invoke('get-hover-size')
+  getSavedHoverSize: () => ipcRenderer.invoke('get-hover-size'),
+
+  // Window visibility for flicker-free transitions
+  hideWindowTemporarily: () => ipcRenderer.invoke('window:hide-temporarily'),
+  showWindow: () => ipcRenderer.invoke('window:show'),
+
+  // Listen for real transition completion events
+  onViewTransitionDone: (callback) => {
+    ipcRenderer.removeAllListeners('view-transition-done')
+    ipcRenderer.on('view-transition-done', (_event, view) => {
+      callback(view)
+    })
+    return () => ipcRenderer.removeAllListeners('view-transition-done')
+  }
 })

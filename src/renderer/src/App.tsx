@@ -44,7 +44,7 @@ const App = memo(() => {
         console.log('Resuming from sleep, restoring view:', view)
         // Only set view if different from current
         if (view && view !== currentView) {
-          setView(view)
+          setView(view as 'default' | 'pill' | 'hover' | 'expanded')
         }
       })
 
@@ -60,13 +60,34 @@ const App = memo(() => {
   // If transitioning to or from a view, or transitioning in general,
   // show an empty window without any content
   if (isTransitioning) {
-    return <main className="w-screen h-screen animated-gradient"></main>
+    return (
+      <main className="w-screen h-screen relative">
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundColor: '#000000', // Fully opaque black
+            zIndex: 9999,
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0
+          }}
+        />
+      </main>
+    )
   }
 
   // Regular rendering without animations for all views
   return (
-    <main className="w-screen h-screen animated-gradient">
-      <div className="absolute inset-0 flex items-center justify-center" style={{ opacity: 1 }}>
+    <main className="w-screen h-screen">
+      <div
+        className="absolute inset-0 flex items-center justify-center"
+        style={{
+          opacity: 1,
+          transition: 'opacity 0.15s ease-in'
+        }}
+      >
         {React.createElement(viewComponents[currentView])}
       </div>
     </main>

@@ -1,45 +1,56 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import { Plus } from 'lucide-react'
 import { groupNotesByDate } from '../utils/groupNotesByDate'
 import { useNotesStore } from '../store/notesStore'
 import { formatDateLabel } from '../utils/formatting'
 import { Note } from '../types/noteTypes'
 
+// Utility to extract first word from HTML string
+function getFirstWordFromHtml(html: string): string {
+  if (!html) return '';
+  // Remove HTML tags
+  const text = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!text) return '';
+  return text.split(' ')[0] || '';
+}
+
 const NotesSidebar: React.FC = () => {
   const {
+    notes,
     selectedNoteId,
     setSelectedNoteId,
-    setNotes,
     trashed,
+    loadNotes,
+    addNote,
     restoreNote,
     permanentlyDeleteNote
   } = useNotesStore()
   const [groupedNotes, setGroupedNotes] = useState<{ label: string; notes: Note[] }[]>([])
 
-  const refreshNotes = async () => {
-    const raw = await window.electronAPI.notesAPI.getAllNotes()
-    setNotes(raw)
-    setGroupedNotes(groupNotesByDate(raw))
-  }
-
   const handleAddNote = async () => {
     const now = new Date().toISOString()
-    const newNote: Note = {
+    const newNote = {
       id: crypto.randomUUID(),
       title: '',
-      type: 'richtext',
+      type: 'richtext' as const,
       content: '',
       createdAt: now,
-      updatedAt: now
+      updatedAt: now,
+      trashed: false
     }
-    await window.electronAPI.notesAPI.insertNote(newNote)
-    await refreshNotes()
+    await addNote(newNote)
     setSelectedNoteId(newNote.id)
   }
 
+  // Load notes once on mount
   useEffect(() => {
-    refreshNotes()
-  }, [])
+    loadNotes()
+  }, [loadNotes])
+
+  // Update grouped notes when notes change
+  useEffect(() => {
+    setGroupedNotes(groupNotesByDate(notes))
+  }, [notes])
 
   return (
     <aside className="w-72 animated-gradient text-white border-r border-zinc-800 flex flex-col">
@@ -74,9 +85,9 @@ const NotesSidebar: React.FC = () => {
                   {note.title?.trim()
                     ? note.title
                     : typeof note.content === 'string'
-                      ? note.content.split('\n')[0] || 'Untitled'
+                      ? getFirstWordFromHtml(note.content) || 'Untitled'
                       : Array.isArray(note.content) && note.content.length > 0
-                        ? note.content[0].text
+                        ? (note.content[0].text.split(' ')[0] || 'Untitled')
                         : 'Untitled'}
                 </div>
                 <div className="text-xs text-zinc-400">{formatDateLabel(note.updatedAt)}</div>

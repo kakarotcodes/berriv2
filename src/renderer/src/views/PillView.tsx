@@ -1,6 +1,14 @@
 // views/PillView.tsx
 import { useState, useEffect } from 'react'
-import { LayoutGrid, ClipboardPen, History, Video, CalendarDays } from 'lucide-react'
+// import { LayoutGrid, ClipboardPen, History, Video, CalendarDays } from 'lucide-react'
+import {
+  VideoCameraIcon,
+  CalendarIcon,
+  ClipboardDocumentIcon,
+  ArrowsPointingOutIcon,
+  PaperClipIcon,
+  PencilSquareIcon
+} from '@heroicons/react/24/outline'
 
 // Hooks
 import { useElectron } from '@/hooks/useElectron'
@@ -48,7 +56,7 @@ const PillView: React.FC = () => {
 
   useIdleOpacity()
   useDragHandle(savePillPosition)
-  usePillInit(savePillPosition, resizeWindow, dimensions)
+  usePillInit()
 
   // Ensure proper window state when pill view mounts
   useEffect(() => {
@@ -89,15 +97,17 @@ const PillView: React.FC = () => {
     return <div className="w-full h-full bg-transparent flex items-center justify-center" />
   }
 
+  const iconStyle = 'size-4 text-[#F4CDF1]'
+
   return (
     <PillLayout>
-      <FuturisticGradientDef />
+      {/* <FuturisticGradientDef /> */}
       {/* <PillNotification count={99} onClick={() => setView('hover')} /> */}
 
       <PillButton
         onClick={switchToDefaultView}
         featureKey="default"
-        icon={<LayoutGrid size={14} style={futuristicGradientStyle} />}
+        icon={<ArrowsPointingOutIcon className={iconStyle} />}
       />
 
       <PillButton
@@ -105,7 +115,7 @@ const PillView: React.FC = () => {
           switchToHoverView('calendar')
         }}
         featureKey="calendar"
-        icon={<CalendarDays size={15} style={futuristicGradientStyle} />}
+        icon={<CalendarIcon className={iconStyle} />}
       />
 
       <PillButton
@@ -113,7 +123,7 @@ const PillView: React.FC = () => {
           switchToHoverView('clipboard')
         }}
         featureKey="clipboard"
-        icon={<History size={15} style={futuristicGradientStyle} />}
+        icon={<PaperClipIcon className={iconStyle} />}
         draggable
       />
 
@@ -122,14 +132,14 @@ const PillView: React.FC = () => {
           switchToHoverView('notes')
         }}
         featureKey="notes"
-        icon={<ClipboardPen size={15} style={futuristicGradientStyle} />}
+        icon={<PencilSquareIcon className={iconStyle} />}
         draggable
       />
 
       <PillButton
         onClick={startGoogleMeet}
         featureKey="googleMeet"
-        icon={<Video size={15} style={futuristicGradientStyle} />}
+        icon={<VideoCameraIcon className={iconStyle} />}
         draggable
       />
     </PillLayout>

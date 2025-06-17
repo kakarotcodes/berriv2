@@ -1,37 +1,112 @@
 /// <reference types="vite/client" />
 
-import { ViewType } from '../../types/types'
-
 interface ClipboardEntry {
   id: string
   content: string
+  type: 'text' | 'image'
   timestamp: number
+}
+
+interface AuthTokens {
+  access: string
+  refresh?: string
+  timestamp?: number
+}
+
+interface AuthResponse {
+  success: boolean
+  tokens?: AuthTokens | null
+  error?: string
+}
+
+interface AuthCallbackData {
+  url: string
+  tokens?: AuthTokens | null
+  error?: string
+}
+
+interface NoteFields {
+  title?: string
+  content?: string
+  tags?: string[]
+  isActive?: boolean
+  isTrashed?: boolean
+  updatedAt?: string
+}
+
+interface Note {
+  id: string
+  title: string
+  type: 'text' | 'checklist' | 'richtext'
+  content: string | Array<{ id: string; text: string; checked: boolean }>
+  createdAt: string
+  updatedAt: string
+  pinned?: boolean
+  trashed?: boolean
 }
 
 interface ElectronAPI {
   resizeWindow: (dimensions: { width: number; height: number }) => void
-  animateViewTransition: (view: ViewType) => Promise<boolean>
+  animateViewTransition: (view: string) => Promise<void>
+  getWindowBounds: () => Promise<{ width: number; height: number; x: number; y: number }>
 
-  // Get current window bounds
-  getWindowBounds: () => Promise<{ x: number; y: number; width: number; height: number } | null>
+  // Authentication API
+  auth: {
+    openGoogleLogin: () => Promise<AuthResponse>
+    requestCalendarPermissions: () => Promise<AuthResponse>
+    getTokens: () => Promise<AuthResponse>
+    logout: () => Promise<AuthResponse>
+    onAuthCallback: (callback: (data: AuthCallbackData) => void) => () => void
+  }
 
-  // Vertical drag
+  // Calendar API
+  calendar: {
+    getEvents: (options?: { timeMin?: string; timeMax?: string; maxResults?: number }) => Promise<{
+      success: boolean
+      events?: Array<{
+        id: string
+        title: string
+        start: string
+        end: string
+        description?: string
+        location?: string
+        htmlLink?: string
+      }>
+      error?: string
+    }>
+    createEvent: (event: {
+      title: string
+      start: string
+      end: string
+      description?: string
+      location?: string
+      attendees?: string[]
+    }) => Promise<{
+      success: boolean
+      event?: {
+        id: string
+        title: string
+        start: string
+        end: string
+        htmlLink?: string
+      }
+      error?: string
+    }>
+  }
+
+  // Vertical Drag
   startVerticalDrag: (mouseY: number) => void
   updateVerticalDrag: (mouseY: number) => void
   endVerticalDrag: () => void
 
-  // Full drag (horizontal + vertical)
+  // Full Drag
   startDrag: (mouseX: number, mouseY: number) => void
   updateDrag: (mouseX: number, mouseY: number) => void
   endDrag: () => void
 
   setResizable: (resizable: boolean) => void
+  setMainWindowResizable: (resizable: boolean) => void
   savePillPosition: () => void
-
-  // Hover view size management
-  saveHoverSize: (dimensions: { width: number; height: number }) => void
-  getSavedHoverSize: () => Promise<{ width: number; height: number }>
-  fixHoverDimensions: () => void
 
   // Opacity control
   setPillOpacity: (alpha: number) => void
@@ -41,13 +116,13 @@ interface ElectronAPI {
   openExternal: (url: string) => void
 
   // Google Meet
-  startGoogleMeet: () => Promise<string>
+  startGoogleMeet: () => Promise<void>
 
   // Sleep/wake handlers
-  requestCurrentView: (callback: () => ViewType) => () => void
-  onResumeFromSleep: (callback: (view: ViewType) => void) => () => void
+  requestCurrentView: (callback: () => string) => () => void
+  onResumeFromSleep: (callback: (view: string) => void) => () => void
 
-  // Clipboard history
+  // Clipboard
   clipboard: {
     getHistory: () => Promise<ClipboardEntry[]>
     onUpdate: (callback: (entry: ClipboardEntry) => void) => () => void
@@ -57,20 +132,28 @@ interface ElectronAPI {
   notesAPI: {
     getAllNotes: () => Promise<Note[]>
     getTrashedNotes: () => Promise<Note[]>
-    insertNote: (note: Note) => Promise<void>
-    updateNote: (id: string, fields: Partial<Omit<Note, 'id'>>) => Promise<void>
+    insertNote: (note: Note) => Promise<Note>
+    updateNote: (id: string, fields: NoteFields) => Promise<Note>
     trashNote: (id: string) => Promise<void>
     restoreNote: (id: string) => Promise<void>
     permanentlyDeleteNote: (id: string) => Promise<void>
-    saveImage: (filename: string, arrayBuffer: ArrayBuffer) => Promise<string | null>
+    removeDuplicates: () => Promise<number>
+    saveImage: (filename: string, arrayBuffer: ArrayBuffer) => Promise<string>
   }
 
-  // Main window resizability
-  setMainWindowResizable: (resizable: boolean) => void
+  // Hover management
+  fixHoverDimensions: () => void
+  saveHoverSize: (dimensions: { width: number; height: number }) => void
+  getSavedHoverSize: () => Promise<{ width: number; height: number } | null>
+
+  // Window visibility for flicker-free transitions
+  hideWindowTemporarily: () => Promise<{ success: boolean; error?: string }>
+  showWindow: () => Promise<{ success: boolean; error?: string }>
+
+  // Listen for real transition completion events
+  onViewTransitionDone: (callback: (view: string) => void) => () => void
 }
 
-declare global {
-  interface Window {
-    electronAPI: ElectronAPI
-  }
+interface Window {
+  electronAPI: ElectronAPI
 }
