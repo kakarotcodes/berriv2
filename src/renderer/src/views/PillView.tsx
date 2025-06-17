@@ -7,7 +7,9 @@ import {
   ClipboardDocumentIcon,
   ArrowsPointingOutIcon,
   PaperClipIcon,
-  PencilSquareIcon
+  PencilSquareIcon,
+  CameraIcon,
+  ScissorsIcon
 } from '@heroicons/react/24/outline'
 
 // Hooks
@@ -93,6 +95,42 @@ const PillView: React.FC = () => {
     }
   }
 
+  const openScreenCapture = async () => {
+    console.log('[SCREEN_CAPTURE] Camera button clicked')
+    try {
+      console.log('[SCREEN_CAPTURE] Calling electronAPI.screenCapture.openToolbar()')
+      const result = await window.electronAPI.screenCapture.openToolbar()
+      console.log('[SCREEN_CAPTURE] Result:', result)
+      if (!result.success) {
+        console.error('Screen capture failed:', result.error)
+        alert('Failed to open screen capture toolbar.')
+      } else {
+        console.log('[SCREEN_CAPTURE] Screen capture toolbar opened successfully')
+      }
+    } catch (e) {
+      console.error('Screen capture failed:', e)
+      alert('Failed to open screen capture toolbar.')
+    }
+  }
+
+  const openSnippingTool = async () => {
+    console.log('[SNIPPING_TOOL] Scissors button clicked')
+    try {
+      console.log('[SNIPPING_TOOL] Calling electronAPI.screenCapture.openSnippingTool()')
+      const result = await window.electronAPI.screenCapture.openSnippingTool()
+      console.log('[SNIPPING_TOOL] Result:', result)
+      if (!result.success) {
+        console.error('Snipping tool failed:', result.error)
+        alert('Failed to open snipping tool.')
+      } else {
+        console.log('[SNIPPING_TOOL] Snipping tool opened successfully')
+      }
+    } catch (e) {
+      console.error('Snipping tool failed:', e)
+      alert('Failed to open snipping tool.')
+    }
+  }
+
   if (isTransitioningToDefault || (targetView === 'default' && isTransitioning)) {
     return <div className="w-full h-full bg-transparent flex items-center justify-center" />
   }
@@ -140,6 +178,20 @@ const PillView: React.FC = () => {
         onClick={startGoogleMeet}
         featureKey="googleMeet"
         icon={<VideoCameraIcon className={iconStyle} />}
+        draggable
+      />
+
+      <PillButton
+        onClick={openScreenCapture}
+        featureKey="screenCapture"
+        icon={<CameraIcon className={iconStyle} />}
+        draggable
+      />
+
+      <PillButton
+        onClick={openSnippingTool}
+        featureKey="snippingTool"
+        icon={<ScissorsIcon className={iconStyle} />}
         draggable
       />
     </PillLayout>
