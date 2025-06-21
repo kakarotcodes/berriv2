@@ -9,7 +9,8 @@ import {
   PaperClipIcon,
   PencilSquareIcon,
   CameraIcon,
-  ScissorsIcon
+  ScissorsIcon,
+  RectangleStackIcon
 } from '@heroicons/react/24/outline'
 
 // Hooks
@@ -175,6 +176,15 @@ const PillView: React.FC = () => {
       />
 
       <PillButton
+        onClick={() => {
+          switchToHoverView('screenshots')
+        }}
+        featureKey="screenshots"
+        icon={<CameraIcon className={iconStyle} />}
+        draggable
+      />
+
+      <PillButton
         onClick={startGoogleMeet}
         featureKey="googleMeet"
         icon={<VideoCameraIcon className={iconStyle} />}
@@ -184,14 +194,14 @@ const PillView: React.FC = () => {
       <PillButton
         onClick={openScreenCapture}
         featureKey="screenCapture"
-        icon={<CameraIcon className={iconStyle} />}
+        icon={<ScissorsIcon className={iconStyle} />}
         draggable
       />
 
       <PillButton
         onClick={openSnippingTool}
         featureKey="snippingTool"
-        icon={<ScissorsIcon className={iconStyle} />}
+        icon={<RectangleStackIcon className={iconStyle} />}
         draggable
       />
     </PillLayout>
