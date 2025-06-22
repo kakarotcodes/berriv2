@@ -90,6 +90,10 @@ export function registerWindowHandlers(mainWindow: BrowserWindow) {
       }
 
       mainWindow.setPosition(newX, newY, false)
+      
+      // CRITICAL: Ensure window remains visible on all workspaces after position change
+      mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
+      
       dragState.currentDisplayId = disp.id
     } catch (err) {
       console.error('drag update error', err)
@@ -148,6 +152,9 @@ export function registerWindowHandlers(mainWindow: BrowserWindow) {
     const clampedY = Math.max(area.y, Math.min(area.y + area.height - height, newY))
 
     mainWindow.setBounds({ x: clampedX, y: clampedY, width, height }, false)
+    
+    // CRITICAL: Ensure window remains visible on all workspaces after position change
+    mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
   })
 
   ipcMain.on('end-drag', () => {
