@@ -97,7 +97,7 @@ interface ElectronAPI {
 
   // Gmail API
   gmail: {
-    getEmails: (options?: { maxResults?: number }) => Promise<{
+    getEmails: (options?: { maxResults?: number; query?: string }) => Promise<{
       success: boolean
       emails?: Array<{
         id: string

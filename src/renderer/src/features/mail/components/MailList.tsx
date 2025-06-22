@@ -1,5 +1,5 @@
 // dependencies
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { EnvelopeIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
 
 // hooks
@@ -10,6 +10,27 @@ import { useMailStore } from '../store'
 
 // components
 import MailItem from './MailItem'
+
+// Gmail filter options
+const GMAIL_FILTERS = {
+  PRIMARY: 'category:primary',
+  ALL_INBOX: 'in:inbox',
+  UNREAD: 'in:inbox is:unread',
+  IMPORTANT: 'in:inbox is:important',
+  STARRED: 'in:inbox is:starred',
+  PERSONAL: 'category:primary -from:noreply -from:no-reply -from:newsletter -from:donotreply -from:notifications -subject:unsubscribe',
+} as const
+
+type FilterType = keyof typeof GMAIL_FILTERS
+
+const FILTER_LABELS: Record<FilterType, string> = {
+  PRIMARY: 'Primary',
+  ALL_INBOX: 'All Inbox',
+  UNREAD: 'Unread',
+  IMPORTANT: 'Important',
+  STARRED: 'Starred',
+  PERSONAL: 'Personal'
+}
 
 const MailList: React.FC = () => {
   const { isAuthenticated } = useAuth()
@@ -24,21 +45,24 @@ const MailList: React.FC = () => {
     setError
   } = useMailStore()
 
-  // Fetch emails when authenticated
+  const [activeFilter, setActiveFilter] = useState<FilterType>('PRIMARY')
+
+  // Fetch emails when authenticated or filter changes
   useEffect(() => {
     if (isAuthenticated) {
-      fetchEmails()
+      fetchEmails(activeFilter)
     }
-  }, [isAuthenticated])
+  }, [isAuthenticated, activeFilter])
 
-  const fetchEmails = async () => {
+  const fetchEmails = async (filterType: FilterType = activeFilter) => {
     setLoading(true)
     setError(null)
     
     try {
-      console.log('[MAIL] Fetching emails from Gmail API...')
+      console.log('[MAIL] Fetching emails with filter:', filterType)
       const result = await window.electronAPI.gmail.getEmails({
-        maxResults: 20
+        maxResults: 20,
+        query: GMAIL_FILTERS[filterType]
       })
       
       if (result.success && result.emails) {
@@ -56,7 +80,7 @@ const MailList: React.FC = () => {
         }))
         
         setMails(convertedMails)
-        console.log(`[MAIL] Successfully fetched ${convertedMails.length} emails`)
+        console.log(`[MAIL] Successfully fetched ${convertedMails.length} emails with filter: ${filterType}`)
       } else {
         setError(result.error || 'Failed to load emails')
         console.error('[MAIL] Failed to fetch emails:', result.error)
@@ -67,6 +91,10 @@ const MailList: React.FC = () => {
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleFilterChange = (filterType: FilterType) => {
+    setActiveFilter(filterType)
   }
 
   const filteredMails = getFilteredMails()
@@ -91,7 +119,7 @@ const MailList: React.FC = () => {
           <p className="text-sm">{error}</p>
         </div>
         <button
-          onClick={fetchEmails}
+          onClick={() => fetchEmails()}
           className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors"
         >
           Try Again
@@ -117,12 +145,29 @@ const MailList: React.FC = () => {
             </span>
           </div>
           <button
-            onClick={fetchEmails}
+            onClick={() => fetchEmails()}
             disabled={isLoading}
             className="px-3 py-1 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white text-xs rounded transition-colors disabled:cursor-not-allowed"
           >
             {isLoading ? 'Refreshing...' : 'Refresh'}
           </button>
+        </div>
+
+        {/* Filter buttons */}
+        <div className="flex flex-wrap gap-2">
+          {(Object.keys(GMAIL_FILTERS) as FilterType[]).map((filterType) => (
+            <button
+              key={filterType}
+              onClick={() => handleFilterChange(filterType)}
+              className={`px-3 py-1 text-xs rounded-full transition-colors ${
+                activeFilter === filterType
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+              }`}
+            >
+              {FILTER_LABELS[filterType]}
+            </button>
+          ))}
         </div>
         
         {/* Search bar placeholder */}
@@ -143,6 +188,7 @@ const MailList: React.FC = () => {
             <div className="text-gray-400 text-center">
               <EnvelopeIcon className="size-8 mx-auto mb-2 opacity-50" />
               <p>No emails found</p>
+              <p className="text-xs mt-1">Filter: {FILTER_LABELS[activeFilter]}</p>
             </div>
           </div>
         ) : (

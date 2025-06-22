@@ -20,7 +20,19 @@ interface GmailAPIResponse {
 
 interface GetEmailsOptions {
   maxResults?: number
+  query?: string
 }
+
+// Predefined filter queries
+export const GMAIL_FILTERS = {
+  PRIMARY: 'category:primary',
+  ALL_INBOX: 'in:inbox',
+  UNREAD: 'in:inbox is:unread',
+  IMPORTANT: 'in:inbox is:important',
+  STARRED: 'in:inbox is:starred',
+  PERSONAL: 'category:primary -from:noreply -from:no-reply -from:newsletter -from:donotreply -from:notifications -subject:unsubscribe',
+  FILTERED: 'in:inbox -in:spam -in:trash -from:noreply -from:no-reply -from:newsletter -from:donotreply -from:notifications -subject:unsubscribe -category:promotions -category:social -category:updates'
+} as const
 
 export class GmailAPI {
   private oauth2Client: any
@@ -40,9 +52,26 @@ export class GmailAPI {
     })
   }
 
+  private extractEmailFromString(emailString: string): string {
+    // Extract email from "Name <email@domain.com>" format
+    const match = emailString.match(/<([^>]+)>/)
+    return match ? match[1] : emailString
+  }
+
+  private extractNameFromString(emailString: string): string {
+    // Extract name from "Name <email@domain.com>" format
+    const match = emailString.match(/^([^<]+)</)
+    return match ? match[1].trim().replace(/"/g, '') : emailString
+  }
+
+  private generateEmailPreview(subject: string, sender: string): string {
+    // Generate a simple preview without fetching body - return empty since subject is already shown
+    return ''
+  }
+
   async getEmails(accessToken: string, refreshToken?: string, options: GetEmailsOptions = {}): Promise<GmailAPIResponse> {
     try {
-      console.log('[GMAIL_API] Starting email fetch...')
+      console.log('[GMAIL_API] Starting optimized email fetch...')
       console.log('[GMAIL_API] Access token available:', !!accessToken)
       console.log('[GMAIL_API] Refresh token available:', !!refreshToken)
       
@@ -50,40 +79,57 @@ export class GmailAPI {
 
       const gmail = google.gmail({ version: 'v1', auth: this.oauth2Client })
 
-      const { maxResults = 20 } = options
+      const { maxResults = 20, query = GMAIL_FILTERS.PRIMARY } = options
 
+      console.log('[GMAIL_API] Using query:', query)
       console.log('[GMAIL_API] Requesting Gmail message list...')
       
-      // First, get the list of message IDs
+      const startTime = Date.now()
+      
+      // First, get the list of message IDs with the specified query
       const listResponse = await gmail.users.messages.list({
         userId: 'me',
         maxResults,
-        q: 'in:inbox' // Only fetch emails from inbox
+        q: query
       })
 
-      console.log('[GMAIL_API] Message list response received')
+      console.log('[GMAIL_API] Message list response received in', Date.now() - startTime, 'ms')
 
       if (!listResponse.data.messages) {
-        console.log('[GMAIL_API] No messages found')
+        console.log('[GMAIL_API] No messages found for query:', query)
         return {
           success: true,
           emails: []
         }
       }
 
-      console.log(`[GMAIL_API] Found ${listResponse.data.messages.length} messages, fetching details...`)
+      console.log(`[GMAIL_API] Found ${listResponse.data.messages.length} messages, fetching metadata concurrently...`)
 
-      // Then fetch details for each message
+      // Fetch all message details concurrently using Promise.all
+      // Use metadata format for much faster responses (no body content)
+      const messagePromises = listResponse.data.messages.slice(0, maxResults).map(message =>
+        gmail.users.messages.get({
+          userId: 'me',
+          id: message.id!,
+          format: 'metadata', // Much faster than 'full' - only headers and labels
+          metadataHeaders: ['Subject', 'From', 'To', 'Date'] // Only fetch required headers
+        }).catch(error => {
+          console.error('[GMAIL_API] Error fetching message:', message.id, error)
+          return null // Return null for failed requests
+        })
+      )
+
+      const messageResponses = await Promise.all(messagePromises)
+      
+      console.log('[GMAIL_API] All message details fetched in', Date.now() - startTime, 'ms')
+
+      // Process responses and build email objects
       const emails: GmailEmail[] = []
       
-      for (const message of listResponse.data.messages.slice(0, maxResults)) {
-        try {
-          const messageResponse = await gmail.users.messages.get({
-            userId: 'me',
-            id: message.id!,
-            format: 'full'
-          })
+      for (const messageResponse of messageResponses) {
+        if (!messageResponse?.data) continue
 
+        try {
           const emailData = messageResponse.data
           const headers = emailData.payload?.headers || []
           
@@ -93,21 +139,8 @@ export class GmailAPI {
           const to = headers.find(h => h.name === 'To')?.value || 'Unknown Recipient'
           const date = headers.find(h => h.name === 'Date')?.value || new Date().toISOString()
           
-          // Extract body (simplified - gets first text part)
-          let body = ''
-          if (emailData.payload?.parts) {
-            const textPart = emailData.payload.parts.find(part => part.mimeType === 'text/plain')
-            if (textPart?.body?.data) {
-              body = Buffer.from(textPart.body.data, 'base64').toString('utf-8')
-            }
-          } else if (emailData.payload?.body?.data) {
-            body = Buffer.from(emailData.payload.body.data, 'base64').toString('utf-8')
-          }
-
-          // Limit body length for display
-          if (body.length > 500) {
-            body = body.substring(0, 500) + '...'
-          }
+          // Generate a simple preview instead of fetching body
+          const body = this.generateEmailPreview(subject, from)
 
           // Parse timestamp
           const timestamp = new Date(date).toISOString()
@@ -122,7 +155,7 @@ export class GmailAPI {
             subject,
             sender: from,
             recipient: to,
-            body: body || 'No content available',
+            body,
             timestamp,
             isRead,
             isStarred,
@@ -130,12 +163,14 @@ export class GmailAPI {
           })
 
         } catch (messageError) {
-          console.error('[GMAIL_API] Error fetching individual message:', messageError)
+          console.error('[GMAIL_API] Error processing individual message:', messageError)
           // Continue with other messages even if one fails
         }
       }
 
-      console.log(`[GMAIL_API] Successfully processed ${emails.length} emails`)
+      const totalTime = Date.now() - startTime
+      console.log(`[GMAIL_API] Successfully processed ${emails.length} emails with query: ${query} in ${totalTime}ms`)
+      console.log(`[GMAIL_API] Performance: ${Math.round(totalTime / emails.length)}ms per email`)
 
       return {
         success: true,
