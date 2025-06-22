@@ -118,6 +118,20 @@ interface ElectronAPI {
   // Google Meet
   startGoogleMeet: () => Promise<void>
 
+  // Screen Capture
+  screenCapture: {
+    openToolbar: () => Promise<{ success: boolean; error?: string }>
+    openSnippingTool: () => Promise<{ success: boolean; error?: string }>
+  }
+
+  // Screenshots
+  screenshots: {
+    getScreenshots: () => Promise<{ success: boolean; screenshots: any[]; error?: string }>
+    deleteScreenshot: (filePath: string) => Promise<{ success: boolean; error?: string }>
+    openInFinder: (filePath: string) => Promise<{ success: boolean; error?: string }>
+    watchDirectory: () => Promise<{ success: boolean; error?: string }>
+  }
+
   // Sleep/wake handlers
   requestCurrentView: (callback: () => string) => () => void
   onResumeFromSleep: (callback: (view: string) => void) => () => void

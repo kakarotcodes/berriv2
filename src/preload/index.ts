@@ -88,6 +88,20 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Google Meet
   startGoogleMeet: () => ipcRenderer.invoke('start-google-meet'),
 
+  // Screen Capture
+  screenCapture: {
+    openToolbar: () => ipcRenderer.invoke('screen-capture:open-toolbar'),
+    openSnippingTool: () => ipcRenderer.invoke('screen-capture:open-snipping-tool')
+  },
+
+  // Screenshots
+  screenshots: {
+    getScreenshots: () => ipcRenderer.invoke('screenshots:get-screenshots'),
+    deleteScreenshot: (filePath: string) => ipcRenderer.invoke('screenshots:delete-screenshot', filePath),
+    openInFinder: (filePath: string) => ipcRenderer.invoke('screenshots:open-in-finder', filePath),
+    watchDirectory: () => ipcRenderer.invoke('screenshots:watch-directory')
+  },
+
   // Sleep/wake handlers
   requestCurrentView: (callback) => {
     // Remove any existing listeners to prevent memory leaks
