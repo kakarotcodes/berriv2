@@ -23,3 +23,11 @@ export function requestCalendarPermissions(): void {
   shell.openExternal(calendarPermissionUrl)
   console.log('Opened calendar permissions request in external browser:', calendarPermissionUrl)
 }
+
+export function requestGmailPermissions(): void {
+  // Open Gmail permissions request URL in the user's default browser
+  // Using the same calendar auth route since no dedicated Gmail route exists
+  const gmailPermissionUrl = 'http://localhost:3000/auth/calendar?source=electron'
+  shell.openExternal(gmailPermissionUrl)
+  console.log('Opened Gmail permissions request in external browser (using calendar route):', gmailPermissionUrl)
+}

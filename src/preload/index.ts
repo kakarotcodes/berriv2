@@ -28,6 +28,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   auth: {
     openGoogleLogin: () => ipcRenderer.invoke('auth:open-google-login'),
     requestCalendarPermissions: () => ipcRenderer.invoke('auth:request-calendar'),
+    requestGmailPermissions: () => ipcRenderer.invoke('auth:request-gmail'),
     getTokens: () => ipcRenderer.invoke('auth:get-tokens'),
     logout: () => ipcRenderer.invoke('auth:logout'),
     onAuthCallback: (callback) => {
@@ -53,6 +54,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
   calendar: {
     getEvents: (options) => ipcRenderer.invoke('calendar:get-events', options),
     createEvent: (event) => ipcRenderer.invoke('calendar:create-event', event)
+  },
+
+  // ------------------------------------------------------------
+  // Gmail API
+  // ------------------------------------------------------------
+
+  gmail: {
+    getEmails: (options) => ipcRenderer.invoke('gmail:get-emails', options)
   },
 
   // ------------------------------------------------------------

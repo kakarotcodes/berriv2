@@ -54,6 +54,7 @@ interface ElectronAPI {
   auth: {
     openGoogleLogin: () => Promise<AuthResponse>
     requestCalendarPermissions: () => Promise<AuthResponse>
+    requestGmailPermissions: () => Promise<AuthResponse>
     getTokens: () => Promise<AuthResponse>
     logout: () => Promise<AuthResponse>
     onAuthCallback: (callback: (data: AuthCallbackData) => void) => () => void
@@ -90,6 +91,25 @@ interface ElectronAPI {
         end: string
         htmlLink?: string
       }
+      error?: string
+    }>
+  }
+
+  // Gmail API
+  gmail: {
+    getEmails: (options?: { maxResults?: number }) => Promise<{
+      success: boolean
+      emails?: Array<{
+        id: string
+        subject: string
+        sender: string
+        recipient: string
+        body: string
+        timestamp: string
+        isRead: boolean
+        isStarred: boolean
+        labels: string[]
+      }>
       error?: string
     }>
   }

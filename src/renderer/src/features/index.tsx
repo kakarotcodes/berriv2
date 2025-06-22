@@ -14,6 +14,7 @@ import ClipboardViewHover from './clipboard/views/ClipboardViewHover'
 import NotesViewHover from './notes/views/NotesViewHover'
 import CalendarViewHover from './calendar/views/CalendarViewHover'
 import ScreenshotsViewHover from './screenshots/views/ScreenshotsViewHover'
+import MailViewHover from './mail/views/MailViewHover'
 
 // Feature definitions
 export const clipboardFeature: FeatureModule = {
@@ -48,7 +49,7 @@ export const mailFeature: FeatureModule = {
   id: 'mail',
   name: 'Mail',
   icon: null, // Will be set by the consuming component
-  component: () => <div>Mail View</div>
+  component: MailViewHover
 }
 
 // Registry of all features
