@@ -10,7 +10,8 @@ import {
   PencilSquareIcon,
   CameraIcon,
   ScissorsIcon,
-  RectangleStackIcon
+  RectangleStackIcon,
+  EnvelopeIcon
 } from '@heroicons/react/24/outline'
 
 // Hooks
@@ -202,6 +203,15 @@ const PillView: React.FC = () => {
         onClick={openSnippingTool}
         featureKey="snippingTool"
         icon={<RectangleStackIcon className={iconStyle} />}
+        draggable
+      />
+
+      <PillButton
+        onClick={() => {
+          switchToHoverView('mail')
+        }}
+        featureKey="mail"
+        icon={<EnvelopeIcon className={iconStyle} />}
         draggable
       />
     </PillLayout>

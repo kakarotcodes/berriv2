@@ -5,6 +5,7 @@ import { registerClipboardHandlers } from './features/clipboard/ipcHandlers'
 import { registerExternalHandlers } from './features/external/ipcHandlers'
 import { registerAuthHandlers } from './features/auth/ipcHandlers'
 import { registerCalendarHandlers } from './features/calendar/ipcHandlers'
+import { registerGmailHandlers } from './features/gmail/ipcHandlers'
 import { registerScreenCaptureHandlers } from './features/screenCapture/ipcHandlers'
 import { registerScreenshotsHandlers } from './features/screenshots/ipcHandlers'
 
@@ -16,6 +17,7 @@ export function registerAllHandlers(mainWindow: BrowserWindow) {
   registerExternalHandlers()
   registerAuthHandlers()
   registerCalendarHandlers()
+  registerGmailHandlers()
   registerScreenCaptureHandlers()
   registerScreenshotsHandlers()
   console.log('[IPC] All handlers registered successfully')

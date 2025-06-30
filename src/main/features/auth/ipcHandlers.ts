@@ -1,5 +1,5 @@
 import { ipcMain } from 'electron'
-import { openGoogleLoginWindow, closeAuthWindow, requestCalendarPermissions } from '../auth'
+import { openGoogleLoginWindow, closeAuthWindow, requestCalendarPermissions, requestGmailPermissions } from '../auth'
 
 interface AuthResponse {
   success: boolean
@@ -41,6 +41,29 @@ export function registerAuthHandlers(): void {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to open calendar permission request'
+      }
+    }
+  })
+
+  // Handle Gmail permission request
+  ipcMain.handle('auth:request-gmail', async (): Promise<AuthResponse> => {
+    console.log('[IPC] auth:request-gmail handler called')
+    try {
+      requestGmailPermissions()
+      console.log('[IPC] requestGmailPermissions completed successfully')
+      return {
+        success: true
+      }
+    } catch (error) {
+      console.error('[IPC] Failed to request Gmail permissions:', error)
+      console.error('[IPC] Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        type: typeof error
+      })
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to open Gmail permission request'
       }
     }
   })
