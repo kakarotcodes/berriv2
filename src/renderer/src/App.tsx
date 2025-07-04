@@ -7,6 +7,9 @@ import { useViewStore } from '@/globalStore'
 // views
 import { DefaultView, PillView, HoverView, ExpandedView } from '@/views'
 
+// providers
+import { ThemeProvider } from '@/components/providers'
+
 /**
  * OverlayContainer - With all animations removed
  */
@@ -61,36 +64,40 @@ const App = memo(() => {
   // show an empty window without any content
   if (isTransitioning) {
     return (
-      <main className="w-screen h-screen relative">
-        <div
-          className="absolute inset-0"
-          style={{
-            backgroundColor: '#000000', // Fully opaque black
-            zIndex: 9999,
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0
-          }}
-        />
-      </main>
+      <ThemeProvider>
+        <main className="w-screen h-screen relative">
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundColor: '#000000', // Fully opaque black
+              zIndex: 9999,
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0
+            }}
+          />
+        </main>
+      </ThemeProvider>
     )
   }
 
   // Regular rendering without animations for all views
   return (
-    <main className="w-screen h-screen">
-      <div
-        className="absolute inset-0 flex items-center justify-center"
-        style={{
-          opacity: 1,
-          transition: 'opacity 0.15s ease-in'
-        }}
-      >
-        {React.createElement(viewComponents[currentView])}
-      </div>
-    </main>
+    <ThemeProvider>
+      <main className="w-screen h-screen">
+        <div
+          className="absolute inset-0 flex items-center justify-center"
+          style={{
+            opacity: 1,
+            transition: 'opacity 0.15s ease-in'
+          }}
+        >
+          {React.createElement(viewComponents[currentView])}
+        </div>
+      </main>
+    </ThemeProvider>
   )
 })
 

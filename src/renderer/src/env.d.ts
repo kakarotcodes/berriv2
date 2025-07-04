@@ -156,6 +156,13 @@ interface ElectronAPI {
   requestCurrentView: (callback: () => string) => () => void
   onResumeFromSleep: (callback: (view: string) => void) => () => void
 
+  // Theme API
+  theme: {
+    getSystemTheme: () => boolean
+    setTheme: (theme: 'light' | 'dark') => void
+    onSystemThemeChange: (callback: (isDark: boolean) => void) => () => void
+  }
+
   // Clipboard
   clipboard: {
     getHistory: () => Promise<ClipboardEntry[]>
