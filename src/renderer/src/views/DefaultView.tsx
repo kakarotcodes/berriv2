@@ -22,7 +22,7 @@ const DefaultView = () => {
   }
 
   return (
-    <div className="w-full h-full bg-[#00000000] p-4">
+    <div className="w-full h-full p-4">
       {/* Your existing workspace content */}
       <div
         className="text-white text-center"

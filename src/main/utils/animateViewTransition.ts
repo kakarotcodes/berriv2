@@ -24,8 +24,7 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
   const viewDimensions = {
     default: { width: WIDTH.DEFAULT, height: HEIGHT.DEFAULT },
     pill: { width: WIDTH.PILL, height: HEIGHT.PILL },
-    hover: { width: WIDTH.HOVER, height: HEIGHT.HOVER }, // Match renderer dimensions
-    expanded: { width: 800, height: 600 }
+    hover: { width: WIDTH.HOVER, height: HEIGHT.HOVER } // Match renderer dimensions
   }
 
   // Consistent margin across all views

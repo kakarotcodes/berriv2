@@ -12,7 +12,7 @@ ipcRenderer.setMaxListeners(20)
 contextBridge.exposeInMainWorld('electronAPI', {
   resizeWindow: (dimensions) => ipcRenderer.send('resize-window', dimensions),
   animateViewTransition: (view) => {
-    if (['default', 'pill', 'hover', 'expanded'].includes(view)) {
+    if (['default', 'pill', 'hover'].includes(view)) {
       return ipcRenderer.invoke('animate-view-transition', view)
     }
     return Promise.reject('Invalid view type')

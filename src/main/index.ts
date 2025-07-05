@@ -34,7 +34,7 @@ function createWindow(): void {
   const backgroundColor = isDark ? MainWindowColors.darkBG : MainWindowColors.lightBG
 
   mainWindow = new BrowserWindow({
-    backgroundColor: backgroundColor,
+    backgroundColor: '#00000000',
     width: defaultWidth,
     height: defaultHeight,
     minWidth: WIDTH.PILL,

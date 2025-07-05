@@ -5,7 +5,7 @@ import React, { memo, useEffect } from 'react'
 import { useViewStore } from '@/globalStore'
 
 // views
-import { DefaultView, PillView, HoverView, ExpandedView } from '@/views'
+import { DefaultView, PillView, HoverView } from '@/views'
 
 // providers
 import { ThemeProvider } from '@/components/providers'
@@ -21,8 +21,7 @@ const App = memo(() => {
     () => ({
       default: DefaultView,
       pill: PillView,
-      hover: HoverView,
-      expanded: ExpandedView
+      hover: HoverView
     }),
     []
   )
@@ -47,7 +46,7 @@ const App = memo(() => {
         console.log('Resuming from sleep, restoring view:', view)
         // Only set view if different from current
         if (view && view !== currentView) {
-          setView(view as 'default' | 'pill' | 'hover' | 'expanded')
+          setView(view as 'default' | 'pill' | 'hover')
         }
       })
 

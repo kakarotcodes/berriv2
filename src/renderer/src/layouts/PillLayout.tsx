@@ -11,9 +11,6 @@ const PillLayout: React.FC<PillLayoutProps> = ({ children }) => {
     <div
       id="pill-container"
       className="w-full h-full text-white flex flex-col gap-y-[15px] hardware-accelerated"
-      style={{
-        background: 'linear-gradient(180deg, #34005B,#270025)'
-      }}
     >
       {/* <FuturisticGradientDef /> */}
       <div id="drag-handle" className="flex items-center justify-center pt-1">
