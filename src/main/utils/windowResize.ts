@@ -59,15 +59,7 @@ export function animateWindowResize(args: WindowResizeOptions): void {
         if (now >= endTime) {
           const finalX = Math.round(Math.max(workArea.x, targetX >= 0 ? targetX : currentX))
 
-          const finalY = Math.round(
-            Math.max(
-              workArea.y,
-              Math.min(
-                targetY >= 0 ? targetY : currentY,
-                workArea.y + workArea.height - targetHeight
-              )
-            )
-          )
+          const finalY = Math.round(targetY >= 0 ? targetY : currentY)
 
           window.setBounds(
             {
@@ -96,12 +88,7 @@ export function animateWindowResize(args: WindowResizeOptions): void {
           )
         )
 
-        const boundedY = Math.round(
-          Math.max(
-            Math.floor(workArea.y),
-            Math.min(Math.ceil(newY), Math.floor(workArea.y + workArea.height - newHeight))
-          )
-        )
+        const boundedY = Math.round(Math.ceil(newY))
 
         window.setBounds(
           {

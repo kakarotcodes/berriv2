@@ -124,8 +124,12 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
       ) {
         // We're definitely in pill view now, save the position for later use
         lastKnownPillY = currentBounds.y
+        prefs.set('pillX', currentBounds.x)
         prefs.set('pillY', currentBounds.y)
-        logPositionInfo('Saved pill position during transition', lastKnownPillY)
+        logPositionInfo('Saved pill position during transition', {
+          x: currentBounds.x,
+          y: currentBounds.y
+        })
       }
 
       console.log(`Transitioning to ${view} view on display:`, currentDisplay.id)
@@ -138,8 +142,16 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
         targetX = workArea.x + workArea.width - dimensions.width - MARGIN
         targetY = workArea.y + workArea.height - dimensions.height - MARGIN
       } else if (view === 'pill') {
-        // Pill view positioning - use consistent offset from right edge
-        targetX = workArea.x + workArea.width - PILL_OFFSET
+        // Pill view positioning - use saved X position or default to right edge
+        const savedPillX = prefs.get('pillX') as number | undefined
+        if (savedPillX !== undefined) {
+          targetX = savedPillX
+          logPositionInfo('Using saved pill X position', targetX)
+        } else {
+          // Default to right edge with offset for first time
+          targetX = workArea.x + workArea.width - PILL_OFFSET
+          logPositionInfo('Using default pill X position (right edge)', targetX)
+        }
 
         // Check if this is first transition to pill
         if (isFirstTransitionToPill) {
@@ -187,12 +199,18 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
           logPositionInfo('Using fallback pill position with 130px top margin', targetY)
         }
 
+        // Ensure X is within bounds of current monitor
+        const minX = workArea.x
+        const maxX = workArea.x + workArea.width - dimensions.width
+        targetX = Math.min(maxX, Math.max(minX, targetX))
+
         // Ensure Y is within bounds of current monitor
         const minY = workArea.y
         const maxY = workArea.y + workArea.height - dimensions.height
         targetY = Math.min(maxY, Math.max(minY, targetY))
 
         // Update the stored position to ensure consistency
+        prefs.set('pillX', targetX)
         prefs.set('pillY', targetY)
         lastKnownPillY = targetY
       } else if (view === 'hover') {
@@ -297,9 +315,10 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
       bounds.width === viewDimensions.pill.width &&
       bounds.height === viewDimensions.pill.height
     ) {
+      prefs.set('pillX', bounds.x)
       prefs.set('pillY', bounds.y)
       lastKnownPillY = bounds.y
-      logPositionInfo('Explicitly saved pill position', bounds.y)
+      logPositionInfo('Explicitly saved pill position', { x: bounds.x, y: bounds.y })
     }
   })
 }

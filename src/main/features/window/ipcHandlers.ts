@@ -90,10 +90,10 @@ export function registerWindowHandlers(mainWindow: BrowserWindow) {
       }
 
       mainWindow.setPosition(newX, newY, false)
-      
+
       // CRITICAL: Ensure window remains visible on all workspaces after position change
       mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
-      
+
       dragState.currentDisplayId = disp.id
     } catch (err) {
       console.error('drag update error', err)
@@ -136,6 +136,8 @@ export function registerWindowHandlers(mainWindow: BrowserWindow) {
     dragState.startMouseY = mouseY
     dragState.startWindowX = bounds.x
     dragState.startWindowY = bounds.y
+    dragState.windowWidth = bounds.width
+    dragState.windowHeight = bounds.height
   })
 
   ipcMain.on('update-drag', (_e, { mouseX, mouseY }) => {
@@ -148,17 +150,60 @@ export function registerWindowHandlers(mainWindow: BrowserWindow) {
     const cursor = screen.getCursorScreenPoint()
     const area = screen.getDisplayNearestPoint(cursor).workArea
 
-    const clampedX = Math.max(area.x, Math.min(area.x + area.width - width, newX))
-    const clampedY = Math.max(area.y, Math.min(area.y + area.height - height, newY))
+    // For pill view, implement edge snapping logic
+    const isPillView = width === WIDTH.PILL
 
-    mainWindow.setBounds({ x: clampedX, y: clampedY, width, height }, false)
-    
+    let finalX = newX
+    let finalY = newY
+
+    if (isPillView) {
+      // Edge snapping logic for pill view
+      const edgeSnapDistance = OFFSET.SNAPDISTANCE
+      const edgeOffset = OFFSET.PILLOFFSET
+
+      // Check if within snapping distance of left or right edge
+      const distanceToLeft = Math.abs(newX - area.x)
+      const distanceToRight = Math.abs(newX - (area.x + area.width - width))
+
+      if (distanceToLeft <= edgeSnapDistance) {
+        // Snap to left edge with offset
+        finalX = area.x + edgeOffset
+      } else if (distanceToRight <= edgeSnapDistance) {
+        // Snap to right edge with offset
+        finalX = area.x + area.width - width - edgeOffset
+      } else {
+        // Free positioning - clamp to screen bounds
+        finalX = Math.max(area.x, Math.min(area.x + area.width - width, newX))
+      }
+
+      // Always clamp Y position to screen bounds
+      finalY = Math.max(area.y, Math.min(area.y + area.height - height, newY))
+    } else {
+      // Non-pill views use standard clamping
+      finalX = Math.max(area.x, Math.min(area.x + area.width - width, newX))
+      finalY = Math.max(area.y, Math.min(area.y + area.height - height, newY))
+    }
+
+    mainWindow.setBounds({ x: finalX, y: finalY, width, height }, false)
+
     // CRITICAL: Ensure window remains visible on all workspaces after position change
     mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
   })
 
   ipcMain.on('end-drag', () => {
+    if (!mainWindow || mainWindow.isDestroyed()) return
     dragState.isDragging = false
+
+    // For pill view, save the final position
+    const bounds = mainWindow.getBounds()
+    const isPillView = bounds.width === WIDTH.PILL
+
+    if (isPillView) {
+      const [x, y] = mainWindow.getPosition()
+      prefs.set('pillX', x)
+      prefs.set('pillY', y)
+      console.log('[POSITION] Saved pill position after drag:', { x, y })
+    }
   })
 
   // Save pill position handler

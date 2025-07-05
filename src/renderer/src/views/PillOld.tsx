@@ -53,19 +53,21 @@ const PillView = () => {
 
     let isDragging = false
     let lastY = 0
+    let lastX = 0
     let isAnimating = false
 
     const onMouseDown = (e: MouseEvent) => {
       isDragging = true
       lastY = e.clientY
+      lastX = e.clientX
       e.preventDefault()
 
       // Immediately add dragging classes for visual feedback
       handle.classList.add('active')
       document.body.classList.add('dragging')
 
-      // Start the drag operation
-      window.electronAPI.startVerticalDrag(e.clientY)
+      // Start the drag operation with screen coordinates
+      window.electronAPI.startDrag(e.screenX, e.screenY)
 
       // Start animation loop only if not already running
       if (!isAnimating) {
@@ -77,15 +79,19 @@ const PillView = () => {
     // Handle mouse move events by just storing the position
     const onMouseMove = (e: MouseEvent) => {
       if (!isDragging) return
-      // Just update the position - don't send IPC messages directly
+      // Store both X and Y coordinates
       lastY = e.clientY
+      lastX = e.clientX
     }
 
     // Animation loop runs at the display's refresh rate
     const animateDrag = () => {
       if (isDragging) {
         // Send the update through IPC only in the animation frame
-        window.electronAPI.updateVerticalDrag(lastY)
+        // Convert client coordinates to screen coordinates properly
+        const screenX = lastX + window.screenX
+        const screenY = lastY + window.screenY
+        window.electronAPI.updateDrag(screenX, screenY)
         // Schedule next frame
         rafIdRef.current = requestAnimationFrame(animateDrag)
       } else {
@@ -104,12 +110,12 @@ const PillView = () => {
       }
 
       // End drag operation
-      window.electronAPI.endVerticalDrag()
+      window.electronAPI.endDrag()
       handle.classList.remove('active')
       document.body.classList.remove('dragging')
 
-      // Explicitly save position after drag ends
-      savePillPosition()
+      // Position is now saved automatically in the end-drag handler
+      // No need to call savePillPosition() here anymore
 
       // Mark animation as stopped
       isAnimating = false

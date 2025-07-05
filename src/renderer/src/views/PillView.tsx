@@ -54,7 +54,7 @@ const FuturisticGradientDef = () => (
 
 const PillView: React.FC = () => {
   const { resizeWindow, savePillPosition, setMainWindowResizable } = useElectron()
-  const { dimensions, setView, targetView, isTransitioning } = useViewStore()
+  const { setView, targetView, isTransitioning, currentView } = useViewStore()
   const { setActiveFeature } = useViewController()
   const [isTransitioningToDefault, setIsTransitioningToDefault] = useState(false)
 
@@ -64,10 +64,12 @@ const PillView: React.FC = () => {
 
   // Ensure proper window state when pill view mounts
   useEffect(() => {
-    // Disable resizing and ensure pill dimensions
-    setMainWindowResizable(false)
-    resizeWindow({ width: WIDTH.PILL, height: HEIGHT.PILL })
-  }, [setMainWindowResizable, resizeWindow])
+    // Only resize to pill dimensions if we're actually in pill view
+    if (currentView === 'pill') {
+      setMainWindowResizable(false)
+      resizeWindow({ width: WIDTH.PILL, height: HEIGHT.PILL })
+    }
+  }, [setMainWindowResizable, resizeWindow, currentView])
 
   const switchToDefaultView = async () => {
     savePillPosition()

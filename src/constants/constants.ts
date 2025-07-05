@@ -6,12 +6,13 @@ export const WIDTH = {
 
 export const HEIGHT = {
   DEFAULT: 288,
-  PILL: 320,
+  PILL: 120,
   HOVER: 500
 }
 
 export const OFFSET = {
-  PILLOFFSET: 50
+  PILLOFFSET: 20,
+  SNAPDISTANCE: 40
 }
 
 // Protocol configuration

@@ -3,6 +3,7 @@ import Store from 'electron-store' // 👈 use Store
 
 export const prefs = new Store<{
   pillY: number
+  pillX?: number
   hoverWidth?: number
   hoverHeight?: number
 }>({
