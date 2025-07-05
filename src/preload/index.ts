@@ -106,7 +106,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Screenshots
   screenshots: {
     getScreenshots: () => ipcRenderer.invoke('screenshots:get-screenshots'),
-    deleteScreenshot: (filePath: string) => ipcRenderer.invoke('screenshots:delete-screenshot', filePath),
+    deleteScreenshot: (filePath: string) =>
+      ipcRenderer.invoke('screenshots:delete-screenshot', filePath),
     openInFinder: (filePath: string) => ipcRenderer.invoke('screenshots:open-in-finder', filePath),
     watchDirectory: () => ipcRenderer.invoke('screenshots:watch-directory')
   },
