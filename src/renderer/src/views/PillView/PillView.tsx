@@ -14,7 +14,7 @@ import {
 
 // Hooks
 import { useElectron } from '@/hooks/useElectron'
-import { useIdleOpacity, useDragHandle, usePillInit } from './hooks'
+import { useIdleOpacity, useDragHandle, usePillInit } from '../hooks'
 
 // Store & Controller
 import { useViewStore } from '@/globalStore'
@@ -26,7 +26,7 @@ import { PillButton } from './components'
 import { Feature } from '@/controller/viewController'
 
 // Constants
-import { WIDTH, HEIGHT } from '../../../constants/constants'
+import { WIDTH, HEIGHT } from '../../../../constants/constants'
 
 const PillView: React.FC = () => {
   const { resizeWindow, savePillPosition, setMainWindowResizable } = useElectron()

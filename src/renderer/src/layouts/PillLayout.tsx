@@ -10,13 +10,7 @@ const PillLayout: React.FC<PillLayoutProps> = ({ children }) => {
   return (
     <div
       id="pill-container"
-      className="w-full h-full text-white flex flex-col gap-y-[15px] hardware-accelerated"
-      style={{
-        background: 'rgba(52, 0, 91, 0.25)',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
-        borderRadius: '12px'
-      }}
+      className="w-full h-full text-white flex flex-col gap-y-[15px] hardware-accelerated frosted-glass-base frosted-glass-pill"
     >
       {/* <FuturisticGradientDef /> */}
       <div id="drag-handle" className="flex items-center justify-center pt-1">

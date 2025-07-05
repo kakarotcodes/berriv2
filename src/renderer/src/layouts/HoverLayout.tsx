@@ -82,15 +82,9 @@ const HoverLayout: React.FC<Props> = ({ children }) => {
 
   return (
     <div
-      className="w-full h-full flex flex-col overflow-hidden"
+      className="w-full h-full flex flex-col overflow-hidden frosted-glass-base frosted-glass-hover"
       onMouseLeave={handleMouseLeave}
       onMouseEnter={handleMouseEnter}
-      style={{
-        background: 'rgba(0, 0, 0, 0.1)',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
-        borderRadius: '12px'
-      }}
     >
       <FuturisticGradientDef />
       <HeaderHover LEAVE_DELAY={LEAVE_DELAY} />
