@@ -24,8 +24,8 @@ body {
   -moz-osx-font-smoothing: grayscale;
   overflow: hidden; /* Prevent body scrolling */
   
-  /* Use theme-aware background color */
-  background-color: rgb(var(--color-surface-canvas));
+  /* Translucent background for frosted glass effect */
+  background: transparent;
   color: rgb(var(--color-text-primary));
 }
 

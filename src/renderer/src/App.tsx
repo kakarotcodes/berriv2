@@ -68,7 +68,7 @@ const App = memo(() => {
           <div
             className="absolute inset-0"
             style={{
-              backgroundColor: '#000000', // Fully opaque black
+              backgroundColor: 'transparent', // Transparent during transitions
               zIndex: 9999,
               position: 'fixed',
               top: 0,
@@ -85,7 +85,12 @@ const App = memo(() => {
   // Regular rendering without animations for all views
   return (
     <ThemeProvider>
-      <main className="w-screen h-screen">
+      <main className="w-screen h-screen" style={{
+        background: 'rgba(0, 0, 0, 0.05)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        borderRadius: '12px'
+      }}>
         <div
           className="absolute inset-0 flex items-center justify-center"
           style={{

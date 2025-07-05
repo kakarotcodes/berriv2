@@ -1,23 +1,15 @@
 import { ipcMain, BrowserWindow, nativeTheme } from 'electron'
 
 export function registerThemeHandlers(mainWindow: BrowserWindow) {
-  // Theme colors matching your theme.css
-  const themeColors = {
-    light: '#ffffff', // rgb(255 255 255) - matches --color-surface-canvas light
-    dark: '#1e1e1e' // rgb(30 30 30) - matches --color-surface-canvas dark
-  }
-
-  // Function to update window background color
+  // Function to update window background color (now transparent for frosted glass effect)
   const updateWindowBackground = (isDark: boolean) => {
     if (!mainWindow || mainWindow.isDestroyed()) return
 
-    const backgroundColor = isDark ? themeColors.dark : themeColors.light
-
-    // Update the window background color
-    mainWindow.setBackgroundColor(backgroundColor)
+    // Keep background transparent for frosted glass effect
+    mainWindow.setBackgroundColor('#00000000')
 
     console.log(
-      `[THEME] Window background updated to: ${backgroundColor} (${isDark ? 'dark' : 'light'} theme)`
+      `[THEME] Window background kept transparent for frosted glass effect (${isDark ? 'dark' : 'light'} theme)`
     )
   }
 

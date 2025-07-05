@@ -22,7 +22,12 @@ const DefaultView = () => {
   }
 
   return (
-    <div className="w-full h-full p-4">
+    <div className="w-full h-full p-4" style={{
+      background: 'rgba(0, 0, 0, 0.1)',
+      backdropFilter: 'blur(20px)',
+      WebkitBackdropFilter: 'blur(20px)',
+      borderRadius: '12px'
+    }}>
       {/* Your existing workspace content */}
       <div
         className="text-white text-center"

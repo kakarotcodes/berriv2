@@ -10,7 +10,7 @@ import { setupPowerMonitoring } from './utils/powerMonitor'
 import { handleProtocolUrl, setupProtocolHandling } from './features/auth/protocolHandler'
 
 // constants
-import { WIDTH, HEIGHT, PROTOCOL, MainWindowColors } from '../constants/constants'
+import { WIDTH, HEIGHT, PROTOCOL } from '../constants/constants'
 
 let mainWindow: BrowserWindow | null = null
 
@@ -29,10 +29,6 @@ function createWindow(): void {
   const x = workArea.x + workArea.width - defaultWidth - margin
   const y = workArea.y + workArea.height - defaultHeight - margin
 
-  // Get initial theme-aware background color
-  const isDark = nativeTheme.shouldUseDarkColors
-  const backgroundColor = isDark ? MainWindowColors.darkBG : MainWindowColors.lightBG
-
   mainWindow = new BrowserWindow({
     backgroundColor: '#00000000',
     width: defaultWidth,
@@ -45,7 +41,7 @@ function createWindow(): void {
     x,
     y,
     frame: false,
-    transparent: false,
+    transparent: true,
     alwaysOnTop: true,
     resizable: false,
     skipTaskbar: true,
