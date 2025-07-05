@@ -138,10 +138,30 @@ export function registerWindowHandlers(mainWindow: BrowserWindow) {
     dragState.startWindowY = bounds.y
     dragState.windowWidth = bounds.width
     dragState.windowHeight = bounds.height
+    
+    // Reset tracking variables
+    lastDragUpdate = 0
+    lastProcessedX = 0
+    lastProcessedY = 0
   })
+
+  // Add tracking for last processed coordinates
+  let lastDragUpdate = 0
+  let lastProcessedX = 0
+  let lastProcessedY = 0
 
   ipcMain.on('update-drag', (_e, { mouseX, mouseY }) => {
     if (!dragState.isDragging || !mainWindow) return
+
+    // Rate limiting - max 60fps
+    const now = Date.now()
+    if (now - lastDragUpdate < 16) return
+    lastDragUpdate = now
+
+    // Skip if coordinates haven't changed
+    if (mouseX === lastProcessedX && mouseY === lastProcessedY) return
+    lastProcessedX = mouseX
+    lastProcessedY = mouseY
 
     const newX = mouseX - (dragState.startMouseX - dragState.startWindowX)
     const newY = mouseY - (dragState.startMouseY - dragState.startWindowY)
@@ -184,15 +204,24 @@ export function registerWindowHandlers(mainWindow: BrowserWindow) {
       finalY = Math.max(area.y, Math.min(area.y + area.height - height, newY))
     }
 
-    mainWindow.setBounds({ x: finalX, y: finalY, width, height }, false)
+    // Only update position if it actually changed
+    const currentBounds = mainWindow.getBounds()
+    if (currentBounds.x !== finalX || currentBounds.y !== finalY) {
+      mainWindow.setBounds({ x: finalX, y: finalY, width, height }, false)
 
-    // CRITICAL: Ensure window remains visible on all workspaces after position change
-    mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
+      // CRITICAL: Ensure window remains visible on all workspaces after position change
+      mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
+    }
   })
 
   ipcMain.on('end-drag', () => {
     if (!mainWindow || mainWindow.isDestroyed()) return
     dragState.isDragging = false
+
+    // Reset tracking variables
+    lastDragUpdate = 0
+    lastProcessedX = 0
+    lastProcessedY = 0
 
     // For pill view, save the final position
     const bounds = mainWindow.getBounds()

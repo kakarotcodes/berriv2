@@ -32,7 +32,9 @@
 
   .surface-elevated {
     background-color: rgb(var(--color-surface-elevated));
-    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    box-shadow:
+      0 10px 15px -3px rgb(0 0 0 / 0.1),
+      0 4px 6px -4px rgb(0 0 0 / 0.1);
   }
 
   .surface-card {
@@ -310,28 +312,5 @@
 
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
     background-color: rgb(var(--color-text-secondary));
-  }
-
-  /* Frosted glass effect utilities */
-  .frosted-glass-base {
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-radius: 12px;
-  }
-
-  .frosted-glass-main {
-    background: rgb(var(--color-surface-canvas) / 0.05);
-  }
-
-  .frosted-glass-view {
-    background: rgb(var(--color-surface-elevated) / 0.4);
-  }
-
-  .frosted-glass-hover {
-    background: rgb(var(--color-surface-primary) / 0.6);
-  }
-
-  .frosted-glass-pill {
-    background: rgba(52, 0, 91, 0.25);
   }
 }

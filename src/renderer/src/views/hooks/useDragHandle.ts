@@ -5,6 +5,8 @@ export function useDragHandle(savePillPosition: () => void) {
   const isDraggingRef = useRef(false)
   const lastYRef = useRef(0)
   const lastXRef = useRef(0)
+  const lastSentXRef = useRef(0)
+  const lastSentYRef = useRef(0)
   const cleanupFnRef = useRef<(() => void) | null>(null)
 
   useEffect(() => {
@@ -13,8 +15,10 @@ export function useDragHandle(savePillPosition: () => void) {
       if (isDraggingRef.current) return // Prevent starting a new drag if already dragging
 
       isDraggingRef.current = true
-      lastYRef.current = e.clientY
-      lastXRef.current = e.clientX
+      lastYRef.current = e.screenY
+      lastXRef.current = e.screenX
+      lastSentXRef.current = 0
+      lastSentYRef.current = 0
       e.preventDefault()
       e.stopPropagation()
 
@@ -29,17 +33,24 @@ export function useDragHandle(savePillPosition: () => void) {
 
     const onMouseMove = (e: MouseEvent) => {
       if (isDraggingRef.current) {
-        lastYRef.current = e.clientY
-        lastXRef.current = e.clientX
+        lastYRef.current = e.screenY
+        lastXRef.current = e.screenX
       }
     }
 
     const animateDrag = () => {
       if (isDraggingRef.current) {
-        // Convert client coordinates to screen coordinates properly
-        const screenX = lastXRef.current + window.screenX
-        const screenY = lastYRef.current + window.screenY
-        window.electronAPI.updateDrag(screenX, screenY)
+        // Use screen coordinates directly (no conversion needed)
+        const screenX = lastXRef.current
+        const screenY = lastYRef.current
+        
+        // Only send updates if coordinates have actually changed
+        if (screenX !== lastSentXRef.current || screenY !== lastSentYRef.current) {
+          window.electronAPI.updateDrag(screenX, screenY)
+          lastSentXRef.current = screenX
+          lastSentYRef.current = screenY
+        }
+        
         rafIdRef.current = requestAnimationFrame(animateDrag)
       }
     }
@@ -85,6 +96,8 @@ export function useDragHandle(savePillPosition: () => void) {
       isDraggingRef.current = false
       lastXRef.current = 0
       lastYRef.current = 0
+      lastSentXRef.current = 0
+      lastSentYRef.current = 0
       if (rafIdRef.current !== null) {
         cancelAnimationFrame(rafIdRef.current)
         rafIdRef.current = null
@@ -105,6 +118,8 @@ export function useDragHandle(savePillPosition: () => void) {
         isDraggingRef.current = false
         lastXRef.current = 0
         lastYRef.current = 0
+        lastSentXRef.current = 0
+        lastSentYRef.current = 0
         if (rafIdRef.current !== null) {
           cancelAnimationFrame(rafIdRef.current)
           rafIdRef.current = null
