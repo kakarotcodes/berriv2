@@ -6,5 +6,9 @@
 }
 
 .frosted-glass-main {
-  background: rgb(var(--color-surface-canvas) / 0.7);
+  background: rgb(var(--color-surface-canvas) / 0.5);
+}
+
+.frosted-glass-transparent {
+  background: rgba(0, 0, 0, 0);
 }

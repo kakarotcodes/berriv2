@@ -64,20 +64,7 @@ const App = memo(() => {
   if (isTransitioning) {
     return (
       <ThemeProvider>
-        <main className="w-screen h-screen relative frosted-glass-base frosted-glass-main">
-          <div
-            className="absolute inset-0"
-            style={{
-              backgroundColor: 'transparent', // Transparent during transitions
-              zIndex: 9999,
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0
-            }}
-          />
-        </main>
+        <main className="w-screen h-screen relative frosted-glass-base frosted-glass-main"></main>
       </ThemeProvider>
     )
   }
