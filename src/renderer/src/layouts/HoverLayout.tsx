@@ -82,7 +82,7 @@ const HoverLayout: React.FC<Props> = ({ children }) => {
 
   return (
     <div
-      className="w-full h-full flex flex-col overflow-hidden frosted-glass-base frosted-glass-hover"
+      className="w-full h-full flex flex-col overflow-hidden"
       onMouseLeave={handleMouseLeave}
       onMouseEnter={handleMouseEnter}
     >

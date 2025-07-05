@@ -6,17 +6,5 @@
 }
 
 .frosted-glass-main {
-  background: rgb(var(--color-surface-canvas) / 0.25);
-}
-
-.frosted-glass-view {
-  background: rgb(var(--color-surface-elevated) / 0.25);
-}
-
-.frosted-glass-hover {
-  background: rgb(var(--color-surface-primary) / 0.25);
-}
-
-.frosted-glass-pill {
-  background: rgb(var(--color-surface-primary) / 0.25);
+  background: rgb(var(--color-surface-canvas) / 0.7);
 }

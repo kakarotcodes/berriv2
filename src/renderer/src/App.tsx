@@ -64,7 +64,7 @@ const App = memo(() => {
   if (isTransitioning) {
     return (
       <ThemeProvider>
-        <main className="w-screen h-screen relative">
+        <main className="w-screen h-screen relative frosted-glass-base frosted-glass-main">
           <div
             className="absolute inset-0"
             style={{
@@ -86,15 +86,15 @@ const App = memo(() => {
   return (
     <ThemeProvider>
       <main className="w-screen h-screen frosted-glass-base frosted-glass-main">
-        <div
+        {/* <div
           className="absolute inset-0 flex items-center justify-center"
           style={{
             opacity: 1,
             transition: 'opacity 0.15s ease-in'
           }}
-        >
-          {React.createElement(viewComponents[currentView])}
-        </div>
+        > */}
+        {React.createElement(viewComponents[currentView])}
+        {/* </div> */}
       </main>
     </ThemeProvider>
   )

@@ -22,7 +22,7 @@ const DefaultView: React.FC = () => {
   }
 
   return (
-    <div className="w-full h-full p-4 frosted-glass-base frosted-glass-view">
+    <div className="w-full h-full p-4 frosted-glass-main">
       {/* Your existing workspace content */}
       <div
         className="text-white text-center"

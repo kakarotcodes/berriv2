@@ -10,7 +10,7 @@ const PillLayout: React.FC<PillLayoutProps> = ({ children }) => {
   return (
     <div
       id="pill-container"
-      className="w-full h-full text-white flex flex-col gap-y-[15px] hardware-accelerated frosted-glass-base frosted-glass-pill"
+      className="w-full h-full text-white flex flex-col gap-y-[15px] hardware-accelerated"
     >
       <div id="drag-handle" className="flex items-center justify-center pt-1">
         <svg width="20" height="20" viewBox="0 0 60 20" xmlns="http://www.w3.org/2000/svg">
