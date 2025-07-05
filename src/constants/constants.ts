@@ -16,3 +16,10 @@ export const OFFSET = {
 
 // Protocol configuration
 export const PROTOCOL = 'berri'
+
+// colors
+export const MainWindowColors = {
+  // background
+  darkBG: '#1e1e1e',
+  lightBG: '#ffffff'
+}

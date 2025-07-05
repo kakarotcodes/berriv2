@@ -4,10 +4,6 @@
 @import './base.css';
 @import './draggable.css';
 
-:root {
-  background: rgba(24, 24, 24, 0.15);
-}
-
 body {
   line-height: 1.6;
   font-family:
@@ -27,6 +23,10 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow: hidden; /* Prevent body scrolling */
+  
+  /* Use theme-aware background color */
+  background-color: rgb(var(--color-surface-canvas));
+  color: rgb(var(--color-text-primary));
 }
 
 /* Custom dark scrollbar styles */

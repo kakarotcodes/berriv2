@@ -200,5 +200,28 @@ contextBridge.exposeInMainWorld('electronAPI', {
       callback(view)
     })
     return () => ipcRenderer.removeAllListeners('view-transition-done')
+  },
+
+  // ------------------------------------------------------------
+  // Theme API
+  // ------------------------------------------------------------
+
+  theme: {
+    getSystemTheme: () => ipcRenderer.invoke('theme:get-system-theme'),
+    setTheme: (theme) => ipcRenderer.send('theme:set-theme', theme),
+    onSystemThemeChange: (callback) => {
+      // Remove existing listeners to prevent memory leaks
+      ipcRenderer.removeAllListeners('theme:system-changed')
+
+      // Add the new listener
+      ipcRenderer.on('theme:system-changed', (_event, isDark) => {
+        callback(isDark)
+      })
+
+      // Return a cleanup function
+      return () => {
+        ipcRenderer.removeAllListeners('theme:system-changed')
+      }
+    }
   }
 })

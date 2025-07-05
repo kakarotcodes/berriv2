@@ -1,4 +1,4 @@
-import { app, BrowserWindow, screen } from 'electron'
+import { app, BrowserWindow, screen, nativeTheme } from 'electron'
 import path from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 
@@ -10,7 +10,7 @@ import { setupPowerMonitoring } from './utils/powerMonitor'
 import { handleProtocolUrl, setupProtocolHandling } from './features/auth/protocolHandler'
 
 // constants
-import { WIDTH, HEIGHT, PROTOCOL } from '../constants/constants'
+import { WIDTH, HEIGHT, PROTOCOL, MainWindowColors } from '../constants/constants'
 
 let mainWindow: BrowserWindow | null = null
 
@@ -29,8 +29,12 @@ function createWindow(): void {
   const x = workArea.x + workArea.width - defaultWidth - margin
   const y = workArea.y + workArea.height - defaultHeight - margin
 
+  // Get initial theme-aware background color
+  const isDark = nativeTheme.shouldUseDarkColors
+  const backgroundColor = isDark ? MainWindowColors.darkBG : MainWindowColors.lightBG
+
   mainWindow = new BrowserWindow({
-    backgroundColor: '#00000000',
+    backgroundColor: backgroundColor,
     width: defaultWidth,
     height: defaultHeight,
     minWidth: WIDTH.PILL,
@@ -41,7 +45,7 @@ function createWindow(): void {
     x,
     y,
     frame: false,
-    transparent: true,
+    transparent: false,
     alwaysOnTop: true,
     resizable: false,
     skipTaskbar: true,
@@ -143,6 +147,17 @@ app.on('before-quit', () => {
 // main.ts - Add GPU constraints
 app.commandLine.appendSwitch('disable-gpu-driver-bug-workarounds')
 app.commandLine.appendSwitch('disable-software-rasterizer')
+
+// Handle the protocol URL from macOS open-url event
+app.on('open-url', (event, url) => {
+  event.preventDefault()
+  if (mainWindow) {
+    handleProtocolUrl(url, mainWindow)
+  } else {
+    // Store the URL to handle after the window is created
+    process.env.PENDING_PROTOCOL_URL = url
+  }
+})
 
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.

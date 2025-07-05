@@ -8,6 +8,7 @@ import { registerCalendarHandlers } from './features/calendar/ipcHandlers'
 import { registerGmailHandlers } from './features/gmail/ipcHandlers'
 import { registerScreenCaptureHandlers } from './features/screenCapture/ipcHandlers'
 import { registerScreenshotsHandlers } from './features/screenshots/ipcHandlers'
+import { registerThemeHandlers } from './features/theme/ipcHandlers'
 
 export function registerAllHandlers(mainWindow: BrowserWindow) {
   // Register feature-specific handlers
@@ -20,5 +21,6 @@ export function registerAllHandlers(mainWindow: BrowserWindow) {
   registerGmailHandlers()
   registerScreenCaptureHandlers()
   registerScreenshotsHandlers()
+  registerThemeHandlers(mainWindow)
   console.log('[IPC] All handlers registered successfully')
 }
