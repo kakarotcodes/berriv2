@@ -18,7 +18,7 @@ const PillLayout: React.FC<PillLayoutProps> = ({ children }) => {
       <div id="drag-handle" className="flex items-center justify-center">
         <DragHandle className="w-5 h-5" />
       </div>
-      <div className="w-full h-full flex flex-col gap-y-[15px] overflow-y-scroll pt-2 px-1">
+      <div className="w-full h-full flex flex-col gap-y-[15px] overflow-y-scroll pt-2 px-1 hide-scrollbar">
         {children}
       </div>
     </div>
