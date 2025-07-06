@@ -66,7 +66,7 @@ const PillView: React.FC = () => {
 
   // Handle pill height based on hover state
   useEffect(() => {
-    if (currentView === 'pill' && !isTransitioning) {
+    if (currentView === 'pill' && !isTransitioning && !isAnimating) {
       const targetHeight = isPillHovered ? HEIGHT.PILL_EXPANDED : HEIGHT.PILL_COLLAPSED
       setIsAnimating(true)
       resizeWindow({ width: WIDTH.PILL, height: targetHeight }, 450) // Slightly longer for ultra-smooth expansion
@@ -79,10 +79,13 @@ const PillView: React.FC = () => {
         setIsAnimating(false)
       }, 450)
     }
-  }, [isPillHovered, currentView, isTransitioning, resizeWindow])
+  }, [isPillHovered, currentView, isTransitioning, isAnimating])
 
   // Handle pill content hover (excludes drag handle) with debouncing for smoother animation
   const handleContentHover = useCallback(() => {
+    // Don't change hover state during animation to prevent race conditions
+    if (isAnimating) return
+
     // Clear any existing leave timeout
     if (hoverTimeoutRef.current) {
       clearTimeout(hoverTimeoutRef.current)
@@ -97,9 +100,12 @@ const PillView: React.FC = () => {
     expandTimeoutRef.current = setTimeout(() => {
       setIsPillHovered(true)
     }, 200)
-  }, [])
+  }, [isAnimating])
 
   const handleContentLeave = useCallback(() => {
+    // Don't change hover state during animation to prevent race conditions
+    if (isAnimating) return
+
     // Clear expansion timeout if we're leaving before it triggers
     if (expandTimeoutRef.current) {
       clearTimeout(expandTimeoutRef.current)
@@ -108,11 +114,11 @@ const PillView: React.FC = () => {
     if (hoverTimeoutRef.current) {
       clearTimeout(hoverTimeoutRef.current)
     }
-    // Minimal delay for immediate response while preventing flicker
+    // Increased delay for more stable behavior
     hoverTimeoutRef.current = setTimeout(() => {
       setIsPillHovered(false)
-    }, 50) // Reduced to 50ms for more immediate response
-  }, [])
+    }, 150) // Increased from 50ms to 150ms for more stability
+  }, [isAnimating])
 
   // Cleanup timeouts on unmount
   useEffect(() => {
