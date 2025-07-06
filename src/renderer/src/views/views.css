@@ -12,3 +12,15 @@
 .frosted-glass-transparent {
   background: rgba(0, 0, 0, 0);
 }
+
+/* Optimize the pill container for dragging */
+#pill-container {
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  perspective: 1000;
+  -webkit-perspective: 1000;
+  touch-action: none;
+  transform-style: preserve-3d;
+}

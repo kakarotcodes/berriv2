@@ -25,7 +25,7 @@ import { useViewStore } from '@/globalStore'
 import { useViewController } from '@/controller'
 
 // Layouts & UI
-import { PillLayout } from '@/layouts'
+import { PillLayout } from '../layouts'
 import { PillButton } from './components'
 import { Feature } from '@/controller/viewController'
 

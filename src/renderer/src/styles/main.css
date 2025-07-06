@@ -23,7 +23,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow: hidden; /* Prevent body scrolling */
-  
+
   /* Translucent background for frosted glass effect */
   background: transparent;
   color: rgb(var(--color-text-primary));
@@ -67,18 +67,6 @@ body {
   pointer-events: auto !important;
   touch-action: none;
   cursor: grabbing !important;
-}
-
-/* Optimize the pill container for dragging */
-#pill-container {
-  will-change: transform;
-  transform: translateZ(0);
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-  perspective: 1000;
-  -webkit-perspective: 1000;
-  touch-action: none;
-  transform-style: preserve-3d;
 }
 
 /* Force hardware acceleration for performance */

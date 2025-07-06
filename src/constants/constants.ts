@@ -6,7 +6,7 @@ export const WIDTH = {
 
 export const HEIGHT = {
   DEFAULT: 288,
-  PILL: 280,
+  PILL: 175,
   HOVER: 500
 }
 
