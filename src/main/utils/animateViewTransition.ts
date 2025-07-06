@@ -166,17 +166,9 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
         
         // Determine X position based on the source view
         if (currentBounds.width === viewDimensions.hover.width && currentBounds.height === viewDimensions.hover.height) {
-          // Coming from hover view - use the saved return position
-          const pillReturnX = prefs.get('pillReturnX') as number | undefined
-          if (pillReturnX !== undefined) {
-            targetX = pillReturnX
-            logPositionInfo('Coming from hover view, using saved return X position', targetX)
-          } else {
-            // Fallback to regular saved position
-            const savedPillX = prefs.get('pillX') as number | undefined
-            targetX = savedPillX !== undefined ? savedPillX : workArea.x + workArea.width - PILL_OFFSET
-            logPositionInfo('Coming from hover view, using fallback X position', targetX)
-          }
+          // X position will be calculated in the hover-to-pill transition logic below
+          // (We'll set targetX there based on hover view position)
+          console.log('[PILL_X] X position will be calculated from hover view location')
         } else {
           // Coming from other views - use regular saved position or default
           const savedPillX = prefs.get('pillX') as number | undefined
@@ -202,27 +194,67 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
           // Reset the flag so subsequent transitions use saved position
           isFirstTransitionToPill = false
         }
-        // Coming from hover view - return to the exact position where pill was before hover opened
+        // Coming from hover view - position pill at hover view's current location
         else if (
           currentBounds.width === viewDimensions.hover.width &&
           currentBounds.height === viewDimensions.hover.height
         ) {
-          // First try to use the saved return position (most accurate)
-          const pillReturnY = prefs.get('pillReturnY') as number | undefined
-          if (pillReturnY !== undefined && pillReturnY >= workArea.y && pillReturnY <= workArea.y + workArea.height - dimensions.height) {
-            targetY = pillReturnY
-            logPositionInfo('Coming from hover view, using saved return position', targetY)
-          } else if (lastKnownPillY !== null && lastKnownPillY >= workArea.y && lastKnownPillY <= workArea.y + workArea.height - dimensions.height) {
-            targetY = lastKnownPillY
-            logPositionInfo('Coming from hover view, using last known pill position', targetY)
+          console.log('[PILL_FROM_HOVER] 🎯 Calculating pill position based on hover view location')
+          
+          const hoverX = currentBounds.x
+          const hoverY = currentBounds.y
+          const hoverWidth = currentBounds.width
+          const pillWidth = dimensions.width
+          
+          console.log('[PILL_FROM_HOVER] Hover view bounds:', { x: hoverX, y: hoverY, width: hoverWidth, height: currentBounds.height })
+          
+          // Calculate distances from screen edges to determine optimal pill placement
+          const distanceFromRight = (workArea.x + workArea.width) - (hoverX + hoverWidth)
+          const distanceFromLeft = hoverX - workArea.x
+          
+          console.log('[PILL_FROM_HOVER] Edge distances:', { 
+            distanceFromRight, 
+            distanceFromLeft,
+            workAreaRight: workArea.x + workArea.width,
+            workAreaLeft: workArea.x
+          })
+          
+          // Position pill based on available space
+          if (distanceFromRight >= pillWidth) {
+            // Enough space on the right - position pill at top-right of hover view
+            targetX = hoverX + hoverWidth
+            targetY = hoverY
+            console.log('[PILL_FROM_HOVER] ✅ Positioning pill at TOP-RIGHT of hover view')
+          } else if (distanceFromLeft >= pillWidth) {
+            // Not enough space on right, but space on left - position pill at top-left of hover view
+            targetX = hoverX - pillWidth
+            targetY = hoverY
+            console.log('[PILL_FROM_HOVER] ✅ Positioning pill at TOP-LEFT of hover view')
           } else {
-            // Reset to safe position if no valid saved position
-            targetY = workArea.y + PILL_FIRST_TOP_MARGIN
-            console.log(`[POSITION] ⚠️ Coming from hover view - no valid saved position, using safe position (${targetY})`)
-            lastKnownPillY = targetY
-            prefs.set('pillY', targetY)
-            logPositionInfo('Coming from hover view, using safe 130px top margin', targetY)
+            // Not enough space on either side, position as close as possible
+            if (distanceFromRight > distanceFromLeft) {
+              // Prefer right side, but constrain to screen edge
+              targetX = workArea.x + workArea.width - pillWidth
+              targetY = hoverY
+              console.log('[PILL_FROM_HOVER] ⚠️ Constraining pill to RIGHT edge of screen')
+            } else {
+              // Prefer left side, but constrain to screen edge
+              targetX = workArea.x
+              targetY = hoverY
+              console.log('[PILL_FROM_HOVER] ⚠️ Constraining pill to LEFT edge of screen')
+            }
           }
+          
+          // Ensure Y position is within screen bounds
+          const minY = workArea.y
+          const maxY = workArea.y + workArea.height - dimensions.height
+          targetY = Math.max(minY, Math.min(maxY, targetY))
+          
+          console.log('[PILL_FROM_HOVER] 🎯 Final calculated pill position:', { x: targetX, y: targetY })
+          logPositionInfo('Coming from hover view, calculated pill position from hover location', { x: targetX, y: targetY })
+          
+          // Update the last known pill position to this new location
+          lastKnownPillY = targetY
         }
         // Coming from default view - use saved pill position (don't use default view's position)
         else if (
@@ -264,6 +296,13 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
         prefs.set('pillX', targetX)
         prefs.set('pillY', targetY)
         lastKnownPillY = targetY
+        
+        // If coming from hover view, also update the return positions for future reference
+        if (currentBounds.width === viewDimensions.hover.width && currentBounds.height === viewDimensions.hover.height) {
+          prefs.set('pillReturnX', targetX)
+          prefs.set('pillReturnY', targetY)
+          console.log('[PILL_FROM_HOVER] 💾 Updated pill return position to new location:', { x: targetX, y: targetY })
+        }
       } else if (view === 'hover') {
         console.log('[TRANSITION] 🔄 Taking HOVER view path - SMART POSITIONING SHOULD HAPPEN HERE')
         // Smart positioning for hover view based on pill position and screen edges
