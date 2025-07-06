@@ -134,11 +134,16 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
         currentBounds.width === viewDimensions.pill.width &&
         currentBounds.height === viewDimensions.pill.height
       ) {
-        // Save the position for later use
+        // Save the position for later use - this is the pill's original position
         lastKnownPillY = currentBounds.y
         prefs.set('pillX', currentBounds.x)
         prefs.set('pillY', currentBounds.y)
-        logPositionInfo('Saved pill position during transition', {
+        
+        // Also save as the "return position" specifically for hover view transitions
+        prefs.set('pillReturnX', currentBounds.x)
+        prefs.set('pillReturnY', currentBounds.y)
+        
+        logPositionInfo('Saved pill position during transition (including return position)', {
           x: currentBounds.x,
           y: currentBounds.y
         })
@@ -158,15 +163,31 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
         targetY = workArea.y + workArea.height - dimensions.height - MARGIN
       } else if (view === 'pill') {
         console.log('[TRANSITION] 💊 Taking PILL view path')
-        // Pill view positioning - use saved X position or default to right edge
-        const savedPillX = prefs.get('pillX') as number | undefined
-        if (savedPillX !== undefined) {
-          targetX = savedPillX
-          logPositionInfo('Using saved pill X position', targetX)
+        
+        // Determine X position based on the source view
+        if (currentBounds.width === viewDimensions.hover.width && currentBounds.height === viewDimensions.hover.height) {
+          // Coming from hover view - use the saved return position
+          const pillReturnX = prefs.get('pillReturnX') as number | undefined
+          if (pillReturnX !== undefined) {
+            targetX = pillReturnX
+            logPositionInfo('Coming from hover view, using saved return X position', targetX)
+          } else {
+            // Fallback to regular saved position
+            const savedPillX = prefs.get('pillX') as number | undefined
+            targetX = savedPillX !== undefined ? savedPillX : workArea.x + workArea.width - PILL_OFFSET
+            logPositionInfo('Coming from hover view, using fallback X position', targetX)
+          }
         } else {
-          // Default to right edge with offset for first time
-          targetX = workArea.x + workArea.width - PILL_OFFSET
-          logPositionInfo('Using default pill X position (right edge)', targetX)
+          // Coming from other views - use regular saved position or default
+          const savedPillX = prefs.get('pillX') as number | undefined
+          if (savedPillX !== undefined) {
+            targetX = savedPillX
+            logPositionInfo('Using saved pill X position', targetX)
+          } else {
+            // Default to right edge with offset for first time
+            targetX = workArea.x + workArea.width - PILL_OFFSET
+            logPositionInfo('Using default pill X position (right edge)', targetX)
+          }
         }
 
         // Check if this is first transition to pill
@@ -181,13 +202,27 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
           // Reset the flag so subsequent transitions use saved position
           isFirstTransitionToPill = false
         }
-        // Coming from hover view - special handling for subsequent transitions
+        // Coming from hover view - return to the exact position where pill was before hover opened
         else if (
           currentBounds.width === viewDimensions.hover.width &&
           currentBounds.height === viewDimensions.hover.height
         ) {
-          targetY = currentBounds.y
-          logPositionInfo('Coming from hover view, setting pill at hover Y position', targetY)
+          // First try to use the saved return position (most accurate)
+          const pillReturnY = prefs.get('pillReturnY') as number | undefined
+          if (pillReturnY !== undefined && pillReturnY >= workArea.y && pillReturnY <= workArea.y + workArea.height - dimensions.height) {
+            targetY = pillReturnY
+            logPositionInfo('Coming from hover view, using saved return position', targetY)
+          } else if (lastKnownPillY !== null && lastKnownPillY >= workArea.y && lastKnownPillY <= workArea.y + workArea.height - dimensions.height) {
+            targetY = lastKnownPillY
+            logPositionInfo('Coming from hover view, using last known pill position', targetY)
+          } else {
+            // Reset to safe position if no valid saved position
+            targetY = workArea.y + PILL_FIRST_TOP_MARGIN
+            console.log(`[POSITION] ⚠️ Coming from hover view - no valid saved position, using safe position (${targetY})`)
+            lastKnownPillY = targetY
+            prefs.set('pillY', targetY)
+            logPositionInfo('Coming from hover view, using safe 130px top margin', targetY)
+          }
         }
         // Coming from default view - use saved pill position (don't use default view's position)
         else if (
