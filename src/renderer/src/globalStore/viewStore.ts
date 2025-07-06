@@ -20,7 +20,7 @@ interface ViewState {
 
 const viewDimensions: Record<ViewType, { width: number; height: number }> = {
   default: { width: WIDTH.DEFAULT, height: HEIGHT.DEFAULT }, // Fixed height to match main window creation
-  pill: { width: WIDTH.PILL, height: HEIGHT.PILL },
+  pill: { width: WIDTH.PILL, height: HEIGHT.PILL_COLLAPSED },
   hover: { width: WIDTH.HOVER, height: HEIGHT.HOVER } // Match main process dimension
 }
 
@@ -53,7 +53,7 @@ export const useViewStore = create<ViewState>()(
             try {
               const bounds = await window.electronAPI.getWindowBounds()
               if (bounds?.width && bounds?.height) {
-                if (bounds.width !== WIDTH.PILL && bounds.height !== HEIGHT.PILL) {
+                if (bounds.width !== WIDTH.PILL && bounds.height !== HEIGHT.PILL_COLLAPSED) {
                   console.log('[VIEW] Saving hover dimensions:', {
                     width: bounds.width,
                     height: bounds.height
@@ -75,7 +75,7 @@ export const useViewStore = create<ViewState>()(
             try {
               const savedSize = await window.electronAPI.getSavedHoverSize()
               if (savedSize?.width && savedSize?.height) {
-                if (savedSize.width !== WIDTH.PILL && savedSize.height !== HEIGHT.PILL) {
+                if (savedSize.width !== WIDTH.PILL && savedSize.height !== HEIGHT.PILL_COLLAPSED) {
                   console.log('[VIEW] Using saved hover dimensions:', savedSize)
                   updatedDimensions = savedSize
                 }
@@ -86,7 +86,9 @@ export const useViewStore = create<ViewState>()(
           }
 
           // 2️⃣ Start the native window animation
+          console.log('[VIEW] 🚀 About to call animateViewTransition with view:', view)
           await window.electronAPI.animateViewTransition(view)
+          console.log('[VIEW] ✅ animateViewTransition call completed')
 
           // 3️⃣ Wait for the real "done" signal with fast fallback
           await new Promise<void>((resolve) => {

@@ -7,13 +7,13 @@ import { getSavedHoverSize, saveHoverSize } from '../../utils/hoverSize'
 
 export function registerWindowHandlers(mainWindow: BrowserWindow) {
   // Window resize handler
-  ipcMain.on('resize-window', (_event, { width, height }) => {
+  ipcMain.on('resize-window', (_event, { width, height, duration = 10 }) => {
     if (!mainWindow || mainWindow.isDestroyed()) return
     animateWindowResize({
       window: mainWindow,
       targetWidth: width,
       targetHeight: height,
-      duration: 10
+      duration: duration
     })
   })
 
@@ -106,7 +106,7 @@ export function registerWindowHandlers(mainWindow: BrowserWindow) {
     const [, y] = mainWindow.getPosition()
 
     const isPillView = bounds.width === WIDTH.PILL
-    const isHoverView = bounds.width > WIDTH.PILL && bounds.height > HEIGHT.PILL
+    const isHoverView = bounds.width > WIDTH.PILL && bounds.height > HEIGHT.PILL_COLLAPSED
 
     if (isPillView) {
       prefs.set('pillY', y)
@@ -318,36 +318,40 @@ export function registerWindowHandlers(mainWindow: BrowserWindow) {
     if (!mainWindow || mainWindow.isDestroyed()) return
 
     const { width, height } = getSavedHoverSize()
-    console.log('[HOVER] Fixing hover dimensions to:', { width, height })
+    console.log('[HOVER] fix-hover-dimensions called with:', { width, height })
 
-    if (width === WIDTH.PILL || height === HEIGHT.PILL || width < 100 || height < 100) {
-      console.log('[HOVER] Invalid hover dimensions (too small), using defaults:', {
-        width: WIDTH.HOVER,
-        height: HEIGHT.HOVER
-      })
-
-      const bounds = mainWindow.getBounds()
-      mainWindow.setBounds(
-        {
-          x: bounds.x,
-          y: bounds.y,
-          width: WIDTH.HOVER,
-          height: HEIGHT.HOVER
-        },
-        false
-      )
+    const bounds = mainWindow.getBounds()
+    
+    // Check if we have smart positioning coordinates saved
+    const smartX = prefs.get('smartHoverX') as number | undefined
+    const smartY = prefs.get('smartHoverY') as number | undefined
+    
+    let targetX = bounds.x
+    let targetY = bounds.y
+    
+    if (smartX !== undefined && smartY !== undefined) {
+      targetX = smartX
+      targetY = smartY
+      console.log('[HOVER] 🎯 Using smart positioning coordinates:', { smartX, smartY })
+      
+      // Clear the smart positioning after use to avoid stale data
+      prefs.delete('smartHoverX')
+      prefs.delete('smartHoverY')
     } else {
-      const bounds = mainWindow.getBounds()
-      mainWindow.setBounds(
-        {
-          x: bounds.x,
-          y: bounds.y,
-          width: width,
-          height: height
-        },
-        false
-      )
+      console.log('[HOVER] 📍 No smart positioning found, using current position:', { x: bounds.x, y: bounds.y })
     }
+
+    mainWindow.setBounds(
+      {
+        x: targetX,
+        y: targetY,
+        width,
+        height
+      },
+      false
+    )
+
+    console.log('[HOVER] Applied hover dimensions:', { x: targetX, y: targetY, width, height })
   })
 
   // Persist last view before sleep

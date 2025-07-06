@@ -47,7 +47,7 @@ interface Note {
 }
 
 interface ElectronAPI {
-  resizeWindow: (dimensions: { width: number; height: number }) => void
+  resizeWindow: (dimensions: { width: number; height: number }, duration?: number) => void
   animateViewTransition: (view: string) => Promise<void>
   getWindowBounds: () => Promise<{ width: number; height: number; x: number; y: number }>
 

@@ -6,6 +6,8 @@ export const prefs = new Store<{
   pillX?: number
   hoverWidth?: number
   hoverHeight?: number
+  smartHoverX?: number
+  smartHoverY?: number
 }>({
   defaults: {
     pillY: 130,

@@ -34,7 +34,7 @@ function createWindow(): void {
     width: defaultWidth,
     height: defaultHeight,
     minWidth: WIDTH.PILL,
-    minHeight: HEIGHT.PILL,
+    minHeight: HEIGHT.PILL_COLLAPSED,
     vibrancy: 'under-window',
     visualEffectState: 'active',
     roundedCorners: true,

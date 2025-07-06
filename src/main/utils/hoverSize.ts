@@ -36,7 +36,7 @@ export function saveHoverSize(width: number, height: number): boolean {
 
   // Additional validation - don't save pill dimensions as hover dimensions
   // And ensure minimum reasonable size
-  if (width === WIDTH.PILL || height === HEIGHT.PILL || width < 100 || height < 100) {
+  if (width === WIDTH.PILL || height === HEIGHT.PILL_COLLAPSED || width < 100 || height < 100) {
     console.error('[HOVER] Rejecting suspicious hover dimensions (too small):', { width, height })
     return false
   }

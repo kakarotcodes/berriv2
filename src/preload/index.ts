@@ -10,7 +10,7 @@ ipcRenderer.on('pill:set-css-opacity', (_event, alpha) => {
 ipcRenderer.setMaxListeners(20)
 
 contextBridge.exposeInMainWorld('electronAPI', {
-  resizeWindow: (dimensions) => ipcRenderer.send('resize-window', dimensions),
+  resizeWindow: (dimensions, duration) => ipcRenderer.send('resize-window', { ...dimensions, duration }),
   animateViewTransition: (view) => {
     if (['default', 'pill', 'hover'].includes(view)) {
       return ipcRenderer.invoke('animate-view-transition', view)

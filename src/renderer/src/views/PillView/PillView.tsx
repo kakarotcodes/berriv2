@@ -1,20 +1,18 @@
 // views/PillView.tsx
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import {
   VideoCameraIcon,
-  // CalendarIcon,
   ArrowsPointingOutIcon,
-  // PaperClipIcon,
-  PencilSquareIcon,
   CameraIcon,
   ScissorsIcon,
   RectangleStackIcon,
   EnvelopeIcon
 } from '@heroicons/react/24/outline'
 
-import GoogleCalendar from '@/assets/google-icons/calendar.svg?react'
-import Gmail from '@/assets/google-icons/gmail2.svg?react'
-import GoogleMeet from '@/assets/google-icons/meet2.svg?react'
+import GoogleCalendar from '@/assets/pill-icons/calendar.svg?react'
+import Gmail from '@/assets/pill-icons/gmail.svg?react'
+import GoogleMeet from '@/assets/pill-icons/meet.svg?react'
+import Notes from '@/assets/pill-icons/notes.svg?react'
 
 // Hooks
 import { useElectron } from '@/hooks/useElectron'
@@ -36,7 +34,13 @@ const PillView: React.FC = () => {
   const { resizeWindow, savePillPosition, setMainWindowResizable } = useElectron()
   const { setView, targetView, isTransitioning, currentView } = useViewStore()
   const { setActiveFeature } = useViewController()
-  const [isTransitioningToDefault, setIsTransitioningToDefault] = useState(false)
+  const [isPillHovered, setIsPillHovered] = useState(false)
+  const [isAnimating, setIsAnimating] = useState(false)
+
+  // Hover timeout ref for debouncing
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
+  const expandTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined) // New timeout for expansion delay
+  const animationTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
 
   useIdleOpacity()
   useDragHandle(savePillPosition)
@@ -47,21 +51,88 @@ const PillView: React.FC = () => {
     // Only resize to pill dimensions if we're actually in pill view
     if (currentView === 'pill') {
       setMainWindowResizable(false)
-      resizeWindow({ width: WIDTH.PILL, height: HEIGHT.PILL })
+      setIsAnimating(true)
+      resizeWindow({ width: WIDTH.PILL, height: HEIGHT.PILL_COLLAPSED }, 400)
+
+      // Clear animation state after animation completes
+      if (animationTimeoutRef.current) {
+        clearTimeout(animationTimeoutRef.current)
+      }
+      animationTimeoutRef.current = setTimeout(() => {
+        setIsAnimating(false)
+      }, 400)
     }
   }, [setMainWindowResizable, resizeWindow, currentView])
 
+  // Handle pill height based on hover state
+  useEffect(() => {
+    if (currentView === 'pill' && !isTransitioning) {
+      const targetHeight = isPillHovered ? HEIGHT.PILL_EXPANDED : HEIGHT.PILL_COLLAPSED
+      setIsAnimating(true)
+      resizeWindow({ width: WIDTH.PILL, height: targetHeight }, 450) // Slightly longer for ultra-smooth expansion
+
+      // Clear animation state after animation completes
+      if (animationTimeoutRef.current) {
+        clearTimeout(animationTimeoutRef.current)
+      }
+      animationTimeoutRef.current = setTimeout(() => {
+        setIsAnimating(false)
+      }, 450)
+    }
+  }, [isPillHovered, currentView, isTransitioning, resizeWindow])
+
+  // Handle pill content hover (excludes drag handle) with debouncing for smoother animation
+  const handleContentHover = useCallback(() => {
+    // Clear any existing leave timeout
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current)
+    }
+
+    // Clear any existing expand timeout
+    if (expandTimeoutRef.current) {
+      clearTimeout(expandTimeoutRef.current)
+    }
+
+    // Delay expansion by 200ms
+    expandTimeoutRef.current = setTimeout(() => {
+      setIsPillHovered(true)
+    }, 200)
+  }, [])
+
+  const handleContentLeave = useCallback(() => {
+    // Clear expansion timeout if we're leaving before it triggers
+    if (expandTimeoutRef.current) {
+      clearTimeout(expandTimeoutRef.current)
+    }
+
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current)
+    }
+    // Minimal delay for immediate response while preventing flicker
+    hoverTimeoutRef.current = setTimeout(() => {
+      setIsPillHovered(false)
+    }, 50) // Reduced to 50ms for more immediate response
+  }, [])
+
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current)
+      }
+      if (expandTimeoutRef.current) {
+        clearTimeout(expandTimeoutRef.current)
+      }
+      if (animationTimeoutRef.current) {
+        clearTimeout(animationTimeoutRef.current)
+      }
+    }
+  }, [])
+
   const switchToDefaultView = async () => {
     savePillPosition()
-    setIsTransitioningToDefault(true)
     setMainWindowResizable(false)
-    try {
-      await window.electronAPI.animateViewTransition('default')
-      setTimeout(() => setView('default'), 150)
-    } catch (error) {
-      console.error('Transition error:', error)
-      setIsTransitioningToDefault(false)
-    }
+    setView('default')
   }
 
   const switchToHoverView = (view: Feature) => {
@@ -115,19 +186,25 @@ const PillView: React.FC = () => {
     }
   }
 
-  if (isTransitioningToDefault || (targetView === 'default' && isTransitioning)) {
+  if (targetView === 'default' && isTransitioning) {
     return <div className="w-full h-full bg-transparent flex items-center justify-center" />
   }
 
   const iconStyle = 'size-4 text-[#F4CDF1]'
 
   return (
-    <PillLayout>
+    <PillLayout onContentHover={handleContentHover} onContentLeave={handleContentLeave}>
       <PillButton
-        onClick={switchToDefaultView}
-        featureKey="default"
-        icon={<ArrowsPointingOutIcon className={iconStyle} />}
+        onClick={() => {
+          switchToHoverView('notes')
+        }}
+        featureKey="notes"
+        // icon={<ArrowsPointingOutIcon className={iconStyle} />}
+        icon={<Notes className="w-5 h-5 hover:-scale-z-105 transition-all duration-300" />}
       />
+      {/* <button className="w-full flex justify-center cursor-pointer">
+        <Notes className="w-5 h-5 hover:scale-120 transition-all duration-300" />
+      </button> */}
 
       {/* <PillButton
         onClick={() => {
@@ -137,11 +214,11 @@ const PillView: React.FC = () => {
         icon={<CalendarIcon className={iconStyle} />}
       /> */}
       <button className="w-full flex justify-center cursor-pointer">
-        <GoogleCalendar className="w-5 h-5 hover:scale-120 transition-all duration-300" />
+        <GoogleCalendar className="w-4.5 h-4.5 hover:scale-125 transition-all duration-300" />
       </button>
 
       <button className="w-full flex justify-center cursor-pointer">
-        <Gmail className="w-5 h-5 hover:scale-120 transition-all duration-300" />
+        <Gmail className="w-4.5 h-4.5 hover:scale-125 transition-all duration-300" />
       </button>
 
       {/* <PillButton
@@ -154,7 +231,7 @@ const PillView: React.FC = () => {
       /> */}
 
       <button className="w-full flex justify-center cursor-pointer">
-        <GoogleMeet className="w-5 h-5 hover:scale-120 transition-all duration-300" />
+        <GoogleMeet className="w-4.5 h-4.5 hover:scale-125 transition-all duration-300" />
       </button>
       {/* <PillButton
         onClick={() => {
