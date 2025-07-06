@@ -2,15 +2,19 @@
 import { useState, useEffect } from 'react'
 import {
   VideoCameraIcon,
-  CalendarIcon,
+  // CalendarIcon,
   ArrowsPointingOutIcon,
-  PaperClipIcon,
+  // PaperClipIcon,
   PencilSquareIcon,
   CameraIcon,
   ScissorsIcon,
   RectangleStackIcon,
   EnvelopeIcon
 } from '@heroicons/react/24/outline'
+
+import GoogleCalendar from '@/assets/google-icons/calendar.svg?react'
+import Gmail from '@/assets/google-icons/gmail2.svg?react'
+import GoogleMeet from '@/assets/google-icons/meet2.svg?react'
 
 // Hooks
 import { useElectron } from '@/hooks/useElectron'
@@ -125,31 +129,41 @@ const PillView: React.FC = () => {
         icon={<ArrowsPointingOutIcon className={iconStyle} />}
       />
 
-      <PillButton
+      {/* <PillButton
         onClick={() => {
           switchToHoverView('calendar')
         }}
         featureKey="calendar"
         icon={<CalendarIcon className={iconStyle} />}
-      />
+      /> */}
+      <button className="w-full flex justify-center cursor-pointer">
+        <GoogleCalendar className="w-5 h-5 hover:scale-120 transition-all duration-300" />
+      </button>
 
-      <PillButton
+      <button className="w-full flex justify-center cursor-pointer">
+        <Gmail className="w-5 h-5 hover:scale-120 transition-all duration-300" />
+      </button>
+
+      {/* <PillButton
         onClick={() => {
           switchToHoverView('clipboard')
         }}
         featureKey="clipboard"
         icon={<PaperClipIcon className={iconStyle} />}
         draggable
-      />
+      /> */}
 
-      <PillButton
+      <button className="w-full flex justify-center cursor-pointer">
+        <GoogleMeet className="w-5 h-5 hover:scale-120 transition-all duration-300" />
+      </button>
+      {/* <PillButton
         onClick={() => {
           switchToHoverView('notes')
         }}
         featureKey="notes"
         icon={<PencilSquareIcon className={iconStyle} />}
         draggable
-      />
+      /> */}
 
       <PillButton
         onClick={() => {
