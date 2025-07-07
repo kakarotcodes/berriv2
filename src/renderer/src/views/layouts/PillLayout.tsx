@@ -7,11 +7,9 @@ import DragHandle from '@/assets/icons/drag-handle.svg?react'
 // types
 type PillLayoutProps = {
   children: React.ReactNode
-  onContentHover?: () => void
-  onContentLeave?: () => void
 }
 
-const PillLayout: React.FC<PillLayoutProps> = ({ children, onContentHover, onContentLeave }) => {
+const PillLayout: React.FC<PillLayoutProps> = ({ children }) => {
   return (
     <div
       id="pill-container"
@@ -22,8 +20,6 @@ const PillLayout: React.FC<PillLayoutProps> = ({ children, onContentHover, onCon
       </div>
       <div
         className="w-full h-full flex flex-col gap-y-[15px] overflow-y-scroll py-2 px-1 hide-scrollbar"
-        onMouseEnter={onContentHover}
-        onMouseLeave={onContentLeave}
       >
         {children}
       </div>

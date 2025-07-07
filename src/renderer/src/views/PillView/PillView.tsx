@@ -1,5 +1,5 @@
 // views/PillView.tsx
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
   VideoCameraIcon,
   ArrowsPointingOutIcon,
@@ -34,12 +34,9 @@ const PillView: React.FC = () => {
   const { resizeWindow, savePillPosition, setMainWindowResizable } = useElectron()
   const { setView, targetView, isTransitioning, currentView } = useViewStore()
   const { setActiveFeature } = useViewController()
-  const [isPillHovered, setIsPillHovered] = useState(false)
   const [isAnimating, setIsAnimating] = useState(false)
 
-  // Hover timeout ref for debouncing
-  const hoverTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
-  const expandTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined) // New timeout for expansion delay
+  // Animation timeout ref for initial mount
   const animationTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
 
   useIdleOpacity()
@@ -64,71 +61,9 @@ const PillView: React.FC = () => {
     }
   }, [setMainWindowResizable, resizeWindow, currentView])
 
-  // Handle pill height based on hover state
-  useEffect(() => {
-    if (currentView === 'pill' && !isTransitioning && !isAnimating) {
-      const targetHeight = isPillHovered ? HEIGHT.PILL_EXPANDED : HEIGHT.PILL_COLLAPSED
-      setIsAnimating(true)
-      resizeWindow({ width: WIDTH.PILL, height: targetHeight }, 450) // Slightly longer for ultra-smooth expansion
-
-      // Clear animation state after animation completes
-      if (animationTimeoutRef.current) {
-        clearTimeout(animationTimeoutRef.current)
-      }
-      animationTimeoutRef.current = setTimeout(() => {
-        setIsAnimating(false)
-      }, 450)
-    }
-  }, [isPillHovered, currentView, isTransitioning, isAnimating])
-
-  // Handle pill content hover (excludes drag handle) with debouncing for smoother animation
-  const handleContentHover = useCallback(() => {
-    // Don't change hover state during animation to prevent race conditions
-    if (isAnimating) return
-
-    // Clear any existing leave timeout
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current)
-    }
-
-    // Clear any existing expand timeout
-    if (expandTimeoutRef.current) {
-      clearTimeout(expandTimeoutRef.current)
-    }
-
-    // Delay expansion by 200ms
-    expandTimeoutRef.current = setTimeout(() => {
-      setIsPillHovered(true)
-    }, 200)
-  }, [isAnimating])
-
-  const handleContentLeave = useCallback(() => {
-    // Don't change hover state during animation to prevent race conditions
-    if (isAnimating) return
-
-    // Clear expansion timeout if we're leaving before it triggers
-    if (expandTimeoutRef.current) {
-      clearTimeout(expandTimeoutRef.current)
-    }
-
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current)
-    }
-    // Increased delay for more stable behavior
-    hoverTimeoutRef.current = setTimeout(() => {
-      setIsPillHovered(false)
-    }, 150) // Increased from 50ms to 150ms for more stability
-  }, [isAnimating])
-
   // Cleanup timeouts on unmount
   useEffect(() => {
     return () => {
-      if (hoverTimeoutRef.current) {
-        clearTimeout(hoverTimeoutRef.current)
-      }
-      if (expandTimeoutRef.current) {
-        clearTimeout(expandTimeoutRef.current)
-      }
       if (animationTimeoutRef.current) {
         clearTimeout(animationTimeoutRef.current)
       }
@@ -199,7 +134,7 @@ const PillView: React.FC = () => {
   const iconStyle = 'size-4 text-[#F4CDF1]'
 
   return (
-    <PillLayout onContentHover={handleContentHover} onContentLeave={handleContentLeave}>
+    <PillLayout>
       <PillButton
         onClick={() => {
           switchToHoverView('notes')
