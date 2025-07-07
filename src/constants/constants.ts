@@ -5,9 +5,9 @@ export const WIDTH = {
 }
 
 export const HEIGHT = {
-  DEFAULT: 288,
-  PILL_COLLAPSED: 175,
-  PILL_EXPANDED: 280,
+  DEFAULT: 300,
+  PILL_COLLAPSED: 190,
+  PILL_EXPANDED: 350,
   HOVER: 500
 }
 

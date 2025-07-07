@@ -1,18 +1,15 @@
-// views/PillView.tsx
-import { useState, useEffect, useRef } from 'react'
-import {
-  VideoCameraIcon,
-  ArrowsPointingOutIcon,
-  CameraIcon,
-  ScissorsIcon,
-  RectangleStackIcon,
-  EnvelopeIcon
-} from '@heroicons/react/24/outline'
+// dependencies
+import { useEffect } from 'react'
 
+// assets
 import GoogleCalendar from '@/assets/pill-icons/calendar.svg?react'
 import Gmail from '@/assets/pill-icons/gmail.svg?react'
+import ClipBoardHistory from '@/assets/pill-icons/clipboard.svg?react'
 import GoogleMeet from '@/assets/pill-icons/meet.svg?react'
 import Notes from '@/assets/pill-icons/notes.svg?react'
+import Snipping from '@/assets/pill-icons/snipping.svg?react'
+import Record from '@/assets/pill-icons/record.svg?react'
+import CameraFolder from '@/assets/pill-icons/camera-folder.svg?react'
 
 // Hooks
 import { useElectron } from '@/hooks/useElectron'
@@ -34,10 +31,6 @@ const PillView: React.FC = () => {
   const { resizeWindow, savePillPosition, setMainWindowResizable } = useElectron()
   const { setView, targetView, isTransitioning, currentView } = useViewStore()
   const { setActiveFeature } = useViewController()
-  const [isAnimating, setIsAnimating] = useState(false)
-
-  // Animation timeout ref for initial mount
-  const animationTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
 
   useIdleOpacity()
   useDragHandle(savePillPosition)
@@ -48,33 +41,17 @@ const PillView: React.FC = () => {
     // Only resize to pill dimensions if we're actually in pill view
     if (currentView === 'pill') {
       setMainWindowResizable(false)
-      setIsAnimating(true)
-      resizeWindow({ width: WIDTH.PILL, height: HEIGHT.PILL_COLLAPSED }, 400)
 
-      // Clear animation state after animation completes
-      if (animationTimeoutRef.current) {
-        clearTimeout(animationTimeoutRef.current)
-      }
-      animationTimeoutRef.current = setTimeout(() => {
-        setIsAnimating(false)
-      }, 400)
+      resizeWindow({ width: WIDTH.PILL, height: HEIGHT.PILL_COLLAPSED }, 400)
     }
   }, [setMainWindowResizable, resizeWindow, currentView])
 
-  // Cleanup timeouts on unmount
-  useEffect(() => {
-    return () => {
-      if (animationTimeoutRef.current) {
-        clearTimeout(animationTimeoutRef.current)
-      }
-    }
-  }, [])
-
-  const switchToDefaultView = async () => {
-    savePillPosition()
-    setMainWindowResizable(false)
-    setView('default')
-  }
+  // todo: to be used later
+  // const switchToDefaultView = async () => {
+  //   savePillPosition()
+  //   setMainWindowResizable(false)
+  //   setView('default')
+  // }
 
   const switchToHoverView = (view: Feature) => {
     setActiveFeature(view)
@@ -131,8 +108,6 @@ const PillView: React.FC = () => {
     return <div className="w-full h-full bg-transparent flex items-center justify-center" />
   }
 
-  const iconStyle = 'size-4 text-[#F4CDF1]'
-
   return (
     <PillLayout>
       <PillButton
@@ -140,76 +115,53 @@ const PillView: React.FC = () => {
           switchToHoverView('notes')
         }}
         featureKey="notes"
-        // icon={<ArrowsPointingOutIcon className={iconStyle} />}
-        icon={<Notes className="w-5 h-5 hover:-scale-z-105 transition-all duration-300" />}
+        icon={<Notes className="w-5 h-5 pill-button-behaviour" />}
       />
-      {/* <button className="w-full flex justify-center cursor-pointer">
-        <Notes className="w-5 h-5 hover:scale-120 transition-all duration-300" />
-      </button> */}
 
-      {/* <PillButton
+      <PillButton
+        onClick={openSnippingTool}
+        featureKey="snippingTool"
+        icon={<Snipping className="w-4.5 h-4.5 pill-button-behaviour" />}
+        draggable
+      />
+
+      <PillButton
         onClick={() => {
           switchToHoverView('calendar')
         }}
         featureKey="calendar"
-        icon={<CalendarIcon className={iconStyle} />}
-      /> */}
-      <button className="w-full flex justify-center cursor-pointer">
-        <GoogleCalendar className="w-4.5 h-4.5 hover:scale-125 transition-all duration-300" />
-      </button>
-
-      <button className="w-full flex justify-center cursor-pointer">
-        <Gmail className="w-4.5 h-4.5 hover:scale-125 transition-all duration-300" />
-      </button>
-
-      {/* <PillButton
-        onClick={() => {
-          switchToHoverView('clipboard')
-        }}
-        featureKey="clipboard"
-        icon={<PaperClipIcon className={iconStyle} />}
-        draggable
-      /> */}
-
-      <button className="w-full flex justify-center cursor-pointer">
-        <GoogleMeet className="w-4.5 h-4.5 hover:scale-125 transition-all duration-300" />
-      </button>
-      {/* <PillButton
-        onClick={() => {
-          switchToHoverView('notes')
-        }}
-        featureKey="notes"
-        icon={<PencilSquareIcon className={iconStyle} />}
-        draggable
-      /> */}
-
-      <PillButton
-        onClick={() => {
-          switchToHoverView('screenshots')
-        }}
-        featureKey="screenshots"
-        icon={<CameraIcon className={iconStyle} />}
-        draggable
+        icon={<GoogleCalendar className="w-4.5 h-4.5 pill-button-behaviour" />}
       />
 
       <PillButton
         onClick={startGoogleMeet}
         featureKey="googleMeet"
-        icon={<VideoCameraIcon className={iconStyle} />}
+        icon={<GoogleMeet className="w-4.5 h-4.5 pill-button-behaviour" />}
         draggable
       />
 
       <PillButton
         onClick={openScreenCapture}
         featureKey="screenCapture"
-        icon={<ScissorsIcon className={iconStyle} />}
+        icon={<Record className="w-4.5 h-4.5 pill-button-behaviour" />}
         draggable
       />
 
       <PillButton
-        onClick={openSnippingTool}
-        featureKey="snippingTool"
-        icon={<RectangleStackIcon className={iconStyle} />}
+        onClick={() => {
+          switchToHoverView('clipboard')
+        }}
+        featureKey="clipboard"
+        icon={<ClipBoardHistory className="w-5.5 h-5.5 pill-button-behaviour" />}
+        draggable
+      />
+
+      <PillButton
+        onClick={() => {
+          switchToHoverView('screenshots')
+        }}
+        featureKey="screenshots"
+        icon={<CameraFolder className="w-5 h-5 pill-button-behaviour" />}
         draggable
       />
 
@@ -218,7 +170,7 @@ const PillView: React.FC = () => {
           switchToHoverView('mail')
         }}
         featureKey="mail"
-        icon={<EnvelopeIcon className={iconStyle} />}
+        icon={<Gmail className="w-4.5 h-4.5 pill-button-behaviour" />}
         draggable
       />
     </PillLayout>
