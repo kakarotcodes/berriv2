@@ -115,13 +115,13 @@ const PillView: React.FC = () => {
           switchToHoverView('notes')
         }}
         featureKey="notes"
-        icon={<Notes className="w-5 h-5 pill-button-behaviour" />}
+        icon={<Notes className="w-5 h-5" />}
       />
 
       <PillButton
         onClick={openSnippingTool}
         featureKey="snippingTool"
-        icon={<Snipping className="w-4.5 h-4.5 pill-button-behaviour" />}
+        icon={<Snipping className="w-4.5 h-4.5" />}
         draggable
       />
 
@@ -130,20 +130,20 @@ const PillView: React.FC = () => {
           switchToHoverView('calendar')
         }}
         featureKey="calendar"
-        icon={<GoogleCalendar className="w-4.5 h-4.5 pill-button-behaviour" />}
+        icon={<GoogleCalendar className="w-4.5 h-4.5" />}
       />
 
       <PillButton
         onClick={startGoogleMeet}
         featureKey="googleMeet"
-        icon={<GoogleMeet className="w-4.5 h-4.5 pill-button-behaviour" />}
+        icon={<GoogleMeet className="w-4.5 h-4.5" />}
         draggable
       />
 
       <PillButton
         onClick={openScreenCapture}
         featureKey="screenCapture"
-        icon={<Record className="w-4.5 h-4.5 pill-button-behaviour" />}
+        icon={<Record className="w-4.5 h-4.5" />}
         draggable
       />
 
@@ -152,7 +152,7 @@ const PillView: React.FC = () => {
           switchToHoverView('clipboard')
         }}
         featureKey="clipboard"
-        icon={<ClipBoardHistory className="w-5.5 h-5.5 pill-button-behaviour" />}
+        icon={<ClipBoardHistory className="w-5.5 h-5.5" />}
         draggable
       />
 
@@ -161,7 +161,7 @@ const PillView: React.FC = () => {
           switchToHoverView('screenshots')
         }}
         featureKey="screenshots"
-        icon={<CameraFolder className="w-5 h-5 pill-button-behaviour" />}
+        icon={<CameraFolder className="w-5 h-5" />}
         draggable
       />
 
@@ -170,7 +170,7 @@ const PillView: React.FC = () => {
           switchToHoverView('mail')
         }}
         featureKey="mail"
-        icon={<Gmail className="w-4.5 h-4.5 pill-button-behaviour" />}
+        icon={<Gmail className="w-4.5 h-4.5" />}
         draggable
       />
     </PillLayout>
