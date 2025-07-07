@@ -24,7 +24,7 @@ const Navigation: React.FC = () => {
   }
 
   return (
-    <div className="w-full flex items-center justify-center">
+    <div className="w-full flex items-center justify-center py-3">
       <nav className="frosted-glass-navbar flex items-center gap-x-6 py-2 px-4 rounded-[100px]">
         <HoverNavigationButton
           featureKey="mail"

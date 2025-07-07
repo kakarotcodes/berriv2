@@ -165,12 +165,12 @@ const NotesViewHover: React.FC = () => {
 
   return (
     <div
-      className="w-full h-full flex flex-col text-white text-sm bg-red-400"
+      className="border border-white w-full h-full flex flex-col flex-grow text-white text-sm bg-red-400 overflow-hidden"
       ref={containerRef}
     >
       <div
         id="make-this-scrollable"
-        className="border borde-white w-full min-h-0 flex-1 flex flex-col gap-y-4 overflow-y-auto"
+        className="w-full h-full flex flex-col gap-y-4 overflow-y-scroll"
       >
         <div className="h-10 w-full bg-green-900">1</div>
         <div className="h-10 w-full bg-green-900">2</div>
