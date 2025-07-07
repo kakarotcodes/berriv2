@@ -113,3 +113,34 @@ body {
 .hide-scrollbar::-webkit-scrollbar {
   display: none; /* Webkit browsers */
 }
+
+@theme {
+  /* Light theme colors (default) */
+  --color-surface-canvas: 255 255 255;
+  --color-surface-primary: 242 242 242;
+  --color-surface-secondary: 229 229 231;
+  --color-surface-elevated: 255 255 255;
+
+  --color-border-primary: 209 209 214;
+  --color-border-subtle: 229 229 231;
+
+  --color-text-primary: 0 0 0;
+  --color-text-secondary: 60 60 67;
+  --color-text-tertiary: 60 60 67;
+
+  /* Text with opacity variants for hierarchy */
+  --color-text-secondary-60: 60 60 67; /* Used with 60% opacity */
+  --color-text-tertiary-24: 60 60 67; /* Used with 24% opacity */
+
+  --color-accent-blue: 10 132 255;
+  --color-accent-purple: 191 90 242;
+  --color-accent-pink: 255 55 95;
+
+  --color-status-success: 48 209 88;
+  --color-status-warning: 255 159 10;
+  --color-status-destructive: 255 69 58;
+
+  /* Shadow colors for elevation */
+  --color-shadow-card: 0 0 0; /* Used with 6% opacity */
+  --color-shadow-modal: 0 0 0; /* Used with 15% opacity */
+}
