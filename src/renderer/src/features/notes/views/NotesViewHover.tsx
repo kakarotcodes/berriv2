@@ -13,7 +13,7 @@ import { NewNoteButton, NotesSearchbar } from '../components'
 const RESIZE_END_DELAY = 500 // Wait 500ms after last resize before final save
 
 const NotesViewHover: React.FC = () => {
-  const [leftWidth, setLeftWidth] = useState(25) // 25% for sidebar (within 33.33% max)
+  const [leftWidth, setLeftWidth] = useState(33.33) // Start at maximum allowed size (1/3rd)
   const resizeTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const lastKnownSize = useRef<{ width: number; height: number } | null>(null)
   const isDraggingRef = useRef(false)
