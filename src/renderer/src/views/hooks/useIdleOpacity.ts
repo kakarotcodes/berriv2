@@ -9,8 +9,8 @@ import { useEffect, useRef } from 'react'
  */
 export function useIdleOpacity(
   activeAlpha = 1,
-  // idleAlpha = 0.3,
-  idleAlpha = 1,
+  idleAlpha = 0.3,
+  // idleAlpha = 1,
   idleDelay = 6000
 ) {
   const idleTimerRef = useRef<NodeJS.Timeout | null>(null)
