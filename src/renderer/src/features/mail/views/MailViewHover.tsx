@@ -33,7 +33,7 @@ const MailViewHover: React.FC = () => {
 
   if (authLoading) {
     return (
-      <div className="h-full w-full overflow-hidden animated-gradient">
+      <div className="h-full w-full overflow-hidden ">
         <div className="flex items-center justify-center h-full">
           <div className="flex items-center space-x-3 text-white">
             <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
@@ -46,7 +46,7 @@ const MailViewHover: React.FC = () => {
 
   if (!isAuthenticated) {
     return (
-      <div className="h-full w-full overflow-hidden animated-gradient">
+      <div className="h-full w-full overflow-hidden ">
         <div className="p-6 text-center">
           <div className="mx-auto w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center mb-4">
             <EnvelopeIcon className="w-8 h-8 text-blue-400" />
@@ -86,7 +86,7 @@ const MailViewHover: React.FC = () => {
   }
 
   return (
-    <div className="h-full w-full overflow-hidden animated-gradient">
+    <div className="h-full w-full overflow-hidden ">
       <div className="p-4 h-full">
         <div className="mb-4">
           <h2 className="text-lg font-semibold text-white">Gmail</h2>

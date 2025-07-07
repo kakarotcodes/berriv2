@@ -6,7 +6,7 @@ import { ClipboardHistory } from '../components'
 
 const ClipBoardHoverView: React.FC = () => {
   return (
-    <div className="h-full w-full overflow-hidden animated-gradient">
+    <div className="h-full w-full overflow-hidden ">
       <ClipboardHistory />
     </div>
   )

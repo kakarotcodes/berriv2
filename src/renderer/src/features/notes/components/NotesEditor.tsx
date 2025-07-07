@@ -221,7 +221,7 @@ const NotesEditor: React.FC = () => {
   }
 
   return (
-    <div className="flex-1 h-full animated-gradient text-white flex flex-col">
+    <div className="flex-1 h-full  text-white flex flex-col">
       {/* Title input */}
       <div className="p-6 pb-0">
         <input

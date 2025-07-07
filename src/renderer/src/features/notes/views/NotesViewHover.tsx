@@ -164,14 +164,35 @@ const NotesViewHover: React.FC = () => {
   }, [])
 
   return (
-    <div className="w-full h-full flex text-white text-sm animated-gradient" ref={containerRef}>
-      {/* Sidebar */}
-      <div style={{ width: `${leftWidth}%` }} className="h-full">
-        <NotesSidebar />
+    <div
+      className="w-full h-full flex flex-col text-white text-sm bg-red-400"
+      ref={containerRef}
+    >
+      <div
+        id="make-this-scrollable"
+        className="border borde-white w-full min-h-0 flex-1 flex flex-col gap-y-4 overflow-y-auto"
+      >
+        <div className="h-10 w-full bg-green-900">1</div>
+        <div className="h-10 w-full bg-green-900">2</div>
+        <div className="h-10 w-full bg-green-900">3</div>
+        <div className="h-10 w-full bg-green-900">4</div>
+        <div className="h-10 w-full bg-green-900">5</div>
+        <div className="h-10 w-full bg-green-900">6</div>
+        <div className="h-10 w-full bg-green-900">7</div>
+        <div className="h-10 w-full bg-green-900">8</div>
+        <div className="h-10 w-full bg-green-900">9</div>
+        <div className="h-10 w-full bg-green-900">10</div>
+        <div className="h-10 w-full bg-green-900">11</div>
+        <div className="h-10 w-full bg-green-900">12</div>
+        <div className="h-10 w-full bg-green-900">13</div>
       </div>
+      {/* Sidebar */}
+      {/* <div style={{ width: `${leftWidth}%` }} className="h-full">
+        <NotesSidebar />
+      </div> */}
 
       {/* Resizer */}
-      <div
+      {/* <div
         ref={resizerRef}
         className="w-0.5 bg-gray-600 hover:bg-blue-500 active:bg-blue-700 cursor-col-resize flex-shrink-0 relative"
         title="Drag to resize"
@@ -179,15 +200,15 @@ const NotesViewHover: React.FC = () => {
         <div className="absolute inset-y-0 -left-1 -right-1 flex items-center justify-center">
           <div className="h-8 w-0.5 bg-gray-400 rounded-full"></div>
         </div>
-      </div>
+      </div> */}
 
       {/* Editor */}
-      <div
+      {/* <div
         style={{ width: `calc(100% - ${leftWidth}% - 1px)` }}
         className="h-full overflow-hidden relative"
       >
         <NotesEditor />
-      </div>
+      </div> */}
     </div>
   )
 }
