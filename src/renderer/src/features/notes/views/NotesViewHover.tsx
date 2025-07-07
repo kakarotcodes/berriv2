@@ -13,12 +13,29 @@ import { NewNoteButton, NotesSearchbar } from '../components'
 const RESIZE_END_DELAY = 500 // Wait 500ms after last resize before final save
 
 const NotesViewHover: React.FC = () => {
-  const [leftWidth, setLeftWidth] = useState(40) // 40% for sidebar
+  const [leftWidth, setLeftWidth] = useState(25) // 25% for sidebar (within 33.33% max)
   const resizeTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const lastKnownSize = useRef<{ width: number; height: number } | null>(null)
   const isDraggingRef = useRef(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const resizerRef = useRef<HTMLDivElement>(null)
+
+  const expandDivA = () => {
+    setLeftWidth(33.33) // Restore to maximum allowed 33.33%
+  }
+
+  const collapseDivA = () => {
+    setLeftWidth(0) // Collapse to 0%
+  }
+
+  const toggleDivA = () => {
+    if (isCollapsed) {
+      expandDivA()
+    } else {
+      collapseDivA()
+    }
+  }
+
   // Add a manual sync function that can be called from multiple places
   const syncWindowSizeToStore = async (source: string = 'unknown') => {
     console.log(`[HOVER] Syncing window size to store (source: ${source})`)
@@ -145,10 +162,16 @@ const NotesViewHover: React.FC = () => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!isDraggingRef.current || !containerRef.current) return
       const containerRect = containerRef.current.getBoundingClientRect()
-      const newWidth = ((e.clientX - containerRect.left) / containerRect.width) * 100
-      if (newWidth >= 20 && newWidth <= 80) {
-        setLeftWidth(newWidth)
-      }
+      const mouseX = e.clientX
+      const containerLeft = containerRect.left
+      const containerWidth = containerRect.width
+
+      const newWidth = ((mouseX - containerLeft) / containerWidth) * 100
+
+      // Allow dragging to 0% and restrict maximum to 33.33% (1/3rd)
+      const clampedWidth = Math.max(0, Math.min(33.33, newWidth))
+
+      setLeftWidth(clampedWidth)
     }
 
     const resizer = resizerRef.current
@@ -164,12 +187,53 @@ const NotesViewHover: React.FC = () => {
     }
   }, [])
 
+  const isCollapsed = leftWidth <= 1 // Consider collapsed if 1% or less
+
   return (
     <div className="w-full h-full flex flex-col flex-grow overflow-hidden" ref={containerRef}>
       <div className="w-full bg-black/40 px-4 h-14 flex items-center gap-x-4">
         <NotesSearchbar />
         <NewNoteButton />
       </div>
+
+      {/* Resizable layout */}
+      <div className="w-full h-full flex">
+        {/* Div A */}
+        <div
+          style={{ width: `${leftWidth}%` }}
+          className="h-full bg-blue-500 flex items-center justify-center text-white font-bold"
+        >
+          DIV A
+        </div>
+
+        {/* Resizer gutter */}
+        <div
+          ref={resizerRef}
+          className="w-1 flex-shrink-0 relative bg-gray-600 hover:bg-blue-500 active:bg-blue-700 cursor-col-resize"
+          title="Drag to resize"
+        >
+          <div className="absolute inset-y-0 -left-1 -right-1 flex items-center justify-center">
+            <div className="h-8 w-0.5 bg-gray-400 rounded-full"></div>
+          </div>
+          {/* Toggle button - always visible in center */}
+          <button
+            onClick={toggleDivA}
+            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full flex items-center justify-center text-xs font-bold text-gray-800 hover:bg-gray-200"
+            title={isCollapsed ? 'Expand Div A' : 'Collapse Div A'}
+          >
+            {isCollapsed ? '>' : '<'}
+          </button>
+        </div>
+
+        {/* Div B */}
+        <div
+          style={{ width: `calc(100% - ${leftWidth}% - 4px)` }}
+          className="h-full bg-red-500 flex items-center justify-center text-white font-bold"
+        >
+          DIV B
+        </div>
+      </div>
+
       {/* <div
         id="notes-sidebar"
         className="w-full h-full flex-1 flex flex-col gap-y-4 overflow-y-scroll"
