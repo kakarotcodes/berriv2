@@ -7,6 +7,7 @@ import NotesEditor from '../components/NotesEditor'
 
 // store
 import { useViewStore } from '../../../globalStore/viewStore'
+import { NewNoteButton, NotesSearchbar } from '../components'
 
 // Constants for timing
 const RESIZE_END_DELAY = 500 // Wait 500ms after last resize before final save
@@ -164,28 +165,15 @@ const NotesViewHover: React.FC = () => {
   }, [])
 
   return (
-    <div
-      className="border border-white w-full h-full flex flex-col flex-grow text-white text-sm bg-red-400 overflow-hidden"
-      ref={containerRef}
-    >
-      <div
-        id="make-this-scrollable"
-        className="w-full h-full flex flex-col gap-y-4 overflow-y-scroll"
-      >
-        <div className="h-10 w-full bg-green-900">1</div>
-        <div className="h-10 w-full bg-green-900">2</div>
-        <div className="h-10 w-full bg-green-900">3</div>
-        <div className="h-10 w-full bg-green-900">4</div>
-        <div className="h-10 w-full bg-green-900">5</div>
-        <div className="h-10 w-full bg-green-900">6</div>
-        <div className="h-10 w-full bg-green-900">7</div>
-        <div className="h-10 w-full bg-green-900">8</div>
-        <div className="h-10 w-full bg-green-900">9</div>
-        <div className="h-10 w-full bg-green-900">10</div>
-        <div className="h-10 w-full bg-green-900">11</div>
-        <div className="h-10 w-full bg-green-900">12</div>
-        <div className="h-10 w-full bg-green-900">13</div>
+    <div className="w-full h-full flex flex-col flex-grow overflow-hidden" ref={containerRef}>
+      <div className="w-full bg-black/40 px-4 h-14 flex items-center gap-x-4">
+        <NotesSearchbar />
+        <NewNoteButton />
       </div>
+      {/* <div
+        id="notes-sidebar"
+        className="w-full h-full flex-1 flex flex-col gap-y-4 overflow-y-scroll"
+      ></div> */}
       {/* Sidebar */}
       {/* <div style={{ width: `${leftWidth}%` }} className="h-full">
         <NotesSidebar />

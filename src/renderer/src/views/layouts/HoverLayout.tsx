@@ -53,13 +53,13 @@ const HoverLayout: React.FC<Props> = ({ children }) => {
 
   return (
     <div
-      className="w-full h-full flex flex-col overflow-hidden bg-yellow-900"
+      className="w-full h-full flex flex-col overflow-hidden"
       onMouseLeave={handleMouseLeave}
       onMouseEnter={handleMouseEnter}
     >
       <HeaderHover LEAVE_DELAY={LEAVE_DELAY} />
 
-      <div className="w-full h-full flex flex-col overflow-hidden flex-1">
+      <div className="w-full h-full flex flex-col overflow-hidden">
         <HoverNavigation />
         {children}
       </div>
