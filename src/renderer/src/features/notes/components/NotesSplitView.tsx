@@ -3,6 +3,7 @@ import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
 
 import NotesSidebar from './NotesSidebar'
 import NotesEditor from './NotesEditor'
+import NotesList from './NotesList'
 
 const NotesSplitView: React.FC = () => {
   const [leftWidth, setLeftWidth] = useState(33.33) // Start at maximum allowed size (1/3rd)
@@ -143,9 +144,9 @@ const NotesSplitView: React.FC = () => {
         style={{
           width: `${leftWidth}%`
         }}
-        className="h-full bg-blue-500 flex items-center justify-center text-white font-bold overflow-hidden"
+        className="h-full flex flex-col text-white font-bold overflow-hidden min-h-0"
       >
-        DIV A (Max: {Math.round(parentWidth / 2)}px)
+        <NotesList />
       </div>
 
       {/* Resizer gutter */}

@@ -138,14 +138,16 @@ const NotesViewHover: React.FC = () => {
   // Notes loading is now handled by the store in NotesSidebar
 
   return (
-    <div className="w-full h-full flex flex-col flex-grow overflow-hidden">
+    <div className="w-full h-full flex flex-col flex-grow min-h-0">
       <div className="w-full bg-black/40 px-4 h-14 flex items-center gap-x-4">
         <NotesSearchbar />
         <NewNoteButton />
       </div>
 
       {/* Split view layout */}
-      <NotesSplitView />
+      <div className="flex-1 min-h-0">
+        <NotesSplitView />
+      </div>
     </div>
   )
 }
