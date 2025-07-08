@@ -1,5 +1,6 @@
 // dependencies
 import React, { useEffect, useRef, useState } from 'react'
+import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
 
 // components
 import NotesSidebar from '../components/NotesSidebar'
@@ -14,14 +15,17 @@ const RESIZE_END_DELAY = 500 // Wait 500ms after last resize before final save
 
 const NotesViewHover: React.FC = () => {
   const [leftWidth, setLeftWidth] = useState(33.33) // Start at maximum allowed size (1/3rd)
+  const [parentWidth, setParentWidth] = useState(0) // Track parent container width
   const resizeTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const lastKnownSize = useRef<{ width: number; height: number } | null>(null)
   const isDraggingRef = useRef(false)
   const containerRef = useRef<HTMLDivElement>(null)
+  const flexContainerRef = useRef<HTMLDivElement>(null)
   const resizerRef = useRef<HTMLDivElement>(null)
 
   const expandDivA = () => {
-    setLeftWidth(33.33) // Restore to maximum allowed 33.33%
+    // Restore to default width (33.33%), not the maximum allowed width
+    setLeftWidth(33.33)
   }
 
   const collapseDivA = () => {
@@ -35,6 +39,34 @@ const NotesViewHover: React.FC = () => {
       collapseDivA()
     }
   }
+
+  // Function to update parent width
+  const updateParentWidth = () => {
+    if (flexContainerRef.current) {
+      const newWidth = flexContainerRef.current.getBoundingClientRect().width
+      setParentWidth(newWidth)
+    }
+  }
+
+  // Use ResizeObserver to track flex container width changes
+  useEffect(() => {
+    if (!flexContainerRef.current) return
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setParentWidth(entry.contentRect.width)
+      }
+    })
+
+    resizeObserver.observe(flexContainerRef.current)
+
+    // Initial measurement
+    updateParentWidth()
+
+    return () => {
+      resizeObserver.disconnect()
+    }
+  }, [])
 
   // Add a manual sync function that can be called from multiple places
   const syncWindowSizeToStore = async (source: string = 'unknown') => {
@@ -160,16 +192,20 @@ const NotesViewHover: React.FC = () => {
     }
 
     const handleMouseMove = (e: MouseEvent) => {
-      if (!isDraggingRef.current || !containerRef.current) return
-      const containerRect = containerRef.current.getBoundingClientRect()
+      if (!isDraggingRef.current || !flexContainerRef.current) return
+      const containerRect = flexContainerRef.current.getBoundingClientRect()
       const mouseX = e.clientX
       const containerLeft = containerRect.left
       const containerWidth = containerRect.width
 
       const newWidth = ((mouseX - containerLeft) / containerWidth) * 100
 
-      // Allow dragging to 0% and restrict maximum to 33.33% (1/3rd)
-      const clampedWidth = Math.max(0, Math.min(33.33, newWidth))
+      // Calculate max width percentage based on half the container width
+      const maxWidthPixels = containerWidth / 2
+      const maxWidthPercentage = (maxWidthPixels / containerWidth) * 100
+
+      // Allow dragging to 0% and restrict maximum to half the container width
+      const clampedWidth = Math.max(0, Math.min(maxWidthPercentage, newWidth))
 
       setLeftWidth(clampedWidth)
     }
@@ -197,19 +233,21 @@ const NotesViewHover: React.FC = () => {
       </div>
 
       {/* Resizable layout */}
-      <div className="w-full h-full flex">
+      <div className="w-full h-full flex" ref={flexContainerRef}>
         {/* Div A */}
         <div
-          style={{ width: `${leftWidth}%` }}
-          className="h-full bg-blue-500 flex items-center justify-center text-white font-bold"
+          style={{ 
+            width: `${leftWidth}%`
+          }}
+          className="h-full bg-blue-500 flex items-center justify-center text-white font-bold overflow-hidden"
         >
-          DIV A
+          DIV A (Max: {Math.round(parentWidth / 2)}px)
         </div>
 
         {/* Resizer gutter */}
         <div
           ref={resizerRef}
-          className="w-1 flex-shrink-0 relative bg-gray-600 hover:bg-blue-500 active:bg-blue-700 cursor-col-resize"
+          className="w-0.5 flex-shrink-0 relative bg-gray-600 cursor-col-resize"
           title="Drag to resize"
         >
           <div className="absolute inset-y-0 -left-1 -right-1 flex items-center justify-center">
@@ -218,16 +256,20 @@ const NotesViewHover: React.FC = () => {
           {/* Toggle button - always visible in center */}
           <button
             onClick={toggleDivA}
-            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full flex items-center justify-center text-xs font-bold text-gray-800 hover:bg-gray-200"
+            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full flex items-center justify-center text-gray-800 hover:bg-gray-200"
             title={isCollapsed ? 'Expand Div A' : 'Collapse Div A'}
           >
-            {isCollapsed ? '>' : '<'}
+            {isCollapsed ? (
+              <ChevronRightIcon className="w-2.5 h-2.5" />
+            ) : (
+              <ChevronLeftIcon className="w-2.5 h-2.5" />
+            )}
           </button>
         </div>
 
         {/* Div B */}
         <div
-          style={{ width: `calc(100% - ${leftWidth}% - 4px)` }}
+          style={{ width: `calc(100% - ${leftWidth}% - 2px)` }}
           className="h-full bg-red-500 flex items-center justify-center text-white font-bold"
         >
           DIV B
