@@ -10,6 +10,8 @@ const NotesSplitView: React.FC = () => {
   const isDraggingRef = useRef(false)
   const flexContainerRef = useRef<HTMLDivElement>(null)
   const resizerRef = useRef<HTMLDivElement>(null)
+  const animationFrameRef = useRef<number | null>(null)
+  const pendingWidthRef = useRef<number | null>(null)
 
   const expandDivA = () => {
     // Restore to default width (33.33%), not the maximum allowed width
@@ -68,6 +70,18 @@ const NotesSplitView: React.FC = () => {
       isDraggingRef.current = false
       document.body.style.cursor = ''
       document.body.style.userSelect = ''
+
+      // Cancel any pending animation frame when dragging stops
+      if (animationFrameRef.current !== null) {
+        cancelAnimationFrame(animationFrameRef.current)
+        animationFrameRef.current = null
+      }
+
+      // Apply any final pending width update
+      if (pendingWidthRef.current !== null) {
+        setLeftWidth(pendingWidthRef.current)
+        pendingWidthRef.current = null
+      }
     }
 
     const handleMouseMove = (e: MouseEvent) => {
@@ -86,7 +100,19 @@ const NotesSplitView: React.FC = () => {
       // Allow dragging to 0% and restrict maximum to half the container width
       const clampedWidth = Math.max(0, Math.min(maxWidthPercentage, newWidth))
 
-      setLeftWidth(clampedWidth)
+      // Store the pending width and throttle state updates with requestAnimationFrame
+      pendingWidthRef.current = clampedWidth
+
+      // Only schedule a new animation frame if one isn't already pending
+      if (animationFrameRef.current === null) {
+        animationFrameRef.current = requestAnimationFrame(() => {
+          if (pendingWidthRef.current !== null) {
+            setLeftWidth(pendingWidthRef.current)
+            pendingWidthRef.current = null
+          }
+          animationFrameRef.current = null
+        })
+      }
     }
 
     const resizer = resizerRef.current
@@ -99,6 +125,12 @@ const NotesSplitView: React.FC = () => {
       if (resizer) resizer.removeEventListener('mousedown', handleMouseDown)
       document.removeEventListener('mouseup', handleMouseUp)
       document.removeEventListener('mousemove', handleMouseMove)
+
+      // Cancel any pending animation frame on cleanup
+      if (animationFrameRef.current !== null) {
+        cancelAnimationFrame(animationFrameRef.current)
+        animationFrameRef.current = null
+      }
     }
   }, [])
 
