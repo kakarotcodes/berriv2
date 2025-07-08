@@ -111,7 +111,6 @@ const NotesSplitView: React.FC = () => {
 
   return (
     <div className="w-full h-full flex" ref={flexContainerRef}>
-      {/* Div A */}
       <div
         style={{
           width: `${leftWidth}%`
@@ -124,20 +123,19 @@ const NotesSplitView: React.FC = () => {
       {/* Resizer gutter */}
       <div
         ref={resizerRef}
-        className="w-0.5 flex-shrink-0 relative bg-gray-600 cursor-col-resize"
+        className="w-0.5 flex-shrink-0 relative bg-white/10 cursor-col-resize z-40"
         title="Drag to resize"
       >
         <div className="absolute inset-y-0 -left-1 -right-1 flex items-center justify-center">
-          <div className={`h-10 ${isCollapsed ? 'w-0' : 'w-1'} bg-gray-700 rounded-full`}></div>
+          <div className={`h-10 ${isCollapsed ? 'w-0' : 'w-1'} bg-white/10 rounded-full`}></div>
         </div>
         {/* Toggle button - always visible in center */}
         <button
           onClick={toggleNotesList}
-          className="cursor-pointer absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-6 h-6 bg-gray-900/90 rounded-full flex items-center justify-center text-gray-800 hover:bg-gray-800"
-          title={isCollapsed ? 'Expand Div A' : 'Collapse Div A'}
+          className={`cursor-pointer absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-6 h-6 ${isCollapsed ? 'bg-gray-900' : 'bg-gray-900'} hover:bg-gray-800 rounded-full flex items-center justify-center text-gray-800`}
         >
           {isCollapsed ? (
-            <ChevronRightIcon className="w-3 h-3 text-white stroke-2" />
+            <ChevronRightIcon className="w-8 h-8 text-white stroke-2" />
           ) : (
             <ChevronLeftIcon className="w-3 h-3 text-white stroke-2" />
           )}
@@ -145,12 +143,7 @@ const NotesSplitView: React.FC = () => {
       </div>
 
       {/* Div B */}
-      <div
-        style={{ width: `calc(100% - ${leftWidth}% - 2px)` }}
-        className="h-full bg-red-500 flex items-center justify-center text-white font-bold"
-      >
-        DIV B
-      </div>
+      <NotesEditor />
     </div>
   )
 }

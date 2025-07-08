@@ -3,6 +3,7 @@ import React, { useEffect, useRef } from 'react'
 
 // components
 import NotesSplitView from '../components/NotesSplitView'
+import NotesEditorToolbar from '../components/NotesEditorToolbar'
 
 // store
 import { useViewStore } from '../../../globalStore/viewStore'
@@ -16,16 +17,14 @@ const NotesViewHover: React.FC = () => {
   const lastKnownSize = useRef<{ width: number; height: number } | null>(null)
   const syncVersionRef = useRef(0) // Prevent race conditions
 
-
-
   // Race-condition safe sync function
   const syncWithVersion = async (source: string = 'unknown', isLightweight: boolean = false) => {
     const currentVersion = ++syncVersionRef.current
-    
+
     if (!isLightweight) {
       console.log(`[HOVER] Sync to store (source: ${source})`)
     }
-    
+
     try {
       const bounds = await window.electronAPI.getWindowBounds()
 
@@ -139,9 +138,15 @@ const NotesViewHover: React.FC = () => {
 
   return (
     <div className="w-full h-full flex flex-col flex-grow min-h-0">
-      <div className="w-full bg-black/40 px-4 h-14 flex items-center gap-x-4">
+      <div
+        id="notes-view-hover-header"
+        className="w-full bg-black/40 px-4 h-14 flex items-center gap-x-4"
+      >
         <NotesSearchbar />
         <NewNoteButton />
+        <div className="ml-4 overflow-x-auto">
+          <NotesEditorToolbar />
+        </div>
       </div>
 
       {/* Split view layout */}

@@ -19,7 +19,7 @@ function getFirstWordFromHtml(html: string): string {
 }
 
 const NotesList: React.FC = () => {
-  const { notes, loadNotes, selectedNoteId, setSelectedNoteId } = useNotesStore()
+  const { notes, loadNotes, selectedNoteId, setSelectedNoteId, searchQuery } = useNotesStore()
 
   const [grouped, setGrouped] = useState<{ label: string; notes: Note[] }[]>([])
 
@@ -30,8 +30,16 @@ const NotesList: React.FC = () => {
 
   // Update grouping when notes change
   useEffect(() => {
-    setGrouped(groupNotesByDate(notes))
-  }, [notes])
+    const q = searchQuery.trim().toLowerCase()
+    const visible = q
+      ? notes.filter((n) => {
+          const title = n.title?.toLowerCase() || ''
+          const contentText = typeof n.content === 'string' ? n.content.toLowerCase() : ''
+          return title.includes(q) || contentText.includes(q)
+        })
+      : notes
+    setGrouped(groupNotesByDate(visible))
+  }, [notes, searchQuery])
 
   return (
     <div id="notes-list" className="flex-1 min-h-0 overflow-y-auto hide-scrollbar px-4 py-5">
