@@ -1,5 +1,7 @@
 // dependencies
 import React, { useEffect, useState } from 'react'
+import { Trash2 } from 'lucide-react'
+import { createPortal } from 'react-dom'
 
 // store & utils
 import { useNotesStore } from '../store/notesStore'
@@ -19,9 +21,11 @@ function getFirstWordFromHtml(html: string): string {
 }
 
 const NotesList: React.FC = () => {
-  const { notes, loadNotes, selectedNoteId, setSelectedNoteId, searchQuery } = useNotesStore()
+  const { notes, loadNotes, selectedNoteId, setSelectedNoteId, searchQuery, trashNote } =
+    useNotesStore()
 
   const [grouped, setGrouped] = useState<{ label: string; notes: Note[] }[]>([])
+  const [confirmId, setConfirmId] = useState<string | null>(null)
 
   // Load notes on mount
   useEffect(() => {
@@ -74,8 +78,18 @@ const NotesList: React.FC = () => {
                   }`}
                 >
                   <div className="font-bold truncate mb-1">{title}</div>
-                  <div className="text-xs font-medium text-white/80">
-                    {formatFullDateTime(note.updatedAt)}
+                  <div className="flex items-center justify-between text-xs font-medium text-white/80">
+                    <span>{formatFullDateTime(note.updatedAt)}</span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setConfirmId(note.id)
+                      }}
+                      title="Delete Note"
+                      className="p-1 hover:text-amber-400 text-white/60 cursor-pointer"
+                    >
+                      <Trash2 size={14} />
+                    </button>
                   </div>
                 </div>
               )
@@ -83,6 +97,34 @@ const NotesList: React.FC = () => {
           </div>
         </div>
       ))}
+      {confirmId &&
+        createPortal(
+          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+            <div className="bg-zinc-800 rounded-lg w-80 p-6 text-center text-white">
+              <div className="text-lg font-semibold mb-4">
+                Are you sure you want to delete this note?
+              </div>
+              <div className="flex justify-end gap-3 mt-6">
+                <button
+                  onClick={() => setConfirmId(null)}
+                  className="px-4 py-1 rounded bg-zinc-700 hover:bg-zinc-600"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    trashNote(confirmId)
+                    setConfirmId(null)
+                  }}
+                  className="px-4 py-1 rounded bg-red-600 hover:bg-red-500"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   )
 }
