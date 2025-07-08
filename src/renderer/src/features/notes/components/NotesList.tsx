@@ -1,26 +1,80 @@
 // dependencies
-import React from 'react'
+import React, { useEffect, useState } from 'react'
+
+// store & utils
+import { useNotesStore } from '../store/notesStore'
+import { groupNotesByDate } from '../utils/groupNotesByDate'
+import { formatFullDateTime } from '../utils/formatting'
+import { Note } from '../types/noteTypes'
+
+// Helper: extract first word from HTML content
+function getFirstWordFromHtml(html: string): string {
+  if (!html) return 'Untitled'
+  const text = html
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+  if (!text) return 'Untitled'
+  return text.split(' ')[0] || 'Untitled'
+}
 
 const NotesList: React.FC = () => {
+  const { notes, loadNotes, selectedNoteId, setSelectedNoteId } = useNotesStore()
+
+  const [grouped, setGrouped] = useState<{ label: string; notes: Note[] }[]>([])
+
+  // Load notes on mount
+  useEffect(() => {
+    loadNotes()
+  }, [loadNotes])
+
+  // Update grouping when notes change
+  useEffect(() => {
+    setGrouped(groupNotesByDate(notes))
+  }, [notes])
+
   return (
-    <div
-      id="notes-list"
-      className="flex-1 min-h-0 flex flex-col gap-2 overflow-y-auto p-2 hide-scrollbar"
-    >
-      <div className="bg-black/40 rounded-[16px] p-2 h-20 flex-none">Note 1</div>
-      <div className="bg-black/40 rounded-[16px] p-2 h-20 flex-none">Note 2</div>
-      <div className="bg-black/40 rounded-[16px] p-2 h-20 flex-none">Note 3</div>
-      <div className="bg-black/40 rounded-[16px] p-2 h-20 flex-none">Note 4</div>
-      <div className="bg-black/40 rounded-[16px] p-2 h-20 flex-none">Note 5</div>
-      <div className="bg-black/40 rounded-[16px] p-2 h-20 flex-none">Note 6</div>
-      <div className="bg-black/40 rounded-[16px] p-2 h-20 flex-none">Note 7</div>
-      <div className="bg-black/40 rounded-[16px] p-2 h-20 flex-none">Note 8</div>
-      <div className="bg-black/40 rounded-[16px] p-2 h-20 flex-none">Note 9</div>
-      <div className="bg-black/40 rounded-[16px] p-2 h-20 flex-none">Note 10</div>
-      <div className="bg-black/40 rounded-[16px] p-2 h-20 flex-none">Note 11</div>
-      <div className="bg-black/40 rounded-[16px] p-2 h-20 flex-none">Note 12</div>
-      <div className="bg-black/40 rounded-[16px] p-2 h-20 flex-none">Note 13</div>
-      <div className="bg-black/40 rounded-[16px] p-2 h-20 flex-none">Note 14</div>
+    <div id="notes-list" className="flex-1 min-h-0 overflow-y-auto hide-scrollbar px-4 py-5">
+      {grouped.map((section) => (
+        <div key={section.label} className="mb-8 last:mb-0">
+          <div className="text-xs uppercase tracking-wider text-white px-1">{section.label}</div>
+          <div className="mt-4 flex flex-col">
+            {section.notes.map((note, idx) => {
+              let title = note.title?.trim()
+              if (!title) {
+                if (typeof note.content === 'string') {
+                  title = getFirstWordFromHtml(note.content)
+                } else if (Array.isArray(note.content) && note.content.length > 0) {
+                  title = note.content[0].text.split(' ')[0] || 'Untitled'
+                } else {
+                  title = 'Untitled'
+                }
+              }
+
+              const isSelected = note.id === selectedNoteId
+              const isAboveSelected =
+                idx < section.notes.length - 1 && section.notes[idx + 1].id === selectedNoteId
+              const borderClass =
+                isSelected || isAboveSelected ? 'border-b-0' : 'border-b border-white/20'
+
+              return (
+                <div
+                  key={note.id}
+                  onClick={() => setSelectedNoteId(note.id)}
+                  className={`${borderClass} p-3 cursor-pointer flex-none ${
+                    isSelected ? 'bg-black/50 rounded-[8px]' : ''
+                  }`}
+                >
+                  <div className="font-bold truncate mb-1">{title}</div>
+                  <div className="text-xs font-medium text-white/80">
+                    {formatFullDateTime(note.updatedAt)}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      ))}
     </div>
   )
 }

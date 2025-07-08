@@ -1,3 +1,5 @@
+import { DateTime } from 'luxon'
+
 export function formatDateLabel(dateString: string): string {
   const date = new Date(dateString)
   const now = new Date()
@@ -23,4 +25,8 @@ export function formatDateLabel(dateString: string): string {
         month: 'short',
         year: 'numeric'
       })
+}
+
+export function formatFullDateTime(dateString: string): string {
+  return DateTime.fromISO(dateString).toFormat('dd LLLL yyyy HH:mm')
 }

@@ -1,13 +1,13 @@
+// dependencies
 import React, { useEffect, useRef, useState } from 'react'
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
 
-import NotesSidebar from './NotesSidebar'
+// components
 import NotesEditor from './NotesEditor'
 import NotesList from './NotesList'
 
 const NotesSplitView: React.FC = () => {
   const [leftWidth, setLeftWidth] = useState(33.33) // Start at maximum allowed size (1/3rd)
-  const [parentWidth, setParentWidth] = useState(0) // Track parent container width
   const isDraggingRef = useRef(false)
   const flexContainerRef = useRef<HTMLDivElement>(null)
   const resizerRef = useRef<HTMLDivElement>(null)
@@ -23,41 +23,13 @@ const NotesSplitView: React.FC = () => {
     setLeftWidth(0) // Collapse to 0%
   }
 
-  const toggleDivA = () => {
+  const toggleNotesList = () => {
     if (isCollapsed) {
       expandDivA()
     } else {
       collapseDivA()
     }
   }
-
-  // Function to update parent width
-  const updateParentWidth = () => {
-    if (flexContainerRef.current) {
-      const newWidth = flexContainerRef.current.getBoundingClientRect().width
-      setParentWidth(newWidth)
-    }
-  }
-
-  // Use ResizeObserver to track flex container width changes
-  useEffect(() => {
-    if (!flexContainerRef.current) return
-
-    const resizeObserver = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        setParentWidth(entry.contentRect.width)
-      }
-    })
-
-    resizeObserver.observe(flexContainerRef.current)
-
-    // Initial measurement
-    updateParentWidth()
-
-    return () => {
-      resizeObserver.disconnect()
-    }
-  }, [])
 
   useEffect(() => {
     const handleMouseDown = (e: MouseEvent) => {
@@ -156,18 +128,18 @@ const NotesSplitView: React.FC = () => {
         title="Drag to resize"
       >
         <div className="absolute inset-y-0 -left-1 -right-1 flex items-center justify-center">
-          <div className="h-8 w-1 bg-gray-700 rounded-full"></div>
+          <div className={`h-10 ${isCollapsed ? 'w-0' : 'w-1'} bg-gray-700 rounded-full`}></div>
         </div>
         {/* Toggle button - always visible in center */}
         <button
-          onClick={toggleDivA}
-          className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-gray-900 rounded-full flex items-center justify-center text-gray-800 hover:bg-gray-800"
+          onClick={toggleNotesList}
+          className="cursor-pointer absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-6 h-6 bg-gray-900/90 rounded-full flex items-center justify-center text-gray-800 hover:bg-gray-800"
           title={isCollapsed ? 'Expand Div A' : 'Collapse Div A'}
         >
           {isCollapsed ? (
-            <ChevronRightIcon className="w-2.5 h-2.5 text-white" />
+            <ChevronRightIcon className="w-3 h-3 text-white stroke-2" />
           ) : (
-            <ChevronLeftIcon className="w-2.5 h-2.5 text-white" />
+            <ChevronLeftIcon className="w-3 h-3 text-white stroke-2" />
           )}
         </button>
       </div>
