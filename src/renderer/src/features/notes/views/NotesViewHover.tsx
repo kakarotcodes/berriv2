@@ -40,37 +40,37 @@ const NotesViewHover: React.FC = () => {
           lastKnownSize.current.height !== bounds.height
         ) {
           if (!isLightweight) {
-            console.log('[HOVER] Detected size change:', {
-              from: lastKnownSize.current,
-              to: { width: bounds.width, height: bounds.height }
-            })
+          console.log('[HOVER] Detected size change:', {
+            from: lastKnownSize.current,
+            to: { width: bounds.width, height: bounds.height }
+          })
           }
 
           lastKnownSize.current = { width: bounds.width, height: bounds.height }
           window.electronAPI.saveHoverSize({ width: bounds.width, height: bounds.height })
 
           if (!isLightweight) {
-            useViewStore.setState({
-              dimensions: { width: bounds.width, height: bounds.height }
-            })
+          useViewStore.setState({
+            dimensions: { width: bounds.width, height: bounds.height }
+          })
           }
 
           return true
         } else {
           if (!isLightweight) {
-            console.log('[HOVER] Window size unchanged, skipping update')
+          console.log('[HOVER] Window size unchanged, skipping update')
           }
           return false
         }
       } else {
         if (!isLightweight) {
-          console.warn('[HOVER] Could not sync window size - invalid bounds:', bounds)
+        console.warn('[HOVER] Could not sync window size - invalid bounds:', bounds)
         }
         return false
       }
     } catch (e) {
       if (!isLightweight) {
-        console.error('[HOVER] Error syncing window size:', e)
+      console.error('[HOVER] Error syncing window size:', e)
       }
       return false
     }
@@ -152,7 +152,7 @@ const NotesViewHover: React.FC = () => {
       {/* Split view layout */}
       <div className="flex-1 min-h-0">
         <NotesSplitView />
-      </div>
+        </div>
     </div>
   )
 }
