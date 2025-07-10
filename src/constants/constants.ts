@@ -1,14 +1,16 @@
 export const WIDTH = {
   DEFAULT: 512,
   PILL: 35,
-  HOVER: 500
+  HOVER: 500,
+  SCREENSHOT_PREVIEW: 300
 }
 
 export const HEIGHT = {
   DEFAULT: 300,
   PILL_COLLAPSED: 190,
   PILL_EXPANDED: 350,
-  HOVER: 500
+  HOVER: 500,
+  SCREENSHOT_PREVIEW: 300
 }
 
 export const OFFSET = {

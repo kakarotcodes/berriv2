@@ -1,9 +1,10 @@
-import { ipcMain, BrowserWindow, nativeImage, clipboard } from 'electron'
+import { ipcMain, BrowserWindow, nativeImage } from 'electron'
 import { exec } from 'child_process'
 import { promisify } from 'util'
 import fs from 'fs/promises'
 import path from 'path'
 import os from 'os'
+import { HEIGHT, WIDTH } from '../../../constants/constants'
 
 const execAsync = promisify(exec)
 
@@ -19,7 +20,7 @@ export function registerScreenCaptureHandlers() {
           key code 23 using {command down, shift down}
         end tell
       `
-      
+
       try {
         await execAsync(`osascript -e '${appleScript}'`)
         console.log('[SCREEN_CAPTURE] Successfully opened screen capture toolbar via AppleScript')
@@ -27,15 +28,20 @@ export function registerScreenCaptureHandlers() {
       } catch (appleScriptError) {
         console.log('[SCREEN_CAPTURE] AppleScript failed, trying alternative method')
         // Fallback: Use screencapture command to trigger interactive mode
-        await execAsync('screencapture -i -U /tmp/dummy_screenshot.png 2>/dev/null; rm -f /tmp/dummy_screenshot.png')
-        console.log('[SCREEN_CAPTURE] Successfully opened screen capture toolbar via screencapture command')
+        await execAsync(
+          'screencapture -i -U /tmp/dummy_screenshot.png 2>/dev/null; rm -f /tmp/dummy_screenshot.png'
+        )
+        console.log(
+          '[SCREEN_CAPTURE] Successfully opened screen capture toolbar via screencapture command'
+        )
         return { success: true }
       }
     } catch (error) {
       console.error('Failed to open screen capture toolbar:', error)
-      return { 
-        success: false, 
-        error: 'Unable to open screen capture toolbar. Please try using Cmd+Shift+5 manually or grant accessibility permissions to this app in System Preferences > Security & Privacy > Privacy > Accessibility.'
+      return {
+        success: false,
+        error:
+          'Unable to open screen capture toolbar. Please try using Cmd+Shift+5 manually or grant accessibility permissions to this app in System Preferences > Security & Privacy > Privacy > Accessibility.'
       }
     }
   })
@@ -44,30 +50,30 @@ export function registerScreenCaptureHandlers() {
   ipcMain.handle('screen-capture:open-snipping-tool', async () => {
     try {
       console.log('[SNIPPING_TOOL] Starting snipping tool with preview')
-      
+
       // Create temporary file for screenshot
       const tempDir = os.tmpdir()
       const timestamp = Date.now()
       const screenshotPath = path.join(tempDir, `berri-snippet-${timestamp}.png`)
-      
+
       console.log('[SNIPPING_TOOL] Capturing screenshot to:', screenshotPath)
-      
+
       // Capture screenshot using macOS screencapture with interactive selection
       await execAsync(`screencapture -i -s "${screenshotPath}"`)
-      
+
       // Check if file was created (user might have cancelled)
       try {
         await fs.access(screenshotPath)
         console.log('[SNIPPING_TOOL] Screenshot captured successfully')
-        
+
         // Read the image and create preview window
         const imageBuffer = await fs.readFile(screenshotPath)
         const image = nativeImage.createFromBuffer(imageBuffer)
         const dataUrl = image.toDataURL()
-        
+
         // Create preview window
         createPreviewWindow(dataUrl)
-        
+
         // Clean up temp file
         setTimeout(async () => {
           try {
@@ -76,7 +82,7 @@ export function registerScreenCaptureHandlers() {
             console.log('[SNIPPING_TOOL] Temp file already cleaned up')
           }
         }, 10000)
-        
+
         return { success: true }
       } catch (accessError) {
         console.log('[SNIPPING_TOOL] No screenshot captured (user cancelled)')
@@ -84,9 +90,10 @@ export function registerScreenCaptureHandlers() {
       }
     } catch (error) {
       console.error('Failed to open snipping tool:', error)
-      return { 
-        success: false, 
-        error: 'Unable to capture screenshot. Please grant accessibility permissions to this app in System Preferences > Security & Privacy > Privacy > Accessibility.'
+      return {
+        success: false,
+        error:
+          'Unable to capture screenshot. Please grant accessibility permissions to this app in System Preferences > Security & Privacy > Privacy > Accessibility.'
       }
     }
   })
@@ -94,15 +101,15 @@ export function registerScreenCaptureHandlers() {
   // Helper function to create preview window
   function createPreviewWindow(imageDataUrl: string) {
     console.log('[PREVIEW] Creating preview window...')
-    
+
     // Close existing preview window if it exists
     if (previewWindow && !previewWindow.isDestroyed()) {
       previewWindow.close()
     }
 
     previewWindow = new BrowserWindow({
-      width: 220,
-      height: 250,
+      width: WIDTH.SCREENSHOT_PREVIEW,
+      height: HEIGHT.SCREENSHOT_PREVIEW,
       frame: false,
       alwaysOnTop: true,
       transparent: true,
@@ -114,7 +121,7 @@ export function registerScreenCaptureHandlers() {
       }
     })
 
-         // Create simple HTML content
+    // Create simple HTML content
     const htmlContent = `
       <!DOCTYPE html>
       <html>
@@ -122,7 +129,7 @@ export function registerScreenCaptureHandlers() {
         <style>
           * { margin: 0; padding: 0; box-sizing: border-box; }
           body {
-            width: 220px; height: 250px;
+            width: 300px; height: 300px;
             background: rgba(0, 0, 0, 0.9);
             border-radius: 12px;
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -133,7 +140,7 @@ export function registerScreenCaptureHandlers() {
             flex-direction: column;
           }
           .image-container {
-            width: 200px; height: 200px;
+            width: 280px; height: 250px;
             margin: 10px;
             border-radius: 8px;
             overflow: hidden;
@@ -229,35 +236,32 @@ export function registerScreenCaptureHandlers() {
 
     previewWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`)
 
-         previewWindow.once('ready-to-show', () => {
-       console.log('[PREVIEW] Preview window ready, showing...')
-       
-       // Position window near cursor when ready
-       const { screen } = require('electron')
-       const cursorPosition = screen.getCursorScreenPoint()
-       const display = screen.getDisplayNearestPoint(cursorPosition)
-       
-       // Calculate position with some offset, ensuring it stays on screen
-       let x = cursorPosition.x + 15
-       let y = cursorPosition.y + 15
-       
-       // Keep window on screen
-       if (x + 220 > display.bounds.x + display.bounds.width) {
-         x = cursorPosition.x - 235 // Position to the left instead
-       }
-       if (y + 250 > display.bounds.y + display.bounds.height) {
-         y = cursorPosition.y - 265 // Position above instead
-       }
-       
-       // Ensure minimum distance from screen edges
-       x = Math.max(display.bounds.x + 10, x)
-       y = Math.max(display.bounds.y + 10, y)
-       
-       previewWindow?.setPosition(x, y)
-       previewWindow?.show()
-       
-       console.log(`[PREVIEW] Positioned at ${x}, ${y} (cursor was at ${cursorPosition.x}, ${cursorPosition.y})`)
-     })
+    previewWindow.once('ready-to-show', () => {
+      console.log('[PREVIEW] Preview window ready, showing...')
+
+      // Position window at bottom center of screen with 20px padding
+      const { screen } = require('electron')
+      const cursorPosition = screen.getCursorScreenPoint()
+      const display = screen.getDisplayNearestPoint(cursorPosition)
+
+      // Window dimensions
+      const windowWidth = 300
+      const windowHeight = 300
+      const bottomPadding = 20
+
+      // Calculate center X position
+      const x = display.bounds.x + (display.bounds.width - windowWidth) / 2
+
+      // Calculate bottom Y position with padding
+      const y = display.bounds.y + display.bounds.height - windowHeight - bottomPadding
+
+      previewWindow?.setPosition(x, y)
+      previewWindow?.show()
+
+      console.log(
+        `[PREVIEW] Positioned at bottom center: ${x}, ${y} (display bounds: ${display.bounds.width}x${display.bounds.height})`
+      )
+    })
 
     previewWindow.on('closed', () => {
       console.log('[PREVIEW] Preview window closed')
@@ -276,7 +280,7 @@ export function registerScreenCaptureHandlers() {
 
   ipcMain.on('preview-copy', () => {
     console.log('[PREVIEW] Copy action triggered')
-    // The image data is already in the preview window, 
+    // The image data is already in the preview window,
     // we'll copy from the original data that created the window
     // This is a simplified approach - in a real implementation,
     // you'd store the image data and copy it here
@@ -291,4 +295,4 @@ export function registerScreenCaptureHandlers() {
     console.log('[PREVIEW] Share action triggered')
     // TODO: Implement share functionality
   })
-} 
+}
