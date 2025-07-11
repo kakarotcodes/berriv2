@@ -49,83 +49,101 @@ export function registerScreenCaptureHandlers() {
   // Register IPC handler for opening macOS snipping tool (Cmd+Shift+4)
   ipcMain.handle('screen-capture:open-snipping-tool', async () => {
     try {
-      console.log('[SNIPPING_TOOL] Starting snipping tool with preview')
+      console.log('[SNIPPING_TOOL] Starting snipping tool with direct capture detection')
 
-      // Create temporary file for screenshot
+      // Create temporary file for capture detection
       const tempDir = os.tmpdir()
       const timestamp = Date.now()
-      const screenshotPath = path.join(tempDir, `berri-snippet-${timestamp}.png`)
+      const tempScreenshotPath = path.join(tempDir, `berri-capture-${timestamp}.png`)
 
-      console.log('[SNIPPING_TOOL] Capturing screenshot to:', screenshotPath)
+      console.log('[SNIPPING_TOOL] Capturing to temp file:', tempScreenshotPath)
 
-      // Capture screenshot using macOS screencapture with interactive selection
-      await execAsync(`screencapture -i -s "${screenshotPath}"`)
+      // Use screencapture -i which shows the native crosshair UI and waits for user interaction
+      // This preserves the native selection experience while giving us direct completion detection
+      await execAsync(`screencapture -i "${tempScreenshotPath}"`)
+      
+      console.log('[SNIPPING_TOOL] Screenshot capture process completed')
 
-      // Check if file was created (user might have cancelled)
+      // Check if user actually took a screenshot (file exists and has content)
       try {
-        await fs.access(screenshotPath)
-        console.log('[SNIPPING_TOOL] Screenshot captured successfully')
+        await fs.access(tempScreenshotPath)
+        console.log('[SNIPPING_TOOL] Screenshot file created')
 
-        // Read the image and create preview window
-        const imageBuffer = await fs.readFile(screenshotPath)
-        console.log('[SNIPPING_TOOL] Image buffer size:', imageBuffer.length)
-        
-        if (imageBuffer.length === 0) {
-          console.error('[SNIPPING_TOOL] Image buffer is empty!')
-          return { success: false, error: 'Screenshot file is empty' }
+        const stats = await fs.stat(tempScreenshotPath)
+        if (stats.size === 0) {
+          console.log('[SNIPPING_TOOL] Screenshot file is empty (user cancelled)')
+          await fs.unlink(tempScreenshotPath).catch(() => {})
+          return { success: true, cancelled: true }
         }
-        
+
+        console.log('[SNIPPING_TOOL] Screenshot file size:', stats.size)
+
+        // Read and process the screenshot
+        const imageBuffer = await fs.readFile(tempScreenshotPath)
         const image = nativeImage.createFromBuffer(imageBuffer)
-        console.log('[SNIPPING_TOOL] Native image created, isEmpty:', image.isEmpty())
         
         if (image.isEmpty()) {
-          console.error('[SNIPPING_TOOL] Failed to create native image from buffer!')
-          return { success: false, error: 'Failed to process screenshot image' }
+          console.error('[SNIPPING_TOOL] Failed to create image from buffer')
+          await fs.unlink(tempScreenshotPath).catch(() => {})
+          return { success: false, error: 'Failed to process screenshot' }
         }
+
+        // Save to desktop with proper macOS naming (maintaining native behavior)
+        const now = new Date()
+        const formattedTime = now.toISOString().replace(/[:.]/g, '-').slice(0, -5)
+        const desktopPath = path.join(os.homedir(), 'Desktop')
+        const finalScreenshotPath = path.join(desktopPath, `Screen Shot ${formattedTime}.png`)
         
-        // Try data URL first, fallback to file URL if data URL is too large
+        // Copy to desktop to maintain native macOS behavior
+        await fs.copyFile(tempScreenshotPath, finalScreenshotPath)
+        console.log('[SNIPPING_TOOL] Screenshot saved to desktop:', finalScreenshotPath)
+
+        // Create data URL for preview
         const dataUrl = image.toDataURL()
-        console.log('[SNIPPING_TOOL] Data URL generated, length:', dataUrl.length)
-        console.log('[SNIPPING_TOOL] Data URL starts with:', dataUrl.substring(0, 50))
-        
         if (!dataUrl || dataUrl.length < 100) {
-          console.error('[SNIPPING_TOOL] Data URL is invalid or too short!')
-          return { success: false, error: 'Failed to generate image data URL' }
+          console.error('[SNIPPING_TOOL] Failed to generate data URL')
+          await fs.unlink(tempScreenshotPath).catch(() => {})
+          return { success: false, error: 'Failed to generate preview' }
         }
-        
-        // If data URL is too large (>2MB), use file URL instead
+
+        // Use file URL for large images to avoid browser limits
         let imageUrl = dataUrl
         if (dataUrl.length > 2 * 1024 * 1024) {
-          console.log('[SNIPPING_TOOL] Data URL too large, using file URL instead')
-          imageUrl = `file://${screenshotPath}`
+          console.log('[SNIPPING_TOOL] Using file URL for large image')
+          imageUrl = `file://${finalScreenshotPath}`
         }
 
         // Create preview window
+        console.log('[SNIPPING_TOOL] Creating preview window...')
         createPreviewWindow(imageUrl)
 
         // Clean up temp file
         setTimeout(async () => {
           try {
-            await fs.unlink(screenshotPath)
+            await fs.unlink(tempScreenshotPath)
+            console.log('[SNIPPING_TOOL] Temp file cleaned up')
           } catch (err) {
             console.log('[SNIPPING_TOOL] Temp file already cleaned up')
           }
-        }, 10000)
+        }, 5000)
 
-        return { success: true }
+        return { success: true, savedPath: finalScreenshotPath }
+        
       } catch (accessError) {
-        console.log('[SNIPPING_TOOL] No screenshot captured (user cancelled)')
+        console.log('[SNIPPING_TOOL] No screenshot file found (user cancelled)')
         return { success: true, cancelled: true }
       }
+      
     } catch (error) {
-      console.error('Failed to open snipping tool:', error)
+      console.error('Failed to run snipping tool:', error)
       return {
         success: false,
-        error:
-          'Unable to capture screenshot. Please grant accessibility permissions to this app in System Preferences > Security & Privacy > Privacy > Accessibility.'
+        error: 'Unable to capture screenshot. Please grant accessibility permissions in System Preferences > Security & Privacy > Privacy > Accessibility.'
       }
     }
   })
+
+
 
   // Helper function to create preview window
   function createPreviewWindow(imageDataUrl: string) {
