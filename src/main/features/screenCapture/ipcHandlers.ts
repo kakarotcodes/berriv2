@@ -104,8 +104,20 @@ export function registerScreenCaptureHandlers() {
 
     // Close existing preview window if it exists
     if (previewWindow && !previewWindow.isDestroyed()) {
-      previewWindow.close()
+      console.log('[PREVIEW] Closing existing preview window...')
+      previewWindow.destroy() // Force immediate destruction
+      previewWindow = null
     }
+    
+    // Create new window immediately
+    createPreviewWindowInternal(imageDataUrl)
+  }
+
+  // Internal function to actually create the preview window
+  function createPreviewWindowInternal(imageDataUrl: string) {
+    console.log('[PREVIEW] Creating new preview window with image data...')
+    console.log('[PREVIEW] Image data URL length:', imageDataUrl ? imageDataUrl.length : 'null')
+    console.log('[PREVIEW] Image data starts with:', imageDataUrl ? imageDataUrl.substring(0, 50) : 'null')
 
     // Get cursor position to determine which screen to show the preview on
     const { screen } = require('electron')
@@ -138,7 +150,8 @@ export function registerScreenCaptureHandlers() {
       roundedCorners: true,
       webPreferences: {
         contextIsolation: false,
-        nodeIntegration: true
+        nodeIntegration: true,
+        backgroundThrottling: false
       }
     })
 
@@ -353,7 +366,7 @@ export function registerScreenCaptureHandlers() {
         </div>
         
         <div class="image-container">
-          <img class="preview-image" src="${imageDataUrl}" alt="Screenshot preview" />
+          <img class="preview-image" src="${imageDataUrl}" alt="Screenshot preview" onload="console.log('[PREVIEW] Image loaded successfully')" onerror="console.error('[PREVIEW] Image failed to load')" />
         </div>
         
         <div class="toolbar">
@@ -371,37 +384,74 @@ export function registerScreenCaptureHandlers() {
           </button>
         </div>
                  <script>
+           console.log('[PREVIEW] Script loading...');
            const { ipcRenderer } = require('electron');
+           console.log('[PREVIEW] ipcRenderer loaded:', !!ipcRenderer);
+           
+           // Log when DOM is ready
+           document.addEventListener('DOMContentLoaded', () => {
+             console.log('[PREVIEW] DOM loaded');
+             const img = document.querySelector('.preview-image');
+             console.log('[PREVIEW] Image element found:', !!img);
+             if (img) {
+               console.log('[PREVIEW] Image src length:', img.src ? img.src.length : 'null');
+             }
+           });
            
            let timer = setTimeout(() => {
-             ipcRenderer.send('preview-close');
+             console.log('[PREVIEW] Auto-close timer firing...');
+             try {
+               ipcRenderer.send('preview-close');
+             } catch (error) {
+               console.error('[PREVIEW] IPC failed, using window.close():', error);
+               window.close();
+             }
            }, 5000);
            
            document.body.addEventListener('mouseenter', () => {
+             console.log('[PREVIEW] Mouse entered, clearing timer');
              clearTimeout(timer);
            });
            
            document.body.addEventListener('mouseleave', () => {
+             console.log('[PREVIEW] Mouse left, restarting timer');
              timer = setTimeout(() => {
-               ipcRenderer.send('preview-close');
+               console.log('[PREVIEW] Auto-close timer firing (after mouse leave)...');
+               try {
+                 ipcRenderer.send('preview-close');
+               } catch (error) {
+                 console.error('[PREVIEW] IPC failed, using window.close():', error);
+                 window.close();
+               }
              }, 5000);
            });
            
            function copyImage() {
+             console.log('[PREVIEW] Copy button clicked');
              ipcRenderer.send('preview-copy');
            }
            
            function saveImage() {
+             console.log('[PREVIEW] Save button clicked');
              ipcRenderer.send('preview-save');
            }
            
            function shareImage() {
+             console.log('[PREVIEW] Share button clicked');
              ipcRenderer.send('preview-share');
            }
            
            function closeWindow() {
-             ipcRenderer.send('preview-close');
+             console.log('[PREVIEW] Close button clicked');
+             try {
+               ipcRenderer.send('preview-close');
+             } catch (error) {
+               console.error('[PREVIEW] IPC failed, using window.close():', error);
+               window.close();
+             }
            }
+           
+           console.log('[PREVIEW] Script loaded successfully');
          </script>
       </body>
       </html>
@@ -431,8 +481,12 @@ export function registerScreenCaptureHandlers() {
 
   // IPC handlers for preview window actions
   ipcMain.on('preview-close', () => {
+    console.log('[PREVIEW] IPC preview-close received')
     if (previewWindow && !previewWindow.isDestroyed()) {
+      console.log('[PREVIEW] Closing preview window')
       previewWindow.close()
+    } else {
+      console.log('[PREVIEW] Preview window not found or already destroyed')
     }
   })
 
