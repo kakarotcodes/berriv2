@@ -68,11 +68,40 @@ export function registerScreenCaptureHandlers() {
 
         // Read the image and create preview window
         const imageBuffer = await fs.readFile(screenshotPath)
+        console.log('[SNIPPING_TOOL] Image buffer size:', imageBuffer.length)
+        
+        if (imageBuffer.length === 0) {
+          console.error('[SNIPPING_TOOL] Image buffer is empty!')
+          return { success: false, error: 'Screenshot file is empty' }
+        }
+        
         const image = nativeImage.createFromBuffer(imageBuffer)
+        console.log('[SNIPPING_TOOL] Native image created, isEmpty:', image.isEmpty())
+        
+        if (image.isEmpty()) {
+          console.error('[SNIPPING_TOOL] Failed to create native image from buffer!')
+          return { success: false, error: 'Failed to process screenshot image' }
+        }
+        
+        // Try data URL first, fallback to file URL if data URL is too large
         const dataUrl = image.toDataURL()
+        console.log('[SNIPPING_TOOL] Data URL generated, length:', dataUrl.length)
+        console.log('[SNIPPING_TOOL] Data URL starts with:', dataUrl.substring(0, 50))
+        
+        if (!dataUrl || dataUrl.length < 100) {
+          console.error('[SNIPPING_TOOL] Data URL is invalid or too short!')
+          return { success: false, error: 'Failed to generate image data URL' }
+        }
+        
+        // If data URL is too large (>2MB), use file URL instead
+        let imageUrl = dataUrl
+        if (dataUrl.length > 2 * 1024 * 1024) {
+          console.log('[SNIPPING_TOOL] Data URL too large, using file URL instead')
+          imageUrl = `file://${screenshotPath}`
+        }
 
         // Create preview window
-        createPreviewWindow(dataUrl)
+        createPreviewWindow(imageUrl)
 
         // Clean up temp file
         setTimeout(async () => {
@@ -101,6 +130,19 @@ export function registerScreenCaptureHandlers() {
   // Helper function to create preview window
   function createPreviewWindow(imageDataUrl: string) {
     console.log('[PREVIEW] Creating preview window...')
+    
+    // Validate image data
+    if (!imageDataUrl || typeof imageDataUrl !== 'string') {
+      console.error('[PREVIEW] Invalid image data URL provided!')
+      return
+    }
+    
+    if (!imageDataUrl.startsWith('data:image/') && !imageDataUrl.startsWith('file://')) {
+      console.error('[PREVIEW] Image URL is neither data: nor file: URL!')
+      return
+    }
+    
+    console.log('[PREVIEW] Image data validation passed, length:', imageDataUrl.length)
 
     // Close existing preview window if it exists
     if (previewWindow && !previewWindow.isDestroyed()) {
@@ -366,7 +408,9 @@ export function registerScreenCaptureHandlers() {
         </div>
         
         <div class="image-container">
-          <img class="preview-image" src="${imageDataUrl}" alt="Screenshot preview" onload="console.log('[PREVIEW] Image loaded successfully')" onerror="console.error('[PREVIEW] Image failed to load')" />
+          <img class="preview-image" src="${imageDataUrl}" alt="Screenshot preview" 
+               onload="console.log('[PREVIEW] Image loaded successfully'); document.body.style.borderColor='green';" 
+               onerror="console.error('[PREVIEW] Image failed to load:', this.src); document.body.style.borderColor='red'; this.style.display='none';" />
         </div>
         
         <div class="toolbar">
@@ -395,6 +439,14 @@ export function registerScreenCaptureHandlers() {
              console.log('[PREVIEW] Image element found:', !!img);
              if (img) {
                console.log('[PREVIEW] Image src length:', img.src ? img.src.length : 'null');
+               
+               // Set timeout to detect if image never loads
+               setTimeout(() => {
+                 if (!img.complete || img.naturalWidth === 0) {
+                   console.error('[PREVIEW] Image failed to load within 3 seconds');
+                   document.body.style.borderColor = 'orange';
+                 }
+               }, 3000);
              }
            });
            
