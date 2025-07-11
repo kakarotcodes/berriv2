@@ -1,4 +1,4 @@
-import { ipcMain, BrowserWindow, nativeImage } from 'electron'
+import { ipcMain, BrowserWindow, nativeImage, screen } from 'electron'
 import { exec } from 'child_process'
 import { promisify } from 'util'
 import fs from 'fs/promises'
@@ -389,13 +389,15 @@ export function registerScreenCaptureHandlers() {
       </html>
     `
 
+    // Make window visible on all workspaces
+    previewWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
+
     previewWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`)
 
     previewWindow.once('ready-to-show', () => {
       console.log('[PREVIEW] Preview window ready, showing...')
 
       // Position window at bottom center of screen with 20px padding
-      const { screen } = require('electron')
       const cursorPosition = screen.getCursorScreenPoint()
       const display = screen.getDisplayNearestPoint(cursorPosition)
 
