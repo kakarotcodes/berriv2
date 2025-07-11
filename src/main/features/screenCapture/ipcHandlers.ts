@@ -107,9 +107,27 @@ export function registerScreenCaptureHandlers() {
       previewWindow.close()
     }
 
+    // Get cursor position to determine which screen to show the preview on
+    const { screen } = require('electron')
+    const cursorPosition = screen.getCursorScreenPoint()
+    const display = screen.getDisplayNearestPoint(cursorPosition)
+
+    // Calculate position at bottom center of the screen where cursor is
+    const windowWidth = WIDTH.SCREENSHOT_PREVIEW
+    const windowHeight = HEIGHT.SCREENSHOT_PREVIEW
+    const bottomPadding = 20
+
+    // Calculate center X position on the correct screen
+    const x = display.bounds.x + (display.bounds.width - windowWidth) / 2
+
+    // Calculate bottom Y position with padding on the correct screen
+    const y = display.bounds.y + display.bounds.height - windowHeight - bottomPadding
+
     previewWindow = new BrowserWindow({
-      width: WIDTH.SCREENSHOT_PREVIEW,
-      height: HEIGHT.SCREENSHOT_PREVIEW,
+      width: windowWidth,
+      height: windowHeight,
+      x: x,
+      y: y,
       frame: false,
       alwaysOnTop: true,
       transparent: true,
@@ -396,23 +414,6 @@ export function registerScreenCaptureHandlers() {
 
     previewWindow.once('ready-to-show', () => {
       console.log('[PREVIEW] Preview window ready, showing...')
-
-      // Position window at bottom center of screen with 20px padding
-      const cursorPosition = screen.getCursorScreenPoint()
-      const display = screen.getDisplayNearestPoint(cursorPosition)
-
-      // Window dimensions
-      const windowWidth = 300
-      const windowHeight = 300
-      const bottomPadding = 20
-
-      // Calculate center X position
-      const x = display.bounds.x + (display.bounds.width - windowWidth) / 2
-
-      // Calculate bottom Y position with padding
-      const y = display.bounds.y + display.bounds.height - windowHeight - bottomPadding
-
-      previewWindow?.setPosition(x, y)
       previewWindow?.show()
 
       console.log(
