@@ -1,0 +1,19 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "outDir": "./src/main/features/screenCapture/scripts-compiled",
+    "rootDir": "./src/main/features/screenCapture/scripts",
+    "strict": false,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "declaration": false,
+    "sourceMap": false,
+    "lib": ["ES2020", "DOM"]
+  },
+  "include": [
+    "src/main/features/screenCapture/scripts/**/*.ts"
+  ]
+}

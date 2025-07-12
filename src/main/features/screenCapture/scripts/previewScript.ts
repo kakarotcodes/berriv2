@@ -1,17 +1,17 @@
 console.log('[PREVIEW] Script loading...')
 
-let timer = null
+let timer: NodeJS.Timeout | null = null
 
 // Function to set the image URL
-function setImageUrl(imageUrl) {
-  const img = document.getElementById('previewImage')
+function setImageUrl(imageUrl: string): void {
+  const img = document.getElementById('previewImage') as HTMLImageElement
   if (img) {
     img.src = imageUrl
     console.log('[PREVIEW] Image URL set:', imageUrl.startsWith('data:') ? 'data URL' : 'file URL')
   }
 }
 
-async function startAutoCloseTimer() {
+async function startAutoCloseTimer(): Promise<void> {
   console.log('[PREVIEW] Starting auto-close timer...')
   if (timer) clearTimeout(timer)
   timer = setTimeout(async () => {
@@ -29,7 +29,7 @@ async function startAutoCloseTimer() {
 // Log when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
   console.log('[PREVIEW] DOM loaded')
-  const img = document.querySelector('.preview-image')
+  const img = document.querySelector('.preview-image') as HTMLImageElement
   console.log('[PREVIEW] Image element found:', !!img)
   if (img) {
     console.log('[PREVIEW] Image src length:', img.src ? img.src.length : 'null')

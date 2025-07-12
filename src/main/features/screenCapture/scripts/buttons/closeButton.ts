@@ -1,6 +1,6 @@
 console.log('[CLOSE_BUTTON] Loading close button script...')
 
-async function closeWindow() {
+async function closeWindow(): Promise<void> {
   console.log('[CLOSE_BUTTON] Close button clicked')
   try {
     const electron = await import('electron')
@@ -12,22 +12,22 @@ async function closeWindow() {
 }
 
 // Future complex functionality can go here
-async function closeWithSavePrompt() {
+async function closeWithSavePrompt(): Promise<void> {
   // TODO: Ask user if they want to save before closing
 }
 
-async function minimizeToTray() {
+async function minimizeToTray(): Promise<void> {
   // TODO: Minimize to system tray instead of closing
 }
 
-async function closeWithFeedback() {
+async function closeWithFeedback(): Promise<void> {
   // TODO: Show quick feedback survey before closing
 }
 
 // Export functions to global scope
-window.closeWindow = closeWindow
-window.closeWithSavePrompt = closeWithSavePrompt
-window.minimizeToTray = minimizeToTray
-window.closeWithFeedback = closeWithFeedback
+;(window as any).closeWindow = closeWindow
+;(window as any).closeWithSavePrompt = closeWithSavePrompt
+;(window as any).minimizeToTray = minimizeToTray
+;(window as any).closeWithFeedback = closeWithFeedback
 
 console.log('[CLOSE_BUTTON] Close button script loaded successfully')

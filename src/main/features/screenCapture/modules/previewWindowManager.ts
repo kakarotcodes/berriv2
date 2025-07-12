@@ -88,7 +88,17 @@ function createPreviewWindowInternalOnDisplay(imageDataUrl: string, display: Ele
       webSecurity: false // Allow data URLs and file URLs to load
     },
     // Open DevTools for debugging
-    ...(process.env.NODE_ENV === 'development' && { webPreferences: { ...{ contextIsolation: false, nodeIntegration: true, backgroundThrottling: false, webSecurity: false }, devTools: true } })
+    ...(process.env.NODE_ENV === 'development' && {
+      webPreferences: {
+        ...{
+          contextIsolation: false,
+          nodeIntegration: true,
+          backgroundThrottling: false,
+          webSecurity: false
+        },
+        devTools: true
+      }
+    })
   })
 
   previewWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
@@ -105,29 +115,33 @@ function createPreviewWindowInternalOnDisplay(imageDataUrl: string, display: Ele
     try {
       // Read the HTML file content
       const htmlContent = fs.readFileSync(htmlPath, 'utf8')
-      
+
       // Get the directory for base URL
       const htmlDir = path.dirname(htmlPath)
       const baseHref = pathToFileURL(htmlDir + '/').href
-      
+
       console.log('[PREVIEW_INTERNAL] Base href will be:', baseHref)
-      
+
       // Inject base tag at the beginning of <head>
       const baseTag = `<base href="${baseHref}">`
       const modifiedHtml = htmlContent.replace('<head>', `<head>\n  ${baseTag}`)
-      
+
       // Write modified HTML to a temporary file and load it
       const tempHtmlPath = path.join(htmlDir, 'preview_temp.html')
       fs.writeFileSync(tempHtmlPath, modifiedHtml)
-      
+
       console.log('[PREVIEW_INTERNAL] Created temporary HTML file at:', tempHtmlPath)
-      console.log('[PREVIEW_INTERNAL] Modified HTML content preview:', modifiedHtml.substring(0, 500) + '...')
-      
+      console.log(
+        '[PREVIEW_INTERNAL] Modified HTML content preview:',
+        modifiedHtml.substring(0, 500) + '...'
+      )
+
       // Load the temporary HTML file
-      previewWindow.loadFile(tempHtmlPath)
+      previewWindow
+        .loadFile(tempHtmlPath)
         .then(() => {
           console.log('[PREVIEW_INTERNAL] Temporary HTML file loaded successfully')
-          
+
           // Clean up temp file after a delay (disabled for debugging)
           // setTimeout(() => {
           //   try {
@@ -141,16 +155,18 @@ function createPreviewWindowInternalOnDisplay(imageDataUrl: string, display: Ele
         .catch((error) => {
           console.error('[PREVIEW_INTERNAL] Failed to load temporary HTML file:', error)
         })
-      
+
       // Wait for DOM ready to set image and check button functions
       previewWindow.webContents.once('dom-ready', () => {
         console.log('[PREVIEW_INTERNAL] DOM is ready, setting image and checking buttons')
-        
+
         // Add a small delay to ensure all scripts have loaded
         setTimeout(() => {
           console.log('[PREVIEW_INTERNAL] Running delayed debugging check...')
-        
-        previewWindow?.webContents.executeJavaScript(`
+
+          previewWindow?.webContents
+            .executeJavaScript(
+              `
           // Set image source
           const img = document.getElementById('previewImage');
           if (img) {
@@ -193,10 +209,11 @@ function createPreviewWindowInternalOnDisplay(imageDataUrl: string, display: Ele
               console.error('[PREVIEW_SCRIPT] Script failed to load:', script.src, e);
             });
           });
-        `).catch((jsError) => {
-          console.error('[PREVIEW_INTERNAL] Failed to execute JavaScript:', jsError)
-        })
-        
+        `
+            )
+            .catch((jsError) => {
+              console.error('[PREVIEW_INTERNAL] Failed to execute JavaScript:', jsError)
+            })
         }, 100) // Reduced delay for faster loading
       })
 
@@ -219,9 +236,9 @@ function createPreviewWindowInternalOnDisplay(imageDataUrl: string, display: Ele
   previewWindow.once('ready-to-show', () => {
     console.log('[PREVIEW_INTERNAL] Preview window ready, showing...')
     previewWindow?.show()
-    
+
     // DevTools disabled for production
-    
+
     console.log('[PREVIEW_INTERNAL] Window positioned at:', { x, y }, 'on display:', display.bounds)
   })
 
