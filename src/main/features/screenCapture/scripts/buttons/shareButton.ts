@@ -31,12 +31,12 @@ async function shareWithAnnotations(): Promise<void> {
   // TODO: Add annotations before sharing
 }
 
-// Export functions to global scope
-;(window as any).shareImage = shareImage
-;(window as any).shareToSlack = shareToSlack
-;(window as any).shareToDiscord = shareToDiscord
-;(window as any).shareViaEmail = shareViaEmail
-;(window as any).shareToCloudStorage = shareToCloudStorage
-;(window as any).shareWithAnnotations = shareWithAnnotations
+// Attach event listeners when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+  const shareBtn = document.querySelector('button[title="Share"]')
+  if (shareBtn) {
+    shareBtn.addEventListener('click', shareImage)
+  }
+})
 
 console.log('[SHARE_BUTTON] Share button script loaded successfully');

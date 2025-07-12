@@ -24,10 +24,12 @@ async function closeWithFeedback(): Promise<void> {
   // TODO: Show quick feedback survey before closing
 }
 
-// Export functions to global scope
-;(window as any).closeWindow = closeWindow
-;(window as any).closeWithSavePrompt = closeWithSavePrompt
-;(window as any).minimizeToTray = minimizeToTray
-;(window as any).closeWithFeedback = closeWithFeedback
+// Attach event listeners when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+  const closeBtn = document.querySelector('button[title="Close"]')
+  if (closeBtn) {
+    closeBtn.addEventListener('click', closeWindow)
+  }
+})
 
 console.log('[CLOSE_BUTTON] Close button script loaded successfully')

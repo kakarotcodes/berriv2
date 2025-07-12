@@ -21,9 +21,12 @@ function copyAsMarkdown(): void {
   // TODO: Copy as markdown format
 }
 
-// Export functions to global scope
-;(window as any).copyImage = copyImage
-;(window as any).copyWithMetadata = copyWithMetadata
-;(window as any).copyAsMarkdown = copyAsMarkdown
+// Attach event listeners when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+  const copyBtn = document.querySelector('button[title="Copy to clipboard"]')
+  if (copyBtn) {
+    copyBtn.addEventListener('click', copyImage)
+  }
+})
 
 console.log('[COPY_BUTTON] Copy button script loaded successfully')

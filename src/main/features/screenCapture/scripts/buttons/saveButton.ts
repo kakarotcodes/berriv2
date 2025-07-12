@@ -27,11 +27,12 @@ async function saveWithWatermark(): Promise<void> {
   // TODO: Add watermark before saving
 }
 
-// Export functions to global scope
-;(window as any).saveImage = saveImage
-;(window as any).saveWithCustomName = saveWithCustomName
-;(window as any).saveToSpecificFolder = saveToSpecificFolder
-;(window as any).saveInMultipleFormats = saveInMultipleFormats
-;(window as any).saveWithWatermark = saveWithWatermark
+// Attach event listeners when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+  const saveBtn = document.querySelector('button[title="Save to file"]')
+  if (saveBtn) {
+    saveBtn.addEventListener('click', saveImage)
+  }
+})
 
 console.log('[SAVE_BUTTON] Save button script loaded successfully');
