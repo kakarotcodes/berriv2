@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Screenshot Preview</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="previewStyles.css">
+</head>
+<body>
+  <div class="preview-header">
+    <div class="preview-title">Screenshot Preview</div>
+    <div class="timer-indicator">
+      <div class="timer-dot"></div>
+      <span>Auto-close</span>
+    </div>
+  </div>
+  
+  <div class="image-container">
+    <img class="preview-image" id="previewImage" alt="Screenshot preview" 
+         onload="console.log('[PREVIEW] Image loaded successfully', this.naturalWidth, 'x', this.naturalHeight); document.body.style.borderColor='green';" 
+         onerror="console.error('[PREVIEW] Image failed to load'); document.body.style.borderColor='red'; this.style.display='none';" />
+  </div>
+  
+  <div class="toolbar">
+    <button class="toolbar-btn primary" onclick="copyImage()" title="Copy to clipboard">
+      📋
+    </button>
+    <button class="toolbar-btn" onclick="saveImage()" title="Save to file">
+      💾
+    </button>
+    <button class="toolbar-btn" onclick="shareImage()" title="Share">
+      📤
+    </button>
+    <button class="toolbar-btn destructive" onclick="closeWindow()" title="Close">
+      ✕
+    </button>
+  </div>
+  
+  <script type="module" src="../scripts/previewScript.js"></script>
+  <script type="module" src="../scripts/buttons/copyButton.js"></script>
+  <script type="module" src="../scripts/buttons/saveButton.js"></script>
+  <script type="module" src="../scripts/buttons/shareButton.js"></script>
+  <script type="module" src="../scripts/buttons/closeButton.js"></script>
+</body>
+</html>
