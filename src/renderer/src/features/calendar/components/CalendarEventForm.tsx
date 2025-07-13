@@ -31,15 +31,13 @@ const CalendarEventForm: React.FC<CalendarEventFormProps> = ({
   onCreateEvent
 }) => {
   return (
-    <div className="flex-1 bg-gray-200 rounded-xl p-4">
+    <div className="flex-1 rounded-xl p-4">
       {/* Event Type Selector */}
       <div className="flex mb-3 bg-gray-300 rounded-lg p-1">
         <button
           onClick={() => onEventTypeChange('event')}
           className={`flex-1 py-1.5 px-3 rounded-md text-sm font-medium transition-colors ${
-            eventType === 'event'
-              ? 'text-gray-900 shadow-sm'
-              : 'text-gray-600 hover:text-gray-900'
+            eventType === 'event' ? 'text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'
           }`}
         >
           <CalendarIcon className="w-4 h-4 inline-block mr-2" />
@@ -156,11 +154,7 @@ const CalendarEventForm: React.FC<CalendarEventFormProps> = ({
           disabled={!eventForm.title.trim() || isCreating}
           className="w-full py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white text-sm font-medium rounded-lg transition-colors disabled:cursor-not-allowed"
         >
-          {isCreating
-            ? 'Creating...'
-            : eventType === 'event'
-              ? 'Create Event'
-              : 'Schedule Meeting'}
+          {isCreating ? 'Creating...' : eventType === 'event' ? 'Create Event' : 'Schedule Meeting'}
         </button>
       </div>
     </div>

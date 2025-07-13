@@ -16,14 +16,38 @@ interface CalendarEventsListProps {
   isLoadingEvents: boolean
   error: string | null
   onRefresh: () => void
+  searchQuery: string
 }
 
 const CalendarEventsList: React.FC<CalendarEventsListProps> = ({
   events,
   isLoadingEvents,
   error,
-  onRefresh
+  onRefresh,
+  searchQuery
 }) => {
+  // Generate 100 dummy events for testing
+  const dummyEvents = Array.from({ length: 100 }, (_, i) => ({
+    id: `dummy-${i}`,
+    title: `Test Event ${i + 1}`,
+    start: new Date(Date.now() + i * 60 * 60 * 1000).toISOString(),
+    end: new Date(Date.now() + (i + 1) * 60 * 60 * 1000).toISOString(),
+    description: `This is a test event number ${i + 1}`,
+    location: i % 3 === 0 ? `Location ${i + 1}` : undefined
+  }))
+
+  // Use dummy data instead of real events for testing
+  const testEvents = dummyEvents
+
+  // Filter events based on search query
+  const filteredEvents = searchQuery.trim()
+    ? testEvents.filter(event => 
+        event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (event.description && event.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (event.location && event.location.toLowerCase().includes(searchQuery.toLowerCase()))
+      )
+    : testEvents
+
   const formatEventTime = (startString: string, endString: string) => {
     const start = new Date(startString)
     const end = new Date(endString)
@@ -39,50 +63,78 @@ const CalendarEventsList: React.FC<CalendarEventsListProps> = ({
     return `${formatTime(start)} - ${formatTime(end)}`
   }
 
+  const formatEventDate = (dateString: string) => {
+    const date = new Date(dateString)
+    const today = new Date()
+    const tomorrow = new Date(today)
+    tomorrow.setDate(tomorrow.getDate() + 1)
+
+    if (date.toDateString() === today.toDateString()) {
+      return 'Today'
+    } else if (date.toDateString() === tomorrow.toDateString()) {
+      return 'Tomorrow'
+    } else {
+      return date.toLocaleDateString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric'
+      })
+    }
+  }
+
   const isToday = (dateString: string) => {
     const eventDate = new Date(dateString).toDateString()
     const today = new Date().toDateString()
     return eventDate === today
   }
 
-  return (
-    <div className="w-[200px] bg-gray-200 rounded-xl p-4">
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-lg font-semibold text-gray-900">Upcoming Events</h2>
-        <button
-          onClick={onRefresh}
-          disabled={isLoadingEvents}
-          className="p-1 text-gray-500 hover:text-gray-700 rounded"
-        >
-          <RefreshCwIcon className={`w-4 h-4 ${isLoadingEvents ? 'animate-spin' : ''}`} />
-        </button>
-      </div>
+  // Group events by date
+  const groupedEvents = filteredEvents.reduce((groups, event) => {
+    const dateKey = formatEventDate(event.start)
+    if (!groups[dateKey]) {
+      groups[dateKey] = []
+    }
+    groups[dateKey].push(event)
+    return groups
+  }, {} as Record<string, CalendarEvent[]>)
 
-      <div className="space-y-3 overflow-y-auto max-h-[350px]">
-        {isLoadingEvents ? (
-          <div className="flex items-center justify-center py-8">
-            <RefreshCwIcon className="w-5 h-5 animate-spin text-gray-500" />
-          </div>
-        ) : error ? (
-          <div className="text-red-600 text-sm">{error}</div>
-        ) : events.length === 0 ? (
-          <div className="text-gray-500 text-sm text-center py-8">No upcoming events</div>
-        ) : (
-          <>
-            {isToday(events[0]?.start) && (
-              <div className="text-sm font-medium text-gray-700 mb-2">Today</div>
-            )}
-            {events.map((event) => (
-              <div key={event.id} className="space-y-1">
-                <div className="font-medium text-gray-900 text-sm">{event.title}</div>
-                <div className="text-xs text-gray-600">
-                  {formatEventTime(event.start, event.end)}
+  return (
+    <div className="flex-1 min-h-0 overflow-y-auto hide-scrollbar px-4 py-5">
+      {isLoadingEvents ? (
+        <div className="flex items-center justify-center py-8">
+          <RefreshCwIcon className="w-5 h-5 animate-spin text-gray-400" />
+        </div>
+      ) : error ? (
+        <div className="text-red-400 text-sm">{error}</div>
+      ) : filteredEvents.length === 0 ? (
+        <div className="text-gray-400 text-sm text-center py-8">
+          {searchQuery.trim() ? 'No events found' : 'No upcoming events'}
+        </div>
+      ) : (
+        Object.entries(groupedEvents).map(([dateKey, dateEvents]) => (
+          <div key={dateKey} className="mb-8 last:mb-0">
+            <div className="text-xs uppercase tracking-wider text-white px-1 mb-4">{dateKey}</div>
+            <div className="flex flex-col">
+              {dateEvents.map((event, idx) => (
+                <div
+                  key={event.id}
+                  className={`bg-white/5 rounded-lg p-3 border border-white/10 ${
+                    idx < dateEvents.length - 1 ? 'mb-3' : ''
+                  }`}
+                >
+                  <div className="font-medium text-white text-sm mb-1">{event.title}</div>
+                  <div className="text-xs text-gray-400">
+                    {formatEventTime(event.start, event.end)}
+                  </div>
+                  {event.location && (
+                    <div className="text-xs text-gray-500 mt-1">{event.location}</div>
+                  )}
                 </div>
-              </div>
-            ))}
-          </>
-        )}
-      </div>
+              ))}
+            </div>
+          </div>
+        ))
+      )}
     </div>
   )
 }
