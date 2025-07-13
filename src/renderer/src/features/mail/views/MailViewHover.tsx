@@ -1,6 +1,6 @@
 // dependencies
-import React, { useState, useEffect } from 'react'
-import { EnvelopeIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
+import React, { useState } from 'react'
+import { EnvelopeIcon } from '@heroicons/react/24/outline'
 
 // hooks
 import { useAuth } from '../../../hooks/useAuth'
@@ -16,10 +16,10 @@ const MailViewHover: React.FC = () => {
   const handleRequestGmailPermissions = async () => {
     setIsRequesting(true)
     setError(null)
-    
+
     try {
       const result = await window.electronAPI.auth.requestGmailPermissions()
-      
+
       if (!result.success) {
         setError(result.error || 'Failed to request Gmail permissions')
       }
@@ -51,12 +51,12 @@ const MailViewHover: React.FC = () => {
           <div className="mx-auto w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center mb-4">
             <EnvelopeIcon className="w-8 h-8 text-blue-400" />
           </div>
-          
+
           <h3 className="text-lg font-semibold text-white mb-2">Connect Your Gmail</h3>
           <p className="text-sm text-gray-300 mb-6 leading-relaxed">
             Connect your Gmail account to view and manage your emails.
           </p>
-          
+
           <button
             onClick={handleRequestGmailPermissions}
             disabled={isRequesting}
@@ -74,7 +74,7 @@ const MailViewHover: React.FC = () => {
               </>
             )}
           </button>
-          
+
           {error && (
             <div className="mt-4 p-3 bg-red-500/20 border border-red-500/30 rounded-lg">
               <p className="text-sm text-red-300">{error}</p>
@@ -98,4 +98,4 @@ const MailViewHover: React.FC = () => {
   )
 }
 
-export default MailViewHover 
+export default MailViewHover
