@@ -1,4 +1,4 @@
-import { app, BrowserWindow, screen } from 'electron'
+import { app, BrowserWindow, screen, nativeTheme } from 'electron'
 import path from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 
@@ -34,7 +34,7 @@ function createWindow(): void {
     width: defaultWidth,
     height: defaultHeight,
     minWidth: WIDTH.PILL,
-    minHeight: HEIGHT.PILL,
+    minHeight: HEIGHT.PILL_COLLAPSED,
     vibrancy: 'under-window',
     visualEffectState: 'active',
     roundedCorners: true,
@@ -143,6 +143,17 @@ app.on('before-quit', () => {
 // main.ts - Add GPU constraints
 app.commandLine.appendSwitch('disable-gpu-driver-bug-workarounds')
 app.commandLine.appendSwitch('disable-software-rasterizer')
+
+// Handle the protocol URL from macOS open-url event
+app.on('open-url', (event, url) => {
+  event.preventDefault()
+  if (mainWindow) {
+    handleProtocolUrl(url, mainWindow)
+  } else {
+    // Store the URL to handle after the window is created
+    process.env.PENDING_PROTOCOL_URL = url
+  }
+})
 
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.

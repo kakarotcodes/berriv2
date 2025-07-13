@@ -1,8 +1,8 @@
 import React from 'react'
 
 export const useElectron = () => {
-  const resizeWindow = React.useCallback((dimensions: { width: number; height: number }) => {
-    window.electronAPI.resizeWindow(dimensions)
+  const resizeWindow = React.useCallback((dimensions: { width: number; height: number }, duration?: number) => {
+    window.electronAPI.resizeWindow(dimensions, duration)
   }, [])
 
   const startVerticalDrag = React.useCallback((mouseY: number) => {

@@ -10,9 +10,9 @@ ipcRenderer.on('pill:set-css-opacity', (_event, alpha) => {
 ipcRenderer.setMaxListeners(20)
 
 contextBridge.exposeInMainWorld('electronAPI', {
-  resizeWindow: (dimensions) => ipcRenderer.send('resize-window', dimensions),
+  resizeWindow: (dimensions, duration) => ipcRenderer.send('resize-window', { ...dimensions, duration }),
   animateViewTransition: (view) => {
-    if (['default', 'pill', 'hover', 'expanded'].includes(view)) {
+    if (['default', 'pill', 'hover'].includes(view)) {
       return ipcRenderer.invoke('animate-view-transition', view)
     }
     return Promise.reject('Invalid view type')
@@ -106,7 +106,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Screenshots
   screenshots: {
     getScreenshots: () => ipcRenderer.invoke('screenshots:get-screenshots'),
-    deleteScreenshot: (filePath: string) => ipcRenderer.invoke('screenshots:delete-screenshot', filePath),
+    deleteScreenshot: (filePath: string) =>
+      ipcRenderer.invoke('screenshots:delete-screenshot', filePath),
     openInFinder: (filePath: string) => ipcRenderer.invoke('screenshots:open-in-finder', filePath),
     watchDirectory: () => ipcRenderer.invoke('screenshots:watch-directory')
   },
@@ -200,5 +201,28 @@ contextBridge.exposeInMainWorld('electronAPI', {
       callback(view)
     })
     return () => ipcRenderer.removeAllListeners('view-transition-done')
+  },
+
+  // ------------------------------------------------------------
+  // Theme API
+  // ------------------------------------------------------------
+
+  theme: {
+    getSystemTheme: () => ipcRenderer.invoke('theme:get-system-theme'),
+    setTheme: (theme) => ipcRenderer.send('theme:set-theme', theme),
+    onSystemThemeChange: (callback) => {
+      // Remove existing listeners to prevent memory leaks
+      ipcRenderer.removeAllListeners('theme:system-changed')
+
+      // Add the new listener
+      ipcRenderer.on('theme:system-changed', (_event, isDark) => {
+        callback(isDark)
+      })
+
+      // Return a cleanup function
+      return () => {
+        ipcRenderer.removeAllListeners('theme:system-changed')
+      }
+    }
   }
 })

@@ -5,10 +5,14 @@ interface NotesState {
   notes: Note[]
   trashed: Note[]
   selectedNoteId: string | null
+  searchQuery: string
+  editor: import('@tiptap/react').Editor | null
 
   setNotes: (notes: Note[]) => void
   setTrashed: (notes: Note[]) => void
   setSelectedNoteId: (id: string | null) => void
+  setSearchQuery: (q: string) => void
+  setEditor: (e: import('@tiptap/react').Editor | null) => void
 
   getSelectedNote: () => Note | null
   loadNotes: () => Promise<void>
@@ -24,10 +28,14 @@ export const useNotesStore = create<NotesState>((set, get) => ({
   notes: [],
   trashed: [],
   selectedNoteId: null,
+  searchQuery: '',
+  editor: null,
 
   setNotes: (notes) => set({ notes }),
   setTrashed: (notes) => set({ trashed: notes }),
   setSelectedNoteId: (id) => set({ selectedNoteId: id }),
+  setSearchQuery: (q) => set({ searchQuery: q }),
+  setEditor: (e) => set({ editor: e }),
 
   getSelectedNote: () => {
     const { notes, selectedNoteId } = get()

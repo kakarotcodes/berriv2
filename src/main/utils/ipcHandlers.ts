@@ -135,7 +135,7 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
 
     // Save position based on window type
     const isPillView = bounds.width === WIDTH.PILL
-    const isHoverView = bounds.width > WIDTH.PILL && bounds.height > HEIGHT.PILL
+    const isHoverView = bounds.width > WIDTH.PILL && bounds.height > HEIGHT.PILL_COLLAPSED
 
     if (isPillView) {
       // Save pill position directly
@@ -431,7 +431,7 @@ export function registerIpcHandlers(mainWindow: BrowserWindow) {
 
     // Validate dimensions - only apply if they're reasonable hover dimensions
     // This helps prevent applying pill dimensions to hover view
-    if (width === WIDTH.PILL || height === HEIGHT.PILL || width < 100 || height < 100) {
+    if (width === WIDTH.PILL || height === HEIGHT.PILL_COLLAPSED || width < 100 || height < 100) {
       console.log('[HOVER] Invalid hover dimensions (too small), using defaults:', {
         width: WIDTH.HOVER,
         height: HEIGHT.HOVER

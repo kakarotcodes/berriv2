@@ -20,12 +20,13 @@ const logPositionInfo = (message: string, data: unknown) => {
 }
 
 export function registerViewHandlers(mainWindow: BrowserWindow) {
+  console.log('[IPC] 🔧 Registering view handlers for animate-view-transition')
+  
   // View dimensions - ensure they match with those defined in the renderer
   const viewDimensions = {
     default: { width: WIDTH.DEFAULT, height: HEIGHT.DEFAULT },
-    pill: { width: WIDTH.PILL, height: HEIGHT.PILL },
-    hover: { width: WIDTH.HOVER, height: HEIGHT.HOVER }, // Match renderer dimensions
-    expanded: { width: 800, height: 600 }
+    pill: { width: WIDTH.PILL, height: HEIGHT.PILL_COLLAPSED },
+    hover: { width: WIDTH.HOVER, height: HEIGHT.HOVER } // Match renderer dimensions
   }
 
   // Consistent margin across all views
@@ -65,7 +66,11 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
 
   // Handle IPC calls for view transitions
   ipcMain.handle('animate-view-transition', async (_event, view: ViewType) => {
+    console.log('[TRANSITION] ===== STARTING VIEW TRANSITION =====')
+    console.log('[TRANSITION] Target view:', view)
+    
     if (!mainWindow || mainWindow.isDestroyed()) {
+      console.log('[TRANSITION] ❌ Window not available')
       return false
     }
 
@@ -79,7 +84,7 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
 
       // Special case for hover view - load saved dimensions
       if (view === 'hover') {
-        // Get hover dimensions from prefs
+        // Get hover dimensions from prefs - USE THESE FOR POSITIONING
         const savedWidth = prefs.get('hoverWidth') as number | undefined
         const savedHeight = prefs.get('hoverHeight') as number | undefined
 
@@ -87,12 +92,12 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
           // Validate dimensions - ensure we're not using pill dimensions for hover
           if (
             savedWidth !== WIDTH.PILL &&
-            savedHeight !== HEIGHT.PILL &&
+            savedHeight !== HEIGHT.PILL_COLLAPSED &&
             savedWidth > 100 &&
             savedHeight > 100
           ) {
-            // Minimum reasonable size
-            console.log('[POSITION] Using saved hover dimensions:', {
+            // Use saved dimensions for BOTH sizing AND positioning calculations
+            console.log('[POSITION] Using saved hover dimensions for positioning:', {
               width: savedWidth,
               height: savedHeight
             })
@@ -113,6 +118,13 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
       const cursorPos = screen.getCursorScreenPoint()
       const currentDisplay = screen.getDisplayNearestPoint(cursorPos)
       const workArea = currentDisplay.workArea
+      
+      console.log('[DISPLAY] Current display info:', {
+        displayId: currentDisplay.id,
+        workArea,
+        scaleFactor: currentDisplay.scaleFactor,
+        size: currentDisplay.size
+      })
 
       // Get current window position (for transitions)
       const currentBounds = mainWindow.getBounds()
@@ -122,10 +134,19 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
         currentBounds.width === viewDimensions.pill.width &&
         currentBounds.height === viewDimensions.pill.height
       ) {
-        // We're definitely in pill view now, save the position for later use
+        // Save the position for later use - this is the pill's original position
         lastKnownPillY = currentBounds.y
+        prefs.set('pillX', currentBounds.x)
         prefs.set('pillY', currentBounds.y)
-        logPositionInfo('Saved pill position during transition', lastKnownPillY)
+        
+        // Also save as the "return position" specifically for hover view transitions
+        prefs.set('pillReturnX', currentBounds.x)
+        prefs.set('pillReturnY', currentBounds.y)
+        
+        logPositionInfo('Saved pill position during transition (including return position)', {
+          x: currentBounds.x,
+          y: currentBounds.y
+        })
       }
 
       console.log(`Transitioning to ${view} view on display:`, currentDisplay.id)
@@ -133,13 +154,33 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
       // 3. Calculate target position based on view type
       let targetX, targetY
 
+      console.log('[TRANSITION] Calculating position for view:', view)
+
       if (view === 'default') {
+        console.log('[TRANSITION] 📍 Taking DEFAULT view path')
         // Default view: Bottom right with consistent margin
         targetX = workArea.x + workArea.width - dimensions.width - MARGIN
         targetY = workArea.y + workArea.height - dimensions.height - MARGIN
       } else if (view === 'pill') {
-        // Pill view positioning - use consistent offset from right edge
-        targetX = workArea.x + workArea.width - PILL_OFFSET
+        console.log('[TRANSITION] 💊 Taking PILL view path')
+        
+        // Determine X position based on the source view
+        if (currentBounds.width === viewDimensions.hover.width && currentBounds.height === viewDimensions.hover.height) {
+          // X position will be calculated in the hover-to-pill transition logic below
+          // (We'll set targetX there based on hover view position)
+          console.log('[PILL_X] X position will be calculated from hover view location')
+        } else {
+          // Coming from other views - use regular saved position or default
+          const savedPillX = prefs.get('pillX') as number | undefined
+          if (savedPillX !== undefined) {
+            targetX = savedPillX
+            logPositionInfo('Using saved pill X position', targetX)
+          } else {
+            // Default to right edge with offset for first time
+            targetX = workArea.x + workArea.width - PILL_OFFSET
+            logPositionInfo('Using default pill X position (right edge)', targetX)
+          }
+        }
 
         // Check if this is first transition to pill
         if (isFirstTransitionToPill) {
@@ -153,13 +194,67 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
           // Reset the flag so subsequent transitions use saved position
           isFirstTransitionToPill = false
         }
-        // Coming from hover view - special handling for subsequent transitions
+        // Coming from hover view - position pill at hover view's current location
         else if (
           currentBounds.width === viewDimensions.hover.width &&
           currentBounds.height === viewDimensions.hover.height
         ) {
-          targetY = currentBounds.y
-          logPositionInfo('Coming from hover view, setting pill at hover Y position', targetY)
+          console.log('[PILL_FROM_HOVER] 🎯 Calculating pill position based on hover view location')
+          
+          const hoverX = currentBounds.x
+          const hoverY = currentBounds.y
+          const hoverWidth = currentBounds.width
+          const pillWidth = dimensions.width
+          
+          console.log('[PILL_FROM_HOVER] Hover view bounds:', { x: hoverX, y: hoverY, width: hoverWidth, height: currentBounds.height })
+          
+          // Calculate distances from screen edges to determine optimal pill placement
+          const distanceFromRight = (workArea.x + workArea.width) - (hoverX + hoverWidth)
+          const distanceFromLeft = hoverX - workArea.x
+          
+          console.log('[PILL_FROM_HOVER] Edge distances:', { 
+            distanceFromRight, 
+            distanceFromLeft,
+            workAreaRight: workArea.x + workArea.width,
+            workAreaLeft: workArea.x
+          })
+          
+          // Position pill based on available space
+          if (distanceFromRight >= pillWidth) {
+            // Enough space on the right - position pill at top-right of hover view
+            targetX = hoverX + hoverWidth
+            targetY = hoverY
+            console.log('[PILL_FROM_HOVER] ✅ Positioning pill at TOP-RIGHT of hover view')
+          } else if (distanceFromLeft >= pillWidth) {
+            // Not enough space on right, but space on left - position pill at top-left of hover view
+            targetX = hoverX - pillWidth
+            targetY = hoverY
+            console.log('[PILL_FROM_HOVER] ✅ Positioning pill at TOP-LEFT of hover view')
+          } else {
+            // Not enough space on either side, position as close as possible
+            if (distanceFromRight > distanceFromLeft) {
+              // Prefer right side, but constrain to screen edge
+              targetX = workArea.x + workArea.width - pillWidth
+              targetY = hoverY
+              console.log('[PILL_FROM_HOVER] ⚠️ Constraining pill to RIGHT edge of screen')
+            } else {
+              // Prefer left side, but constrain to screen edge
+              targetX = workArea.x
+              targetY = hoverY
+              console.log('[PILL_FROM_HOVER] ⚠️ Constraining pill to LEFT edge of screen')
+            }
+          }
+          
+          // Ensure Y position is within screen bounds
+          const minY = workArea.y
+          const maxY = workArea.y + workArea.height - dimensions.height
+          targetY = Math.max(minY, Math.min(maxY, targetY))
+          
+          console.log('[PILL_FROM_HOVER] 🎯 Final calculated pill position:', { x: targetX, y: targetY })
+          logPositionInfo('Coming from hover view, calculated pill position from hover location', { x: targetX, y: targetY })
+          
+          // Update the last known pill position to this new location
+          lastKnownPillY = targetY
         }
         // Coming from default view - use saved pill position (don't use default view's position)
         else if (
@@ -187,66 +282,109 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
           logPositionInfo('Using fallback pill position with 130px top margin', targetY)
         }
 
+        // Ensure X is within bounds of current monitor
+        const minX = workArea.x
+        const maxX = workArea.x + workArea.width - dimensions.width
+        targetX = Math.min(maxX, Math.max(minX, targetX))
+
         // Ensure Y is within bounds of current monitor
         const minY = workArea.y
         const maxY = workArea.y + workArea.height - dimensions.height
         targetY = Math.min(maxY, Math.max(minY, targetY))
 
         // Update the stored position to ensure consistency
+        prefs.set('pillX', targetX)
         prefs.set('pillY', targetY)
         lastKnownPillY = targetY
-      } else if (view === 'hover') {
-        // REQUIREMENT: Open hover view at the pill's location
-
-        // If we're leaving hover view, save its position for next time and update pill's position
-        if (currentBounds.width === viewDimensions.hover.width) {
-          // Save hover Y position to be used for pill's position next time
-          lastKnownPillY = currentBounds.y
-          prefs.set('pillY', currentBounds.y)
-          logPositionInfo('Saved hover Y position to be used for pill', currentBounds.y)
+        
+        // If coming from hover view, also update the return positions for future reference
+        if (currentBounds.width === viewDimensions.hover.width && currentBounds.height === viewDimensions.hover.height) {
+          prefs.set('pillReturnX', targetX)
+          prefs.set('pillReturnY', targetY)
+          console.log('[PILL_FROM_HOVER] 💾 Updated pill return position to new location:', { x: targetX, y: targetY })
         }
-
-        // Position hover view at the pill's location if coming from pill view
-        if (currentBounds.width === viewDimensions.pill.width) {
-          // Use pill position with an offset from the right edge
-          const rightEdgeOffset = 20 // Space between hover view and right edge
-
-          // Use pill's Y position
-          targetY = currentBounds.y
-
-          // Check if this is coming from the right side pill
-          // The pill is typically positioned at the right edge
-          const isPillAtRightEdge =
-            Math.abs(workArea.x + workArea.width - PILL_OFFSET - currentBounds.x) < 5
-
-          if (isPillAtRightEdge) {
-            // Position hover with space from right edge
-            targetX = workArea.x + workArea.width - dimensions.width - rightEdgeOffset
-            logPositionInfo('Positioning hover with space from right edge', { targetX, targetY })
-          } else {
-            // Just use pill's exact position
-            targetX = currentBounds.x
-            logPositionInfo('Positioning hover at exact pill location', { targetX, targetY })
+      } else if (view === 'hover') {
+        console.log('[TRANSITION] 🔄 Taking HOVER view path - SMART POSITIONING SHOULD HAPPEN HERE')
+        // Smart positioning for hover view based on pill position and screen edges
+        const pillX = currentBounds.x
+        const pillY = currentBounds.y
+        const pillWidth = currentBounds.width
+        const hoverWidth = dimensions.width
+        
+        // Calculate distances from edges
+        const distanceFromRight = workArea.x + workArea.width - (pillX + pillWidth)
+        const distanceFromLeft = pillX - workArea.x
+        
+        console.log('[HOVER] ======= SMART POSITIONING DEBUG =======')
+        console.log('[HOVER] Current bounds:', currentBounds)
+        console.log('[HOVER] Dimensions to use:', dimensions)
+        console.log('[HOVER] Work area:', workArea)
+        console.log('[HOVER] Pill position:', { x: pillX, y: pillY, width: pillWidth })
+        console.log('[HOVER] Hover width:', hoverWidth)
+        console.log('[HOVER] Distance from right edge:', distanceFromRight)
+        console.log('[HOVER] Distance from left edge:', distanceFromLeft)
+        console.log('[HOVER] Comparison: distanceFromRight < hoverWidth?', distanceFromRight < hoverWidth)
+        
+        // Determine positioning based on available space
+        if (distanceFromRight < hoverWidth) {
+          // Position hover to the left of the pill
+          targetX = pillX - hoverWidth
+          console.log('[HOVER] 🔴 POSITIONING ON LEFT SIDE (insufficient space on right)')
+          console.log('[HOVER] Initial left position:', targetX)
+          
+          // Ensure we don't go off the left edge
+          if (targetX < workArea.x) {
+            const beforeAdjustment = targetX
+            targetX = workArea.x
+            console.log('[HOVER] ⚠️  Adjusted to avoid left edge overflow:', beforeAdjustment, '→', targetX)
           }
         } else {
-          // Otherwise use saved position or fallback to current position
-          targetX = currentBounds.x
-          targetY = currentBounds.y
-          logPositionInfo('Keeping current position for hover', { targetX, targetY })
+          // Position hover to the right of the pill
+          targetX = pillX + pillWidth
+          console.log('[HOVER] 🟢 POSITIONING ON RIGHT SIDE (sufficient space)')
+          console.log('[HOVER] Initial right position:', targetX)
+          
+          // Ensure we don't go off the right edge
+          const rightEdgeCheck = targetX + hoverWidth
+          const screenRightEdge = workArea.x + workArea.width
+          console.log('[HOVER] Right edge check:', rightEdgeCheck, 'vs screen edge:', screenRightEdge)
+          
+          if (rightEdgeCheck > screenRightEdge) {
+            const beforeAdjustment = targetX
+            targetX = workArea.x + workArea.width - hoverWidth
+            console.log('[HOVER] ⚠️  Adjusted to avoid right edge overflow:', beforeAdjustment, '→', targetX)
+          }
         }
-
-        // Ensure the position is within screen bounds
-        const minX = workArea.x
-        const maxX = workArea.x + workArea.width - dimensions.width
-        targetX = Math.max(minX, Math.min(maxX, targetX))
-
-        // Ensure Y is within bounds for the hover size
+        
+        // Keep the same Y position as the pill
+        targetY = pillY
+        
+        // Ensure Y position is within bounds
         const minY = workArea.y
         const maxY = workArea.y + workArea.height - dimensions.height
-        targetY = Math.min(maxY, Math.max(minY, targetY))
+        targetY = Math.max(minY, Math.min(maxY, targetY))
 
-        logPositionInfo('Final hover view position', { targetX, targetY })
+        // Save the calculated position for next time
+        prefs.set('hoverX', targetX)
+        prefs.set('hoverY', targetY)
+        
+        // CRITICAL: Save the smart position globally so fix-hover-dimensions uses it
+        prefs.set('smartHoverX', targetX)
+        prefs.set('smartHoverY', targetY)
+        console.log('[HOVER] 💾 Saved smart position for hover view:', { smartX: targetX, smartY: targetY })
+        
+        console.log('[HOVER] ✅ FINAL SMART POSITION:', { targetX, targetY })
+        console.log('[HOVER] ======= END DEBUG =======')
+        
+        // Double check the final position makes sense
+        if (targetX + hoverWidth > workArea.x + workArea.width) {
+          console.error('[HOVER] 🚨 ERROR: Final position still goes off right edge!')
+        }
+        if (targetX < workArea.x) {
+          console.error('[HOVER] 🚨 ERROR: Final position goes off left edge!')
+        }
       } else {
+        console.log('[TRANSITION] ❓ Taking OTHER view path (unexpected):', view)
         // Other views: Centered in display
         targetX = workArea.x + (workArea.width - dimensions.width) / 2
         targetY = workArea.y + (workArea.height - dimensions.height) / 2
@@ -260,15 +398,90 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
       })
 
       // 4. Set the window size and position with fast native animation
-      mainWindow.setBounds(
-        {
-          x: Math.round(targetX),
-          y: Math.round(targetY),
-          width: dimensions.width,
-          height: dimensions.height
-        },
-        true // Keep native animation but with faster timing
-      )
+      console.log('[TRANSITION] 🎯 Setting final window bounds:', {
+        x: Math.round(targetX),
+        y: Math.round(targetY),
+        width: dimensions.width,
+        height: dimensions.height
+      })
+      
+      // Log before setBounds
+      const beforeBounds = mainWindow.getBounds()
+      console.log('[DEBUG] 📏 Window bounds BEFORE setBounds:', beforeBounds)
+      
+      // CRITICAL: Temporarily enable resizability to allow dimension changes
+      const wasResizable = mainWindow.isResizable()
+      console.log('[DEBUG] 🔧 Window resizability before setBounds:', wasResizable)
+      
+      if (!wasResizable) {
+        console.log('[DEBUG] 🔓 Temporarily enabling resizability for setBounds')
+        mainWindow.setResizable(true)
+      }
+      
+      try {
+        mainWindow.setBounds(
+          {
+            x: Math.round(targetX),
+            y: Math.round(targetY),
+            width: dimensions.width,
+            height: dimensions.height
+          },
+          true // Keep native animation but with faster timing
+        )
+        console.log('[DEBUG] ✅ setBounds call completed successfully')
+      } catch (error) {
+        console.error('[DEBUG] ❌ setBounds call failed:', error)
+      }
+      
+      // Log immediately after setBounds
+      const afterBounds = mainWindow.getBounds()
+      console.log('[DEBUG] 📏 Window bounds IMMEDIATELY after setBounds:', afterBounds)
+      
+      // Restore original resizability state
+      if (!wasResizable) {
+        console.log('[DEBUG] 🔒 Restoring original resizability state')
+        mainWindow.setResizable(false)
+      }
+
+      // Verify the window actually got positioned correctly
+      setTimeout(() => {
+        const actualBounds = mainWindow.getBounds()
+        console.log('[VERIFICATION] 🔍 Window bounds after positioning:', actualBounds)
+        console.log('[VERIFICATION] 📏 Expected vs Actual:', {
+          expectedX: Math.round(targetX),
+          actualX: actualBounds.x,
+          xDifference: actualBounds.x - Math.round(targetX),
+          expectedY: Math.round(targetY),
+          actualY: actualBounds.y,
+          yDifference: actualBounds.y - Math.round(targetY),
+          expectedWidth: dimensions.width,
+          actualWidth: actualBounds.width,
+          expectedHeight: dimensions.height,
+          actualHeight: actualBounds.height
+        })
+        
+        // Check if dimensions changed at all
+        if (actualBounds.width !== dimensions.width || actualBounds.height !== dimensions.height) {
+          console.error('[VERIFICATION] 🚨 DIMENSIONS NOT CHANGED!', {
+            expectedDimensions: { width: dimensions.width, height: dimensions.height },
+            actualDimensions: { width: actualBounds.width, height: actualBounds.height },
+            message: 'setBounds call was ignored or overridden'
+          })
+        }
+        
+        // Check if window is actually going off right edge
+        const rightEdge = actualBounds.x + actualBounds.width
+        const screenRightEdge = workArea.x + workArea.width
+        if (rightEdge > screenRightEdge) {
+          console.error('[VERIFICATION] 🚨 WINDOW IS GOING OFF RIGHT EDGE!', {
+            windowRightEdge: rightEdge,
+            screenRightEdge: screenRightEdge,
+            overhang: rightEdge - screenRightEdge
+          })
+        } else {
+          console.log('[VERIFICATION] ✅ Window positioned correctly within screen bounds')
+        }
+      }, 50) // Check position after animation starts
 
       // Much faster completion detection
       mainWindow.once('resized', () => {
@@ -280,6 +493,7 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
         mainWindow.webContents.send('view-transition-done', view)
       }, 120) // Fast but safe timing to prevent flicker
 
+      console.log('[TRANSITION] ✅ View transition completed successfully')
       return true
     } catch (error) {
       console.error('Error during view transition:', error)
@@ -297,9 +511,10 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
       bounds.width === viewDimensions.pill.width &&
       bounds.height === viewDimensions.pill.height
     ) {
+      prefs.set('pillX', bounds.x)
       prefs.set('pillY', bounds.y)
       lastKnownPillY = bounds.y
-      logPositionInfo('Explicitly saved pill position', bounds.y)
+      logPositionInfo('Explicitly saved pill position', { x: bounds.x, y: bounds.y })
     }
   })
 }

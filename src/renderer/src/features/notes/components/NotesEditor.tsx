@@ -8,20 +8,9 @@ import BulletList from '@tiptap/extension-bullet-list'
 import ListItem from '@tiptap/extension-list-item'
 
 import { useNotesStore } from '../store/notesStore'
-import {
-  Bold,
-  Italic,
-  List,
-  CheckSquare,
-  ImageIcon,
-  Heading1,
-  Heading2,
-  Quote,
-  Code
-} from 'lucide-react'
 
 const NotesEditor: React.FC = () => {
-  const { getSelectedNote } = useNotesStore()
+  const { getSelectedNote, setEditor } = useNotesStore()
   const note = getSelectedNote()
   const debounceRef = useRef<NodeJS.Timeout | null>(null)
   const [title, setTitle] = useState('')
@@ -208,6 +197,12 @@ const NotesEditor: React.FC = () => {
     }
   }
 
+  // expose editor to global store
+  useEffect(() => {
+    setEditor(editor)
+    return () => setEditor(null)
+  }, [editor, setEditor])
+
   if (!note) {
     return (
       <div className="flex-1 flex items-center justify-center text-zinc-400">No note selected</div>
@@ -221,7 +216,7 @@ const NotesEditor: React.FC = () => {
   }
 
   return (
-    <div className="flex-1 h-full animated-gradient text-white flex flex-col">
+    <div className="flex-1 h-full  text-white flex flex-col">
       {/* Title input */}
       <div className="p-6 pb-0">
         <input
@@ -235,108 +230,7 @@ const NotesEditor: React.FC = () => {
         />
       </div>
 
-      {/* Toolbar */}
-      <div className="p-6 pb-2">
-        <div className="flex flex-wrap gap-1 p-2 bg-zinc-800 rounded-lg border border-zinc-700">
-          {/* Text formatting */}
-          <button
-            onClick={() => editor.chain().focus().toggleBold().run()}
-            className={`p-2 rounded hover:bg-zinc-600 transition-colors ${
-              editor.isActive('bold') ? 'bg-zinc-600 text-yellow-400' : ''
-            }`}
-            title="Bold"
-          >
-            <Bold size={16} />
-          </button>
-
-          <button
-            onClick={() => editor.chain().focus().toggleItalic().run()}
-            className={`p-2 rounded hover:bg-zinc-600 transition-colors ${
-              editor.isActive('italic') ? 'bg-zinc-600 text-yellow-400' : ''
-            }`}
-            title="Italic"
-          >
-            <Italic size={16} />
-          </button>
-
-          <button
-            onClick={() => editor.chain().focus().toggleCode().run()}
-            className={`p-2 rounded hover:bg-zinc-600 transition-colors ${
-              editor.isActive('code') ? 'bg-zinc-600 text-yellow-400' : ''
-            }`}
-            title="Code"
-          >
-            <Code size={16} />
-          </button>
-
-          <div className="w-px h-6 bg-zinc-600 mx-1"></div>
-
-          {/* Headings */}
-          <button
-            onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-            className={`p-2 rounded hover:bg-zinc-600 transition-colors ${
-              editor.isActive('heading', { level: 1 }) ? 'bg-zinc-600 text-yellow-400' : ''
-            }`}
-            title="Heading 1"
-          >
-            <Heading1 size={16} />
-          </button>
-
-          <button
-            onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-            className={`p-2 rounded hover:bg-zinc-600 transition-colors ${
-              editor.isActive('heading', { level: 2 }) ? 'bg-zinc-600 text-yellow-400' : ''
-            }`}
-            title="Heading 2"
-          >
-            <Heading2 size={16} />
-          </button>
-
-          <button
-            onClick={() => editor.chain().focus().toggleBlockquote().run()}
-            className={`p-2 rounded hover:bg-zinc-600 transition-colors ${
-              editor.isActive('blockquote') ? 'bg-zinc-600 text-yellow-400' : ''
-            }`}
-            title="Quote"
-          >
-            <Quote size={16} />
-          </button>
-
-          <div className="w-px h-6 bg-zinc-600 mx-1"></div>
-
-          {/* Lists */}
-          <button
-            onClick={() => editor.chain().focus().toggleBulletList().run()}
-            className={`p-2 rounded hover:bg-zinc-600 transition-colors ${
-              editor.isActive('bulletList') ? 'bg-zinc-600 text-yellow-400' : ''
-            }`}
-            title="Bullet List"
-          >
-            <List size={16} />
-          </button>
-
-          <button
-            onClick={() => editor.chain().focus().toggleTaskList().run()}
-            className={`p-2 rounded hover:bg-zinc-600 transition-colors ${
-              editor.isActive('taskList') ? 'bg-zinc-600 text-yellow-400' : ''
-            }`}
-            title="Task List"
-          >
-            <CheckSquare size={16} />
-          </button>
-
-          <div className="w-px h-6 bg-zinc-600 mx-1"></div>
-
-          {/* Image */}
-          <button
-            onClick={addImage}
-            className="p-2 rounded hover:bg-zinc-600 transition-colors"
-            title="Insert Image"
-          >
-            <ImageIcon size={16} />
-          </button>
-        </div>
-      </div>
+      {/* Internal toolbar removed; now rendered in header */}
 
       {/* Editor */}
       <div className="flex-1 overflow-y-auto">

@@ -7,13 +7,13 @@ import { getSavedHoverSize, saveHoverSize } from '../../utils/hoverSize'
 
 export function registerWindowHandlers(mainWindow: BrowserWindow) {
   // Window resize handler
-  ipcMain.on('resize-window', (_event, { width, height }) => {
+  ipcMain.on('resize-window', (_event, { width, height, duration = 10 }) => {
     if (!mainWindow || mainWindow.isDestroyed()) return
     animateWindowResize({
       window: mainWindow,
       targetWidth: width,
       targetHeight: height,
-      duration: 10
+      duration: duration
     })
   })
 
@@ -90,10 +90,10 @@ export function registerWindowHandlers(mainWindow: BrowserWindow) {
       }
 
       mainWindow.setPosition(newX, newY, false)
-      
+
       // CRITICAL: Ensure window remains visible on all workspaces after position change
       mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
-      
+
       dragState.currentDisplayId = disp.id
     } catch (err) {
       console.error('drag update error', err)
@@ -106,7 +106,7 @@ export function registerWindowHandlers(mainWindow: BrowserWindow) {
     const [, y] = mainWindow.getPosition()
 
     const isPillView = bounds.width === WIDTH.PILL
-    const isHoverView = bounds.width > WIDTH.PILL && bounds.height > HEIGHT.PILL
+    const isHoverView = bounds.width > WIDTH.PILL && bounds.height > HEIGHT.PILL_COLLAPSED
 
     if (isPillView) {
       prefs.set('pillY', y)
@@ -136,10 +136,32 @@ export function registerWindowHandlers(mainWindow: BrowserWindow) {
     dragState.startMouseY = mouseY
     dragState.startWindowX = bounds.x
     dragState.startWindowY = bounds.y
+    dragState.windowWidth = bounds.width
+    dragState.windowHeight = bounds.height
+    
+    // Reset tracking variables
+    lastDragUpdate = 0
+    lastProcessedX = 0
+    lastProcessedY = 0
   })
+
+  // Add tracking for last processed coordinates
+  let lastDragUpdate = 0
+  let lastProcessedX = 0
+  let lastProcessedY = 0
 
   ipcMain.on('update-drag', (_e, { mouseX, mouseY }) => {
     if (!dragState.isDragging || !mainWindow) return
+
+    // Rate limiting - max 60fps
+    const now = Date.now()
+    if (now - lastDragUpdate < 16) return
+    lastDragUpdate = now
+
+    // Skip if coordinates haven't changed
+    if (mouseX === lastProcessedX && mouseY === lastProcessedY) return
+    lastProcessedX = mouseX
+    lastProcessedY = mouseY
 
     const newX = mouseX - (dragState.startMouseX - dragState.startWindowX)
     const newY = mouseY - (dragState.startMouseY - dragState.startWindowY)
@@ -148,17 +170,69 @@ export function registerWindowHandlers(mainWindow: BrowserWindow) {
     const cursor = screen.getCursorScreenPoint()
     const area = screen.getDisplayNearestPoint(cursor).workArea
 
-    const clampedX = Math.max(area.x, Math.min(area.x + area.width - width, newX))
-    const clampedY = Math.max(area.y, Math.min(area.y + area.height - height, newY))
+    // For pill view, implement edge snapping logic
+    const isPillView = width === WIDTH.PILL
 
-    mainWindow.setBounds({ x: clampedX, y: clampedY, width, height }, false)
-    
-    // CRITICAL: Ensure window remains visible on all workspaces after position change
-    mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
+    let finalX = newX
+    let finalY = newY
+
+    if (isPillView) {
+      // Edge snapping logic for pill view
+      const edgeSnapDistance = OFFSET.SNAPDISTANCE
+      const edgeOffset = OFFSET.PILLOFFSET
+
+      // Check if within snapping distance of left or right edge
+      const distanceToLeft = Math.abs(newX - area.x)
+      const distanceToRight = Math.abs(newX - (area.x + area.width - width))
+
+      if (distanceToLeft <= edgeSnapDistance) {
+        // Snap to left edge with offset
+        finalX = area.x + edgeOffset
+      } else if (distanceToRight <= edgeSnapDistance) {
+        // Snap to right edge with offset
+        finalX = area.x + area.width - width - edgeOffset
+      } else {
+        // Free positioning - clamp to screen bounds
+        finalX = Math.max(area.x, Math.min(area.x + area.width - width, newX))
+      }
+
+      // Always clamp Y position to screen bounds
+      finalY = Math.max(area.y, Math.min(area.y + area.height - height, newY))
+    } else {
+      // Non-pill views use standard clamping
+      finalX = Math.max(area.x, Math.min(area.x + area.width - width, newX))
+      finalY = Math.max(area.y, Math.min(area.y + area.height - height, newY))
+    }
+
+    // Only update position if it actually changed
+    const currentBounds = mainWindow.getBounds()
+    if (currentBounds.x !== finalX || currentBounds.y !== finalY) {
+      mainWindow.setBounds({ x: finalX, y: finalY, width, height }, false)
+
+      // CRITICAL: Ensure window remains visible on all workspaces after position change
+      mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
+    }
   })
 
   ipcMain.on('end-drag', () => {
+    if (!mainWindow || mainWindow.isDestroyed()) return
     dragState.isDragging = false
+
+    // Reset tracking variables
+    lastDragUpdate = 0
+    lastProcessedX = 0
+    lastProcessedY = 0
+
+    // For pill view, save the final position
+    const bounds = mainWindow.getBounds()
+    const isPillView = bounds.width === WIDTH.PILL
+
+    if (isPillView) {
+      const [x, y] = mainWindow.getPosition()
+      prefs.set('pillX', x)
+      prefs.set('pillY', y)
+      console.log('[POSITION] Saved pill position after drag:', { x, y })
+    }
   })
 
   // Save pill position handler
@@ -244,36 +318,40 @@ export function registerWindowHandlers(mainWindow: BrowserWindow) {
     if (!mainWindow || mainWindow.isDestroyed()) return
 
     const { width, height } = getSavedHoverSize()
-    console.log('[HOVER] Fixing hover dimensions to:', { width, height })
+    console.log('[HOVER] fix-hover-dimensions called with:', { width, height })
 
-    if (width === WIDTH.PILL || height === HEIGHT.PILL || width < 100 || height < 100) {
-      console.log('[HOVER] Invalid hover dimensions (too small), using defaults:', {
-        width: WIDTH.HOVER,
-        height: HEIGHT.HOVER
-      })
-
-      const bounds = mainWindow.getBounds()
-      mainWindow.setBounds(
-        {
-          x: bounds.x,
-          y: bounds.y,
-          width: WIDTH.HOVER,
-          height: HEIGHT.HOVER
-        },
-        false
-      )
+    const bounds = mainWindow.getBounds()
+    
+    // Check if we have smart positioning coordinates saved
+    const smartX = prefs.get('smartHoverX') as number | undefined
+    const smartY = prefs.get('smartHoverY') as number | undefined
+    
+    let targetX = bounds.x
+    let targetY = bounds.y
+    
+    if (smartX !== undefined && smartY !== undefined) {
+      targetX = smartX
+      targetY = smartY
+      console.log('[HOVER] 🎯 Using smart positioning coordinates:', { smartX, smartY })
+      
+      // Clear the smart positioning after use to avoid stale data
+      prefs.delete('smartHoverX')
+      prefs.delete('smartHoverY')
     } else {
-      const bounds = mainWindow.getBounds()
-      mainWindow.setBounds(
-        {
-          x: bounds.x,
-          y: bounds.y,
-          width: width,
-          height: height
-        },
-        false
-      )
+      console.log('[HOVER] 📍 No smart positioning found, using current position:', { x: bounds.x, y: bounds.y })
     }
+
+    mainWindow.setBounds(
+      {
+        x: targetX,
+        y: targetY,
+        width,
+        height
+      },
+      false
+    )
+
+    console.log('[HOVER] Applied hover dimensions:', { x: targetX, y: targetY, width, height })
   })
 
   // Persist last view before sleep

@@ -3,7 +3,7 @@ import { useViewStore } from '@/globalStore'
 import { useElectron } from '@/hooks/useElectron'
 import { useAuth } from '@/hooks/useAuth'
 
-const DefaultView = () => {
+const DefaultView: React.FC = () => {
   const { setView } = useViewStore()
   const { setMainWindowResizable } = useElectron()
   const { isAuthenticated, isLoading, error, login, logout } = useAuth()
@@ -22,7 +22,7 @@ const DefaultView = () => {
   }
 
   return (
-    <div className="w-full h-full bg-[#00000000] p-4">
+    <div className="w-full h-full p-4 frosted-glass-main">
       {/* Your existing workspace content */}
       <div
         className="text-white text-center"

@@ -1,11 +1,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-@import 'tailwindcss';
+@import './theme.css';
+@import './utilities.css';
 @import './base.css';
 @import './draggable.css';
-
-:root {
-  background: rgba(24, 24, 24, 0.15);
-}
 
 body {
   line-height: 1.6;
@@ -26,6 +23,10 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow: hidden; /* Prevent body scrolling */
+
+  /* Translucent background for frosted glass effect */
+  background: transparent;
+  color: rgb(var(--color-text-primary));
 }
 
 /* Custom dark scrollbar styles */
@@ -68,18 +69,6 @@ body {
   cursor: grabbing !important;
 }
 
-/* Optimize the pill container for dragging */
-#pill-container {
-  will-change: transform;
-  transform: translateZ(0);
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-  perspective: 1000;
-  -webkit-perspective: 1000;
-  touch-action: none;
-  transform-style: preserve-3d;
-}
-
 /* Force hardware acceleration for performance */
 .hardware-accelerated {
   transform: translateZ(0);
@@ -113,4 +102,45 @@ body {
 .overflow-y-auto {
   overscroll-behavior-y: contain;
   -webkit-overflow-scrolling: touch;
+}
+
+/* Hide scrollbar for webkit browsers (Chrome, Safari, Edge) and Firefox */
+.hide-scrollbar {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* Internet Explorer 10+ */
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none; /* Webkit browsers */
+}
+
+@theme {
+  /* Light theme colors (default) */
+  --color-surface-canvas: 255 255 255;
+  --color-surface-primary: 242 242 242;
+  --color-surface-secondary: 229 229 231;
+  --color-surface-elevated: 255 255 255;
+
+  --color-border-primary: 209 209 214;
+  --color-border-subtle: 229 229 231;
+
+  --color-text-primary: 0 0 0;
+  --color-text-secondary: 60 60 67;
+  --color-text-tertiary: 60 60 67;
+
+  /* Text with opacity variants for hierarchy */
+  --color-text-secondary-60: 60 60 67; /* Used with 60% opacity */
+  --color-text-tertiary-24: 60 60 67; /* Used with 24% opacity */
+
+  --color-accent-blue: 10 132 255;
+  --color-accent-purple: 191 90 242;
+  --color-accent-pink: 255 55 95;
+
+  --color-status-success: 48 209 88;
+  --color-status-warning: 255 159 10;
+  --color-status-destructive: 255 69 58;
+
+  /* Shadow colors for elevation */
+  --color-shadow-card: 0 0 0; /* Used with 6% opacity */
+  --color-shadow-modal: 0 0 0; /* Used with 15% opacity */
 }

@@ -2,7 +2,7 @@
 import React from 'react'
 
 // layout
-import { HoverLayout } from '@/layouts'
+import { HoverLayout } from '../layouts'
 
 // controller
 import { useViewController } from '@/controller'

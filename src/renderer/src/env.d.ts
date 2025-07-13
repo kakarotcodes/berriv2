@@ -1,4 +1,5 @@
 /// <reference types="vite/client" />
+/// <reference types="vite-plugin-svgr/client" />
 
 interface ClipboardEntry {
   id: string
@@ -46,7 +47,7 @@ interface Note {
 }
 
 interface ElectronAPI {
-  resizeWindow: (dimensions: { width: number; height: number }) => void
+  resizeWindow: (dimensions: { width: number; height: number }, duration?: number) => void
   animateViewTransition: (view: string) => Promise<void>
   getWindowBounds: () => Promise<{ width: number; height: number; x: number; y: number }>
 
@@ -155,6 +156,13 @@ interface ElectronAPI {
   // Sleep/wake handlers
   requestCurrentView: (callback: () => string) => () => void
   onResumeFromSleep: (callback: (view: string) => void) => () => void
+
+  // Theme API
+  theme: {
+    getSystemTheme: () => boolean
+    setTheme: (theme: 'light' | 'dark') => void
+    onSystemThemeChange: (callback: (isDark: boolean) => void) => () => void
+  }
 
   // Clipboard
   clipboard: {

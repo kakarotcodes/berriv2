@@ -4,6 +4,9 @@ export function useDragHandle(savePillPosition: () => void) {
   const rafIdRef = useRef<number | null>(null)
   const isDraggingRef = useRef(false)
   const lastYRef = useRef(0)
+  const lastXRef = useRef(0)
+  const lastSentXRef = useRef(0)
+  const lastSentYRef = useRef(0)
   const cleanupFnRef = useRef<(() => void) | null>(null)
 
   useEffect(() => {
@@ -12,7 +15,10 @@ export function useDragHandle(savePillPosition: () => void) {
       if (isDraggingRef.current) return // Prevent starting a new drag if already dragging
 
       isDraggingRef.current = true
-      lastYRef.current = e.clientY
+      lastYRef.current = e.screenY
+      lastXRef.current = e.screenX
+      lastSentXRef.current = 0
+      lastSentYRef.current = 0
       e.preventDefault()
       e.stopPropagation()
 
@@ -20,19 +26,31 @@ export function useDragHandle(savePillPosition: () => void) {
       handle.classList.add('active')
       document.body.classList.add('dragging')
 
-      window.electronAPI.startVerticalDrag(lastYRef.current)
+      // Start full drag (horizontal + vertical) with screen coordinates
+      window.electronAPI.startDrag(e.screenX, e.screenY)
       animateDrag()
     }
 
     const onMouseMove = (e: MouseEvent) => {
       if (isDraggingRef.current) {
-        lastYRef.current = e.clientY
+        lastYRef.current = e.screenY
+        lastXRef.current = e.screenX
       }
     }
 
     const animateDrag = () => {
       if (isDraggingRef.current) {
-        window.electronAPI.updateVerticalDrag(lastYRef.current)
+        // Use screen coordinates directly (no conversion needed)
+        const screenX = lastXRef.current
+        const screenY = lastYRef.current
+        
+        // Only send updates if coordinates have actually changed
+        if (screenX !== lastSentXRef.current || screenY !== lastSentYRef.current) {
+          window.electronAPI.updateDrag(screenX, screenY)
+          lastSentXRef.current = screenX
+          lastSentYRef.current = screenY
+        }
+        
         rafIdRef.current = requestAnimationFrame(animateDrag)
       }
     }
@@ -50,7 +68,7 @@ export function useDragHandle(savePillPosition: () => void) {
       }
 
       // Clean up
-      window.electronAPI.endVerticalDrag()
+      window.electronAPI.endDrag()
 
       // Find the handle element and remove active class
       const handle = document.getElementById('drag-handle')
@@ -59,8 +77,8 @@ export function useDragHandle(savePillPosition: () => void) {
       }
       document.body.classList.remove('dragging')
 
-      // Save position
-      savePillPosition()
+      // Position is now saved automatically in the end-drag handler
+      // No need to call savePillPosition() here anymore
     }
 
     // Function to attach event listeners
@@ -76,6 +94,10 @@ export function useDragHandle(savePillPosition: () => void) {
 
       // Reset state
       isDraggingRef.current = false
+      lastXRef.current = 0
+      lastYRef.current = 0
+      lastSentXRef.current = 0
+      lastSentYRef.current = 0
       if (rafIdRef.current !== null) {
         cancelAnimationFrame(rafIdRef.current)
         rafIdRef.current = null
@@ -94,6 +116,10 @@ export function useDragHandle(savePillPosition: () => void) {
 
         // Reset state
         isDraggingRef.current = false
+        lastXRef.current = 0
+        lastYRef.current = 0
+        lastSentXRef.current = 0
+        lastSentYRef.current = 0
         if (rafIdRef.current !== null) {
           cancelAnimationFrame(rafIdRef.current)
           rafIdRef.current = null
