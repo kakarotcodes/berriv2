@@ -10,7 +10,8 @@ ipcRenderer.on('pill:set-css-opacity', (_event, alpha) => {
 ipcRenderer.setMaxListeners(20)
 
 contextBridge.exposeInMainWorld('electronAPI', {
-  resizeWindow: (dimensions, duration) => ipcRenderer.send('resize-window', { ...dimensions, duration }),
+  resizeWindow: (dimensions, duration) =>
+    ipcRenderer.send('resize-window', { ...dimensions, duration }),
   animateViewTransition: (view) => {
     if (['default', 'pill', 'hover'].includes(view)) {
       return ipcRenderer.invoke('animate-view-transition', view)
@@ -181,6 +182,17 @@ contextBridge.exposeInMainWorld('electronAPI', {
     removeDuplicates: () => ipcRenderer.invoke('notes:removeDuplicates'),
     saveImage: (filename, arrayBuffer) =>
       ipcRenderer.invoke('notes:saveImage', { filename, file: arrayBuffer })
+  },
+
+  // ------------------------------------------------------------
+  // AI API
+  // ------------------------------------------------------------
+
+  aiAPI: {
+    summarizeNote: (content, title, options) =>
+      ipcRenderer.invoke('ai:summarize-note', content, title, options),
+    batchSummarize: (notes, options) => ipcRenderer.invoke('ai:batch-summarize', notes, options),
+    checkHealth: () => ipcRenderer.invoke('ai:check-health')
   },
 
   // Fix hover dimensions
