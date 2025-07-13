@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { useAuth } from '../../../hooks/useAuth'
 import { CalendarEventsList, CalendarEventForm } from '.'
 
 interface CalendarEvent {
@@ -12,6 +13,7 @@ interface CalendarEvent {
 }
 
 const CalendarAuthorized: React.FC = () => {
+  const { isAuthenticated, isLoading: authLoading } = useAuth()
   const [events, setEvents] = useState<CalendarEvent[]>([])
   const [isLoadingEvents, setIsLoadingEvents] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -29,10 +31,12 @@ const CalendarAuthorized: React.FC = () => {
   })
   const [isCreating, setIsCreating] = useState(false)
 
-  // Fetch calendar events on component mount
+  // Fetch calendar events when authenticated
   useEffect(() => {
-    fetchCalendarEvents()
-  }, [])
+    if (isAuthenticated && !authLoading) {
+      fetchCalendarEvents()
+    }
+  }, [isAuthenticated, authLoading])
 
   const fetchCalendarEvents = async () => {
     setIsLoadingEvents(true)
