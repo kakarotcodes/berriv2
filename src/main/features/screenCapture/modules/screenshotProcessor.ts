@@ -3,6 +3,60 @@ import fs from 'fs/promises'
 import path from 'path'
 import os from 'os'
 import { handlePreviewWindowManagement } from './previewWindowManager'
+import { GoogleGenAI } from '@google/genai'
+import { AI_CONFIG } from '../../../../config/ai'
+
+const genAI = new GoogleGenAI({
+  apiKey: AI_CONFIG.GEMINI_API_KEY
+})
+
+async function extractTextFromScreenshot(imageBuffer: Buffer): Promise<string | null> {
+  try {
+    console.log('[OCR] Starting text extraction from screenshot...')
+    
+    const base64Image = imageBuffer.toString('base64')
+    const mimeType = 'image/png'
+
+    const prompt = `Extract all text content from this screenshot. Please:
+1. Read all visible text accurately
+2. Maintain the original structure and formatting where possible
+3. Include any numbers, symbols, or special characters
+4. Preserve line breaks and spacing when meaningful
+
+Return only the extracted text content without any additional commentary or descriptions.`
+
+    const response = await genAI.models.generateContent({
+      model: AI_CONFIG.MODEL,
+      contents: [
+        {
+          role: 'user',
+          parts: [
+            { text: prompt },
+            {
+              inlineData: {
+                mimeType,
+                data: base64Image
+              }
+            }
+          ]
+        }
+      ]
+    })
+
+    const extractedText = response.text?.trim()
+    
+    if (extractedText && extractedText.length >= AI_CONFIG.OCR.MIN_TEXT_LENGTH) {
+      console.log('[OCR] Text extraction successful, length:', extractedText.length)
+      return extractedText
+    } else {
+      console.log('[OCR] No significant text found in screenshot')
+      return null
+    }
+  } catch (error) {
+    console.error('[OCR] Error extracting text from screenshot:', error)
+    return null
+  }
+}
 
 export async function handleSnippetCompletion(tempScreenshotPath: string) {
   console.log('[SNIPPET_EVENT] Handling snippet completion event')
@@ -40,6 +94,9 @@ export async function handleSnippetCompletion(tempScreenshotPath: string) {
     await fs.copyFile(tempScreenshotPath, finalScreenshotPath)
     console.log('[SNIPPET_EVENT] Screenshot saved to desktop:', finalScreenshotPath)
 
+    // Extract text from screenshot using OCR
+    const extractedText = await extractTextFromScreenshot(imageBuffer)
+
     // Create data URL for preview
     const dataUrl = image.toDataURL()
     if (!dataUrl || dataUrl.length < 100) {
@@ -60,8 +117,11 @@ export async function handleSnippetCompletion(tempScreenshotPath: string) {
       imageUrl.startsWith('data:') ? 'data URL' : 'file URL'
     )
 
-    // Handle preview window management
-    handlePreviewWindowManagement(imageUrl)
+    // Handle preview window management with OCR text
+    handlePreviewWindowManagement(imageUrl, {
+      imagePath: finalScreenshotPath,
+      extractedText: extractedText
+    })
 
     // Clean up temp file
     setTimeout(async () => {

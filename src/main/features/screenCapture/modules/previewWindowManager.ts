@@ -6,8 +6,14 @@ import { pathToFileURL } from 'url'
 
 let previewWindow: BrowserWindow | null = null
 
-export function handlePreviewWindowManagement(imageUrl: string) {
+interface ScreenshotData {
+  imagePath?: string
+  extractedText?: string | null
+}
+
+export function handlePreviewWindowManagement(imageUrl: string, data?: ScreenshotData) {
   console.log('[PREVIEW_MANAGEMENT] Managing preview window for new snippet')
+  console.log('[PREVIEW_MANAGEMENT] OCR text available:', data?.extractedText ? 'Yes' : 'No')
 
   // Check if preview window is already open
   const isWindowOpen = previewWindow && !previewWindow.isDestroyed()
@@ -20,15 +26,15 @@ export function handlePreviewWindowManagement(imageUrl: string) {
     // Wait for window to be fully destroyed, then create new one
     setTimeout(() => {
       console.log('[PREVIEW_MANAGEMENT] Creating new preview window after closing existing one')
-      createPreviewWindowOnCurrentScreen(imageUrl)
+      createPreviewWindowOnCurrentScreen(imageUrl, data)
     }, 150)
   } else {
     console.log('[PREVIEW_MANAGEMENT] No existing preview window, creating new one immediately')
-    createPreviewWindowOnCurrentScreen(imageUrl)
+    createPreviewWindowOnCurrentScreen(imageUrl, data)
   }
 }
 
-function createPreviewWindowOnCurrentScreen(imageUrl: string) {
+function createPreviewWindowOnCurrentScreen(imageUrl: string, data?: ScreenshotData) {
   console.log('[PREVIEW_CURRENT_SCREEN] Creating preview window on current screen')
 
   // Get current cursor position to determine which screen to show preview on
@@ -52,10 +58,10 @@ function createPreviewWindowOnCurrentScreen(imageUrl: string) {
   console.log('[PREVIEW_CURRENT_SCREEN] Image URL validation passed, creating window...')
 
   // Create the preview window
-  createPreviewWindowInternalOnDisplay(imageUrl, display)
+  createPreviewWindowInternalOnDisplay(imageUrl, display, data)
 }
 
-function createPreviewWindowInternalOnDisplay(imageDataUrl: string, display: Electron.Display) {
+function createPreviewWindowInternalOnDisplay(imageDataUrl: string, display: Electron.Display, data?: ScreenshotData) {
   console.log('[PREVIEW_INTERNAL] Creating preview window on display:', display.bounds)
 
   // Calculate position at bottom center of the target screen
@@ -175,6 +181,25 @@ function createPreviewWindowInternalOnDisplay(imageDataUrl: string, display: Ele
           } else {
             console.error('[PREVIEW_SCRIPT] Could not find previewImage element');
           }
+          
+          // Set OCR text if available
+          ${data?.extractedText ? `
+          const ocrPanel = document.getElementById('ocrPanel');
+          const ocrText = document.getElementById('ocrText');
+          if (ocrPanel && ocrText) {
+            ocrText.textContent = ${JSON.stringify(data.extractedText)};
+            ocrPanel.style.display = 'block';
+            console.log('[PREVIEW_SCRIPT] OCR text set successfully');
+          } else {
+            console.log('[PREVIEW_SCRIPT] OCR panel elements not found');
+          }
+          ` : `
+          const ocrPanel = document.getElementById('ocrPanel');
+          if (ocrPanel) {
+            ocrPanel.style.display = 'none';
+            console.log('[PREVIEW_SCRIPT] No OCR text, hiding panel');
+          }
+          `}
           
           // Check if button functions are available
           console.log('[PREVIEW_SCRIPT] Checking button functions:');

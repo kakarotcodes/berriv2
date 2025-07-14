@@ -183,6 +183,23 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.invoke('notes:saveImage', { filename, file: arrayBuffer })
   },
 
+  // ------------------------------------------------------------
+  // AI API
+  // ------------------------------------------------------------
+  
+  aiAPI: {
+    summarizeNote: (content, title, options) =>
+      ipcRenderer.invoke('ai:summarize-note', content, title, options),
+    batchSummarize: (notes, options) => 
+      ipcRenderer.invoke('ai:batch-summarize', notes, options),
+    extractTextFromImage: (imagePath, options) =>
+      ipcRenderer.invoke('ai:extract-text-from-image', imagePath, options),
+    extractTextFromBuffer: (imageBuffer, mimeType, options) =>
+      ipcRenderer.invoke('ai:extract-text-from-buffer', imageBuffer, mimeType, options),
+    checkHealth: () => 
+      ipcRenderer.invoke('ai:check-health')
+  },
+
   // Fix hover dimensions
   fixHoverDimensions: () => ipcRenderer.send('fix-hover-dimensions'),
 
