@@ -72,10 +72,7 @@ const ModalEventForm: React.FC<ModalEventFormProps> = ({
           eventType === 'meeting'
             ? `${eventForm.description ? eventForm.description + '\n\n' : ''}Meeting scheduled via Berri`
             : eventForm.description,
-        location:
-          eventType === 'meeting' && !eventForm.location
-            ? 'Google Meet (link will be generated)'
-            : eventForm.location,
+        location: eventForm.location,
         attendees: eventForm.attendees
           ? eventForm.attendees
               .split(',')

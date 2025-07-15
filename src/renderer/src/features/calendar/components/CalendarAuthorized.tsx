@@ -47,10 +47,17 @@ const CalendarAuthorizedNew: React.FC = () => {
     setError(null)
 
     try {
+      // Fetch events from 3 months ago to 3 months ahead for calendar grid
+      const threeMonthsAgo = new Date()
+      threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3)
+      
+      const threeMonthsAhead = new Date()
+      threeMonthsAhead.setMonth(threeMonthsAhead.getMonth() + 3)
+
       const result = await window.electronAPI.calendar.getEvents({
-        maxResults: 10,
-        timeMin: new Date().toISOString(),
-        timeMax: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // Next 7 days
+        maxResults: 100, // Increased to get more events
+        timeMin: threeMonthsAgo.toISOString(),
+        timeMax: threeMonthsAhead.toISOString()
       })
 
       if (result.success) {
@@ -86,10 +93,7 @@ const CalendarAuthorizedNew: React.FC = () => {
           eventType === 'meeting'
             ? `${eventForm.description ? eventForm.description + '\n\n' : ''}Meeting scheduled via Berri`
             : eventForm.description,
-        location:
-          eventType === 'meeting' && !eventForm.location
-            ? 'Google Meet (link will be generated)'
-            : eventForm.location,
+        location: eventForm.location,
         attendees: eventForm.attendees
           ? eventForm.attendees
               .split(',')
@@ -139,7 +143,7 @@ const CalendarAuthorizedNew: React.FC = () => {
           />
         </div>
         <CalendarEventsList
-          events={events}
+          events={events.filter((event) => new Date(event.end) >= new Date())} // Only upcoming events
           isLoadingEvents={isLoadingEvents}
           error={error}
           onRefresh={fetchCalendarEvents}
@@ -153,6 +157,7 @@ const CalendarAuthorizedNew: React.FC = () => {
         <div id="calendar-grid-container" className="h-[500px] overflow-hidden p-4 box-border">
           <CalendarGrid
             events={events.map((event) => ({
+              // All events including past ones
               ...event,
               start: new Date(event.start),
               end: new Date(event.end)

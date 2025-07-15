@@ -1,4 +1,4 @@
-import React, { useState, useCallback, CSSProperties } from 'react'
+import React, { useState, useCallback } from 'react'
 import {
   Calendar,
   Views,
@@ -86,18 +86,17 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
   }
 
   /* event bar styling */
-  const eventPropGetter = () => ({
-    style: {
-      background: '#0a84ff',
-      borderRadius: 6,
-      border: 'none',
-      paddingInline: 4,
-      fontSize: 14,
-      lineHeight: '20px',
-      fontWeight: 500,
-      color: '#fff'
-    } as CSSProperties
-  })
+  const eventPropGetter = (event: CalendarEvent) => {
+    // Check if it's a meeting
+    const isMeeting =
+      event.description?.includes('Meeting scheduled via Berri') ||
+      event.location?.includes('Google Meet') ||
+      event.location?.includes('meet.google.com')
+
+    return {
+      className: isMeeting ? 'meeting-event' : ''
+    }
+  }
 
   return (
     <div className="h-full calendar-grid-container">

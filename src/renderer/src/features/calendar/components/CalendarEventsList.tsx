@@ -1,5 +1,5 @@
 import React from 'react'
-import { RefreshCwIcon } from 'lucide-react'
+import { RefreshCwIcon, VideoIcon, EditIcon } from 'lucide-react'
 
 interface CalendarEvent {
   id: string
@@ -90,6 +90,28 @@ const CalendarEventsList: React.FC<CalendarEventsListProps> = ({
     })
   }
 
+  const isMeeting = (event: CalendarEvent) => {
+    // Check if it's a meeting based on description containing "Meeting scheduled via Berri"
+    // or location containing "Google Meet"
+    return (
+      event.description?.includes('Meeting scheduled via Berri') ||
+      event.location?.includes('Google Meet') ||
+      event.location?.includes('meet.google.com')
+    )
+  }
+
+  const hasEventEnded = (event: CalendarEvent) => {
+    const eventEndTime = new Date(event.end)
+    const now = new Date()
+    return eventEndTime < now
+  }
+
+  const cleanLocationText = (location?: string) => {
+    if (!location) return ''
+    // Remove the Google Meet default text
+    return location.replace('Google Meet (link will be generated)', '').trim()
+  }
+
   // Group events by date
   const groupedEvents = filteredEvents.reduce(
     (groups, event) => {
@@ -123,20 +145,30 @@ const CalendarEventsList: React.FC<CalendarEventsListProps> = ({
               {dateEvents.map((event, idx) => (
                 <div
                   key={event.id}
-                  className={`bg-white/5 rounded-lg p-3 border border-white/10 ${
-                    idx < dateEvents.length - 1 ? 'mb-3' : ''
-                  }`}
+                  className={`bg-white/5 rounded-lg p-3 border border-white/10 relative ${idx < dateEvents.length - 1 ? 'mb-3' : ''}`}
                 >
-                  <div className="font-medium text-white text-sm mb-1">{event.title}</div>
-                  <div className="text-xs text-gray-500 mb-0.5">
-                    {formatEventCardDate(event.start)}
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="font-medium text-white text-sm mb-1">{event.title}</div>
+                      <div className="text-xs text-gray-500 mb-0.5">
+                        {formatEventCardDate(event.start)}
+                      </div>
+                      <div className="text-[11px] text-gray-400">
+                        {formatEventTime(event.start, event.end)}
+                      </div>
+                      {cleanLocationText(event.location) && (
+                        <div className="text-xs text-gray-500 mt-1">
+                          {cleanLocationText(event.location)}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 ml-2">
+                      {isMeeting(event) && <VideoIcon className="w-4 h-4 text-gray-400" />}
+                      {!hasEventEnded(event) && (
+                        <EditIcon className="w-4 h-4 text-gray-400 hover:text-white cursor-pointer" />
+                      )}
+                    </div>
                   </div>
-                  <div className="text-[11px] text-gray-400">
-                    {formatEventTime(event.start, event.end)}
-                  </div>
-                  {event.location && (
-                    <div className="text-xs text-gray-500 mt-1">{event.location}</div>
-                  )}
                 </div>
               ))}
             </div>
