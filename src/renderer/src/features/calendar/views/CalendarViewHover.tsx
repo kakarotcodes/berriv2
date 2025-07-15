@@ -12,7 +12,6 @@ const CalendarViewHover: React.FC = () => {
   const { isAuthenticated, isLoading: authLoading } = useAuth()
   const [isRequesting, setIsRequesting] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [searchQuery, setSearchQuery] = useState('')
 
   const handleRequestCalendarPermissions = async () => {
     setIsRequesting(true)
@@ -55,7 +54,7 @@ const CalendarViewHover: React.FC = () => {
     )
   }
 
-  return <CalendarAuthorized searchQuery={searchQuery} />
+  return <CalendarAuthorized />
 }
 
 export default CalendarViewHover

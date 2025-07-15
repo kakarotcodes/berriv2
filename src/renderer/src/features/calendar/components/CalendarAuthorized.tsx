@@ -1,8 +1,7 @@
 import { Searchbar } from '@/components/shared'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '../../../hooks/useAuth'
-import { CalendarEventsList, CalendarEventForm } from '.'
+import { CalendarEventsList, CalendarEventForm, CalendarDateSelector } from '.'
 
 interface CalendarEvent {
   id: string
@@ -14,15 +13,12 @@ interface CalendarEvent {
   htmlLink?: string
 }
 
-interface CalendarAutorizedNewProps {
-  searchQuery?: string
-}
-
-const CalendarAutorizedNew: React.FC<CalendarAutorizedNewProps> = ({ searchQuery = '' }) => {
+const CalendarAutorizedNew: React.FC = () => {
   const { isAuthenticated, isLoading: authLoading } = useAuth()
   const [events, setEvents] = useState<CalendarEvent[]>([])
   const [isLoadingEvents, setIsLoadingEvents] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
 
   // Form state
   const [eventType, setEventType] = useState<'event' | 'meeting'>('event')
@@ -38,7 +34,6 @@ const CalendarAutorizedNew: React.FC<CalendarAutorizedNewProps> = ({ searchQuery
   const [isCreating, setIsCreating] = useState(false)
 
   // Month navigation state
-  const [currentDate, setCurrentDate] = useState(new Date())
 
   // Fetch calendar events when authenticated
   useEffect(() => {
@@ -133,17 +128,6 @@ const CalendarAutorizedNew: React.FC<CalendarAutorizedNewProps> = ({ searchQuery
     }
   }
 
-  const handlePreviousMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))
-  }
-
-  const handleNextMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))
-  }
-
-  const formatMonth = (date: Date) => {
-    return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
-  }
   return (
     <div className="w-full h-full flex">
       <div className="w-1/3 h-full flex flex-col">
@@ -160,25 +144,7 @@ const CalendarAutorizedNew: React.FC<CalendarAutorizedNewProps> = ({ searchQuery
       </div>
       <div className="w-2/3 h-full flex flex-col">
         <div className="h-14 bg-black/40 flex items-center">
-          <div className="flex items-center gap-x-2">
-            <button
-              className="text-gray-400 hover:text-white rounded transition-colors"
-              title="Previous month"
-              onClick={handlePreviousMonth}
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <div className="px-3 py-1 text-sm font-medium text-white bg-white/10 rounded border border-white/20">
-              {formatMonth(currentDate)}
-            </div>
-            <button
-              className="p-1 text-gray-400 hover:text-white rounded transition-colors"
-              title="Next month"
-              onClick={handleNextMonth}
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
+          <CalendarDateSelector />
         </div>
         <div className="flex-1 p-4">
           <CalendarEventForm
