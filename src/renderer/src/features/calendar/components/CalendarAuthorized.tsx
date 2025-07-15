@@ -1,3 +1,5 @@
+import { Searchbar } from '@/components/shared'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '../../../hooks/useAuth'
 import { CalendarEventsList, CalendarEventForm } from '.'
@@ -12,11 +14,11 @@ interface CalendarEvent {
   htmlLink?: string
 }
 
-interface CalendarAuthorizedProps {
-  searchQuery: string
+interface CalendarAutorizedNewProps {
+  searchQuery?: string
 }
 
-const CalendarAuthorized: React.FC<CalendarAuthorizedProps> = ({ searchQuery }) => {
+const CalendarAutorizedNew: React.FC<CalendarAutorizedNewProps> = ({ searchQuery = '' }) => {
   const { isAuthenticated, isLoading: authLoading } = useAuth()
   const [events, setEvents] = useState<CalendarEvent[]>([])
   const [isLoadingEvents, setIsLoadingEvents] = useState(false)
@@ -34,6 +36,9 @@ const CalendarAuthorized: React.FC<CalendarAuthorizedProps> = ({ searchQuery }) 
     attendees: ''
   })
   const [isCreating, setIsCreating] = useState(false)
+
+  // Month navigation state
+  const [currentDate, setCurrentDate] = useState(new Date())
 
   // Fetch calendar events when authenticated
   useEffect(() => {
@@ -128,9 +133,23 @@ const CalendarAuthorized: React.FC<CalendarAuthorizedProps> = ({ searchQuery }) 
     }
   }
 
+  const handlePreviousMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))
+  }
+
+  const handleNextMonth = () => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))
+  }
+
+  const formatMonth = (date: Date) => {
+    return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+  }
   return (
     <div className="w-full h-full flex">
-      <div className="w-1/3 h-full border-r-[1px] border-white/20 flex flex-col">
+      <div className="w-1/3 h-full flex flex-col">
+        <div className="h-14 bg-black/40 px-4 flex items-center">
+          <Searchbar />
+        </div>
         <CalendarEventsList
           events={events}
           isLoadingEvents={isLoadingEvents}
@@ -139,19 +158,42 @@ const CalendarAuthorized: React.FC<CalendarAuthorizedProps> = ({ searchQuery }) 
           searchQuery={searchQuery}
         />
       </div>
-      <div className="w-2/3 h-full p-4">
-        <CalendarEventForm
-          eventType={eventType}
-          eventForm={eventForm}
-          isCreating={isCreating}
-          error={error}
-          onEventTypeChange={setEventType}
-          onFormChange={setEventForm}
-          onCreateEvent={handleCreateEvent}
-        />
+      <div className="w-2/3 h-full flex flex-col">
+        <div className="h-14 bg-black/40 flex items-center">
+          <div className="flex items-center gap-x-2">
+            <button
+              className="text-gray-400 hover:text-white rounded transition-colors"
+              title="Previous month"
+              onClick={handlePreviousMonth}
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <div className="px-3 py-1 text-sm font-medium text-white bg-white/10 rounded border border-white/20">
+              {formatMonth(currentDate)}
+            </div>
+            <button
+              className="p-1 text-gray-400 hover:text-white rounded transition-colors"
+              title="Next month"
+              onClick={handleNextMonth}
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+        <div className="flex-1 p-4">
+          <CalendarEventForm
+            eventType={eventType}
+            eventForm={eventForm}
+            isCreating={isCreating}
+            error={error}
+            onEventTypeChange={setEventType}
+            onFormChange={setEventForm}
+            onCreateEvent={handleCreateEvent}
+          />
+        </div>
       </div>
     </div>
   )
 }
 
-export default CalendarAuthorized
+export default CalendarAutorizedNew

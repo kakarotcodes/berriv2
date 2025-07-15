@@ -40,13 +40,16 @@ const CalendarEventsList: React.FC<CalendarEventsListProps> = ({
   const testEvents = dummyEvents
 
   // Filter events based on search query
-  const filteredEvents = searchQuery.trim()
-    ? testEvents.filter(event => 
-        event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (event.description && event.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (event.location && event.location.toLowerCase().includes(searchQuery.toLowerCase()))
-      )
-    : testEvents
+  const filteredEvents =
+    searchQuery && searchQuery.trim()
+      ? testEvents.filter(
+          (event) =>
+            event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (event.description &&
+              event.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
+            (event.location && event.location.toLowerCase().includes(searchQuery.toLowerCase()))
+        )
+      : testEvents
 
   const formatEventTime = (startString: string, endString: string) => {
     const start = new Date(startString)
@@ -89,17 +92,20 @@ const CalendarEventsList: React.FC<CalendarEventsListProps> = ({
   }
 
   // Group events by date
-  const groupedEvents = filteredEvents.reduce((groups, event) => {
-    const dateKey = formatEventDate(event.start)
-    if (!groups[dateKey]) {
-      groups[dateKey] = []
-    }
-    groups[dateKey].push(event)
-    return groups
-  }, {} as Record<string, CalendarEvent[]>)
+  const groupedEvents = filteredEvents.reduce(
+    (groups, event) => {
+      const dateKey = formatEventDate(event.start)
+      if (!groups[dateKey]) {
+        groups[dateKey] = []
+      }
+      groups[dateKey].push(event)
+      return groups
+    },
+    {} as Record<string, CalendarEvent[]>
+  )
 
   return (
-    <div className="flex-1 min-h-0 overflow-y-auto hide-scrollbar px-4 py-5">
+    <div className="flex-1 min-h-0 overflow-y-auto hide-scrollbar px-4 py-5 border-r border-white/20">
       {isLoadingEvents ? (
         <div className="flex items-center justify-center py-8">
           <RefreshCwIcon className="w-5 h-5 animate-spin text-gray-400" />
@@ -108,7 +114,7 @@ const CalendarEventsList: React.FC<CalendarEventsListProps> = ({
         <div className="text-red-400 text-sm">{error}</div>
       ) : filteredEvents.length === 0 ? (
         <div className="text-gray-400 text-sm text-center py-8">
-          {searchQuery.trim() ? 'No events found' : 'No upcoming events'}
+          {searchQuery && searchQuery.trim() ? 'No events found' : 'No upcoming events'}
         </div>
       ) : (
         Object.entries(groupedEvents).map(([dateKey, dateEvents]) => (
