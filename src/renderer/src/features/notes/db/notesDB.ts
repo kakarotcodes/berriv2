@@ -61,6 +61,21 @@ if (currentVersion < 2) {
   db.pragma('user_version = 2')
 }
 
+if (currentVersion < 3) {
+  console.log('Running migration to version 3: Adding summary fields')
+  try {
+    db.prepare(`ALTER TABLE notes ADD COLUMN summary TEXT`).run()
+  } catch (e: unknown) {
+    if (!(e as Error).message?.includes('duplicate column')) throw e
+  }
+  try {
+    db.prepare(`ALTER TABLE notes ADD COLUMN summaryGeneratedAt TEXT`).run()
+  } catch (e: unknown) {
+    if (!(e as Error).message?.includes('duplicate column')) throw e
+  }
+  db.pragma('user_version = 3')
+}
+
 // Safe migration for missing 'trashed' column (keep for backward compatibility)
 try {
   db.prepare(`ALTER TABLE notes ADD COLUMN trashed INTEGER DEFAULT 0`).run()
@@ -159,13 +174,15 @@ export const NotesDB = {
   insertNote: (note: Note): Note => {
     db.prepare(
       `
-      INSERT INTO notes (id, title, type, content, createdAt, updatedAt, trashed)
-      VALUES (@id, @title, @type, @content, @createdAt, @updatedAt, @trashed)
+      INSERT INTO notes (id, title, type, content, createdAt, updatedAt, trashed, summary, summaryGeneratedAt)
+      VALUES (@id, @title, @type, @content, @createdAt, @updatedAt, @trashed, @summary, @summaryGeneratedAt)
     `
     ).run({
       ...note,
       content: serializeContent(note),
-      trashed: note.trashed ? 1 : 0
+      trashed: note.trashed ? 1 : 0,
+      summary: note.summary || null,
+      summaryGeneratedAt: note.summaryGeneratedAt || null
     })
 
     // Return the note that was inserted

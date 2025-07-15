@@ -15,4 +15,6 @@ export interface Note {
   updatedAt: string
   pinned?: boolean
   trashed?: boolean
+  summary?: string
+  summaryGeneratedAt?: string
 }
