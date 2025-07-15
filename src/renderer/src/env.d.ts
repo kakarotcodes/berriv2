@@ -183,6 +183,37 @@ interface ElectronAPI {
     saveImage: (filename: string, arrayBuffer: ArrayBuffer) => Promise<string>
   }
 
+  // AI API
+  aiAPI: {
+    summarizeNote: (
+      content: string,
+      title: string,
+      options?: any
+    ) => Promise<{
+      success: boolean
+      summary?: string
+      error?: string
+    }>
+    batchSummarize: (
+      notes: Array<{ id: string; content: string; title: string }>,
+      options?: any
+    ) => Promise<{
+      success: boolean
+      results?: Array<{
+        id: string
+        success: boolean
+        summary?: string
+        error?: string
+      }>
+      error?: string
+    }>
+    checkHealth: () => Promise<{
+      success: boolean
+      status?: string
+      error?: string
+    }>
+  }
+
   // Hover management
   fixHoverDimensions: () => void
   saveHoverSize: (dimensions: { width: number; height: number }) => void

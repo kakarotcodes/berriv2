@@ -10,11 +10,15 @@ import {
   Quote,
   List,
   CheckSquare,
-  ImageIcon
+  ImageIcon,
+  Sparkles
 } from 'lucide-react'
+import { useAIStore } from '../../ai/store/aiStore'
 
 const NotesEditorToolbar: React.FC = () => {
-  const { editor } = useNotesStore()
+  const { editor, getSelectedNote } = useNotesStore()
+  const { generateSummary, isGeneratingSummary, getSummary } = useAIStore()
+  const selectedNote = getSelectedNote()
 
   if (!editor) return null
 
@@ -38,6 +42,23 @@ const NotesEditorToolbar: React.FC = () => {
       }
     }
     input.click()
+  }
+
+  const handleSummarize = async () => {
+    if (!selectedNote) return
+
+    try {
+      const content =
+        typeof selectedNote.content === 'string'
+          ? selectedNote.content
+          : JSON.stringify(selectedNote.content)
+      await generateSummary(selectedNote.id, content, selectedNote.title, {
+        length: 'medium',
+        includeKeyPoints: true
+      })
+    } catch (error) {
+      console.error('Failed to generate summary:', error)
+    }
   }
 
   return (
@@ -123,6 +144,20 @@ const NotesEditorToolbar: React.FC = () => {
         title="Insert Image"
       >
         <ImageIcon size={16} />
+      </button>
+      <div className="w-px h-6 bg-zinc-600 mx-1"></div>
+      <button
+        onClick={handleSummarize}
+        disabled={!selectedNote || isGeneratingSummary(selectedNote?.id || '')}
+        className={`p-1 rounded hover:bg-zinc-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+          getSummary(selectedNote?.id || '') ? 'text-green-400' : ''
+        }`}
+        title={getSummary(selectedNote?.id || '') ? 'Summary available' : 'Generate AI Summary'}
+      >
+        <Sparkles
+          size={16}
+          className={isGeneratingSummary(selectedNote?.id || '') ? 'animate-pulse' : ''}
+        />
       </button>
     </div>
   )

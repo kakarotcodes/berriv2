@@ -9,6 +9,7 @@ import { registerGmailHandlers } from './features/gmail/ipcHandlers'
 import { registerScreenCaptureHandlers } from './features/screenCapture/ipcHandlers'
 import { registerScreenshotsHandlers } from './features/screenshots/ipcHandlers'
 import { registerThemeHandlers } from './features/theme/ipcHandlers'
+import { registerAIHandlers } from './features/ai/ipcHandlers'
 
 export function registerAllHandlers(mainWindow: BrowserWindow) {
   // Register feature-specific handlers
@@ -22,5 +23,6 @@ export function registerAllHandlers(mainWindow: BrowserWindow) {
   registerScreenCaptureHandlers()
   registerScreenshotsHandlers()
   registerThemeHandlers(mainWindow)
+  registerAIHandlers()
   console.log('[IPC] All handlers registered successfully')
 }

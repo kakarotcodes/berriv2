@@ -8,6 +8,7 @@
     "src/renderer/src/globalStore/**/*",
     "src/renderer/electron.d.ts",
     "src/main/utils/animateViewTransition.ts",
+    "src/config/**/*",
     "src/constants/constants.ts"
   ],
   "compilerOptions": {

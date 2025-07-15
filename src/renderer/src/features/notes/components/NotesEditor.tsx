@@ -8,6 +8,7 @@ import BulletList from '@tiptap/extension-bullet-list'
 import ListItem from '@tiptap/extension-list-item'
 
 import { useNotesStore } from '../store/notesStore'
+import NoteSummary from './NoteSummary'
 
 const NotesEditor: React.FC = () => {
   const { getSelectedNote, setEditor } = useNotesStore()
@@ -230,7 +231,10 @@ const NotesEditor: React.FC = () => {
         />
       </div>
 
-      {/* Internal toolbar removed; now rendered in header */}
+      {/* AI Summary */}
+      <div className="px-6">
+        <NoteSummary noteId={note.id} />
+      </div>
 
       {/* Editor */}
       <div className="flex-1 overflow-y-auto">
