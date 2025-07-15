@@ -10,8 +10,9 @@ const CalendarAuthorizedNew: React.FC = () => {
   
   // Use calendar store
   const {
-    events,
-    isLoadingEvents,
+    gridEvents,
+    listEvents,
+    isLoadingListEvents,
     error,
     searchQuery,
     currentMonth,
@@ -19,16 +20,19 @@ const CalendarAuthorizedNew: React.FC = () => {
     setSearchQuery,
     setIsCreating,
     setError,
-    fetchCalendarEvents,
+    fetchGridEvents,
+    fetchListEvents,
     refreshEvents
   } = useCalendarStore()
 
-  // Fetch calendar events when authenticated
+  // Fetch calendar events when authenticated (INITIAL LOAD ONLY)
   useEffect(() => {
     if (isAuthenticated && !authLoading) {
-      fetchCalendarEvents()
+      // Fetch both grid events for current month and list events (upcoming)
+      fetchGridEvents(currentMonth)
+      fetchListEvents()
     }
-  }, [isAuthenticated, authLoading, fetchCalendarEvents])
+  }, [isAuthenticated, authLoading]) // Removed currentMonth, fetchGridEvents, fetchListEvents from deps
 
   return (
     <div className="w-full h-full flex overflow-hidden">
@@ -41,10 +45,10 @@ const CalendarAuthorizedNew: React.FC = () => {
           />
         </div>
         <CalendarEventsList
-          events={events.filter((event) => new Date(event.end) >= new Date())} // Only upcoming events
-          isLoadingEvents={isLoadingEvents}
+          events={listEvents.filter((event) => new Date(event.end) >= new Date())} // Only upcoming events
+          isLoadingEvents={isLoadingListEvents}
           error={error}
-          onRefresh={refreshEvents}
+          onRefresh={fetchListEvents}
           searchQuery={searchQuery}
         />
       </div>
@@ -54,8 +58,8 @@ const CalendarAuthorizedNew: React.FC = () => {
         </div>
         <div id="calendar-grid-container" className="h-[500px] overflow-hidden p-4 box-border">
           <CalendarGrid
-            events={events.map((event) => ({
-              // All events including past ones
+            events={gridEvents.map((event) => ({
+              // Events for the selected month
               ...event,
               start: new Date(event.start),
               end: new Date(event.end)
@@ -69,7 +73,7 @@ const CalendarAuthorizedNew: React.FC = () => {
                 const result = await window.electronAPI.calendar.createEvent(eventData)
 
                 if (result.success) {
-                  // Refresh events list
+                  // Refresh both grid and list events
                   await refreshEvents()
                   return { success: true }
                 } else {
