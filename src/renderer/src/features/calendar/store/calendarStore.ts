@@ -19,6 +19,8 @@ interface CalendarState {
   searchQuery: string
   currentMonth: Date
   isCreating: boolean
+  isInitialized: boolean // Track if calendar has been initialized
+  lastListEventsFetch: number // Timestamp of last list events fetch
 
   // Actions
   setGridEvents: (events: CalendarEvent[]) => void
@@ -28,12 +30,14 @@ interface CalendarState {
   setSearchQuery: (query: string) => void
   setCurrentMonth: (date: Date) => void
   setIsCreating: (creating: boolean) => void
+  setIsInitialized: (initialized: boolean) => void
 
   // Complex actions
   fetchGridEvents: (targetMonth: Date) => Promise<void>
-  fetchListEvents: () => Promise<void>
+  fetchListEvents: (force?: boolean) => Promise<void>
   changeMonth: (newDate: Date) => Promise<void>
   refreshEvents: () => Promise<void>
+  initializeCalendar: () => Promise<void>
 }
 
 export const useCalendarStore = create<CalendarState>((set, get) => ({
@@ -45,6 +49,8 @@ export const useCalendarStore = create<CalendarState>((set, get) => ({
   searchQuery: '',
   currentMonth: new Date(),
   isCreating: false,
+  isInitialized: false,
+  lastListEventsFetch: 0,
 
   // Simple setters
   setGridEvents: (gridEvents) => set({ gridEvents }),
@@ -54,6 +60,7 @@ export const useCalendarStore = create<CalendarState>((set, get) => ({
   setSearchQuery: (searchQuery) => set({ searchQuery }),
   setCurrentMonth: (currentMonth) => set({ currentMonth }),
   setIsCreating: (isCreating) => set({ isCreating }),
+  setIsInitialized: (isInitialized) => set({ isInitialized }),
 
   // Fetch grid events for a specific month
   fetchGridEvents: async (targetMonth: Date) => {
@@ -84,22 +91,35 @@ export const useCalendarStore = create<CalendarState>((set, get) => ({
   },
 
   // Fetch upcoming events for the list (always from today onwards)
-  fetchListEvents: async () => {
+  fetchListEvents: async (force = false) => {
+    const { lastListEventsFetch } = get()
+    const now = Date.now()
+    const fiveMinutes = 5 * 60 * 1000
+
+    // Skip if we fetched recently and not forced
+    if (!force && now - lastListEventsFetch < fiveMinutes) {
+      return
+    }
+
     set({ isLoadingListEvents: true, error: null })
 
     try {
-      const now = new Date()
+      const currentTime = new Date()
       const threeMonthsAhead = new Date()
       threeMonthsAhead.setMonth(threeMonthsAhead.getMonth() + 3)
 
       const result = await window.electronAPI.calendar.getEvents({
         maxResults: 50,
-        timeMin: now.toISOString(),
+        timeMin: currentTime.toISOString(),
         timeMax: threeMonthsAhead.toISOString()
       })
 
       if (result.success) {
-        set({ listEvents: result.events || [], isLoadingListEvents: false })
+        set({
+          listEvents: result.events || [],
+          isLoadingListEvents: false,
+          lastListEventsFetch: now
+        })
       } else {
         set({
           error: result.error || 'Failed to load upcoming events',
@@ -117,13 +137,28 @@ export const useCalendarStore = create<CalendarState>((set, get) => ({
 
   // Change month and fetch grid events only
   changeMonth: async (newDate: Date) => {
-    set({ currentMonth: newDate })
+    set({ currentMonth: newDate, gridEvents: [] }) // Clear grid events immediately
     await get().fetchGridEvents(newDate)
   },
 
   // Refresh both grid and list events (used after creating events)
   refreshEvents: async () => {
     const { currentMonth } = get()
-    await Promise.all([get().fetchGridEvents(currentMonth), get().fetchListEvents()])
+    await Promise.all([get().fetchGridEvents(currentMonth), get().fetchListEvents(true)])
+  },
+
+  // Initialize calendar (called once when visiting calendar)
+  initializeCalendar: async () => {
+    const { isInitialized, currentMonth } = get()
+
+    if (isInitialized) {
+      // Already initialized, just refresh list events if needed
+      await get().fetchListEvents()
+      return
+    }
+
+    // First time initialization
+    set({ isInitialized: true })
+    await Promise.all([get().fetchGridEvents(currentMonth), get().fetchListEvents(true)])
   }
 }))

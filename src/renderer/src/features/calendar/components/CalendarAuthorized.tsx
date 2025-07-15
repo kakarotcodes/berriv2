@@ -20,19 +20,16 @@ const CalendarAuthorizedNew: React.FC = () => {
     setSearchQuery,
     setIsCreating,
     setError,
-    fetchGridEvents,
-    fetchListEvents,
-    refreshEvents
+    refreshEvents,
+    initializeCalendar
   } = useCalendarStore()
 
-  // Fetch calendar events when authenticated (INITIAL LOAD ONLY)
+  // Initialize calendar when authenticated (handles caching automatically)
   useEffect(() => {
     if (isAuthenticated && !authLoading) {
-      // Fetch both grid events for current month and list events (upcoming)
-      fetchGridEvents(currentMonth)
-      fetchListEvents()
+      initializeCalendar()
     }
-  }, [isAuthenticated, authLoading]) // Removed currentMonth, fetchGridEvents, fetchListEvents from deps
+  }, [isAuthenticated, authLoading, initializeCalendar])
 
   return (
     <div className="w-full h-full flex overflow-hidden">
@@ -48,7 +45,7 @@ const CalendarAuthorizedNew: React.FC = () => {
           events={listEvents.filter((event) => new Date(event.end) >= new Date())} // Only upcoming events
           isLoadingEvents={isLoadingListEvents}
           error={error}
-          onRefresh={fetchListEvents}
+          onRefresh={() => useCalendarStore.getState().fetchListEvents(true)}
           searchQuery={searchQuery}
         />
       </div>
