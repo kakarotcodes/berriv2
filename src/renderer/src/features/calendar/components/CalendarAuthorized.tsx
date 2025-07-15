@@ -7,7 +7,7 @@ import { useCalendarStore } from '../store/calendarStore'
 
 const CalendarAuthorizedNew: React.FC = () => {
   const { isAuthenticated, isLoading: authLoading } = useAuth()
-  
+
   // Use calendar store
   const {
     gridEvents,
@@ -16,7 +16,6 @@ const CalendarAuthorizedNew: React.FC = () => {
     error,
     searchQuery,
     currentMonth,
-    isCreating,
     setSearchQuery,
     setIsCreating,
     setError,
