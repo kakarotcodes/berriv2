@@ -1,12 +1,12 @@
 import { Searchbar } from '@/components/shared'
 import React, { useEffect } from 'react'
 import { DateTime } from 'luxon'
-import { useAuth } from '../../../hooks/useAuth'
+import { useAuthStore } from '../../../globalStore/useAuthStore'
 import { CalendarEventsList, CalendarMonthSelector, CalendarGrid } from '.'
 import { useCalendarStore } from '../store/calendarStore'
 
 const CalendarAuthorizedNew: React.FC = () => {
-  const { isAuthenticated, isLoading: authLoading } = useAuth()
+  const { isAuthenticated } = useAuthStore()
 
   // Use calendar store
   const {
@@ -25,10 +25,10 @@ const CalendarAuthorizedNew: React.FC = () => {
 
   // Initialize calendar when authenticated (handles caching automatically)
   useEffect(() => {
-    if (isAuthenticated && !authLoading) {
+    if (isAuthenticated) {
       initializeCalendar()
     }
-  }, [isAuthenticated, authLoading, initializeCalendar])
+  }, [isAuthenticated, initializeCalendar])
 
   return (
     <div className="w-full h-full flex overflow-hidden">

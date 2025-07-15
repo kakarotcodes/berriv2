@@ -3,6 +3,7 @@ import React, { memo, useEffect } from 'react'
 
 // store
 import { useViewStore } from '@/globalStore'
+import { setupAuthListener, useAuthStore } from '@/globalStore/useAuthStore'
 
 // views
 import { DefaultView, PillView, HoverView } from '@/views'
@@ -18,6 +19,14 @@ import { GlobalModal } from '@/components/shared'
  */
 const App = memo(() => {
   const { currentView, isTransitioning, setView } = useViewStore()
+  const { initializeAuth } = useAuthStore()
+
+  // Initialize auth store and setup listener once
+  useEffect(() => {
+    initializeAuth()
+    const cleanup = setupAuthListener()
+    return cleanup
+  }, [initializeAuth])
 
   // Memoized view component mapping
   const viewComponents = React.useMemo(

@@ -1,12 +1,12 @@
 // components/DefaultView.tsx
 import { useViewStore } from '@/globalStore'
+import { useAuthStore } from '@/globalStore/useAuthStore'
 import { useElectron } from '@/hooks/useElectron'
-import { useAuth } from '@/hooks/useAuth'
 
 const DefaultView: React.FC = () => {
   const { setView } = useViewStore()
   const { setMainWindowResizable } = useElectron()
-  const { isAuthenticated, isLoading, error, login, logout } = useAuth()
+  const { isAuthenticated, error, login, logout } = useAuthStore()
 
   const switchToPillView = () => {
     setMainWindowResizable(false)
@@ -39,7 +39,6 @@ const DefaultView: React.FC = () => {
 
           <button
             onClick={handleAuthAction}
-            disabled={isLoading}
             className={`
               px-4 py-2 rounded-md cursor-pointer font-bold transition-colors
               ${
@@ -47,10 +46,9 @@ const DefaultView: React.FC = () => {
                   ? 'bg-red-600 hover:bg-red-700 text-white'
                   : 'bg-blue-600 hover:bg-blue-700 text-slate-100'
               }
-              ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}
             `}
           >
-            {isLoading ? 'Loading...' : isAuthenticated ? 'Sign Out' : 'Sign in with Google'}
+            {isAuthenticated ? 'Sign Out' : 'Sign in with Google'}
           </button>
 
           {isAuthenticated && (
