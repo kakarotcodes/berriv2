@@ -1,136 +1,34 @@
 import { Searchbar } from '@/components/shared'
-import React, { useState, useEffect } from 'react'
+import React, { useEffect } from 'react'
+import { DateTime } from 'luxon'
 import { useAuth } from '../../../hooks/useAuth'
-import { CalendarEventsList, CalendarEventForm, CalendarDateSelector, CalendarGrid } from '.'
-
-interface CalendarEvent {
-  id: string
-  title: string
-  start: string
-  end: string
-  description?: string
-  location?: string
-  htmlLink?: string
-}
+import { CalendarEventsList, CalendarMonthSelector, CalendarGrid } from '.'
+import { useCalendarStore } from '../store/calendarStore'
 
 const CalendarAuthorizedNew: React.FC = () => {
   const { isAuthenticated, isLoading: authLoading } = useAuth()
-  const [events, setEvents] = useState<CalendarEvent[]>([])
-  const [isLoadingEvents, setIsLoadingEvents] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [searchQuery, setSearchQuery] = useState<string>('')
-
-  // Form state
-  const [eventType, setEventType] = useState<'event' | 'meeting'>('event')
-  const [eventForm, setEventForm] = useState({
-    title: '',
-    date: new Date().toISOString().split('T')[0],
-    startTime: '09:00',
-    endTime: '10:00',
-    description: '',
-    location: '',
-    attendees: ''
-  })
-  const [isCreating, setIsCreating] = useState(false)
-
-  // Month navigation state
+  
+  // Use calendar store
+  const {
+    events,
+    isLoadingEvents,
+    error,
+    searchQuery,
+    currentMonth,
+    isCreating,
+    setSearchQuery,
+    setIsCreating,
+    setError,
+    fetchCalendarEvents,
+    refreshEvents
+  } = useCalendarStore()
 
   // Fetch calendar events when authenticated
   useEffect(() => {
     if (isAuthenticated && !authLoading) {
       fetchCalendarEvents()
     }
-  }, [isAuthenticated, authLoading])
-
-  const fetchCalendarEvents = async () => {
-    setIsLoadingEvents(true)
-    setError(null)
-
-    try {
-      // Fetch events from 3 months ago to 3 months ahead for calendar grid
-      const threeMonthsAgo = new Date()
-      threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3)
-      
-      const threeMonthsAhead = new Date()
-      threeMonthsAhead.setMonth(threeMonthsAhead.getMonth() + 3)
-
-      const result = await window.electronAPI.calendar.getEvents({
-        maxResults: 100, // Increased to get more events
-        timeMin: threeMonthsAgo.toISOString(),
-        timeMax: threeMonthsAhead.toISOString()
-      })
-
-      if (result.success) {
-        setEvents(result.events || [])
-      } else {
-        setError(result.error || 'Failed to load calendar events')
-      }
-    } catch (err) {
-      console.error('Error fetching calendar events:', err)
-      setError('Failed to load calendar events')
-    } finally {
-      setIsLoadingEvents(false)
-    }
-  }
-
-  const handleCreateEvent = async () => {
-    if (!eventForm.title.trim()) return
-
-    setIsCreating(true)
-    setError(null)
-
-    try {
-      // Combine date and time for start/end
-      const startDateTime = `${eventForm.date}T${eventForm.startTime}:00`
-      const endDateTime = `${eventForm.date}T${eventForm.endTime}:00`
-
-      // Prepare event data
-      const eventData = {
-        title: eventForm.title,
-        start: startDateTime,
-        end: endDateTime,
-        description:
-          eventType === 'meeting'
-            ? `${eventForm.description ? eventForm.description + '\n\n' : ''}Meeting scheduled via Berri`
-            : eventForm.description,
-        location: eventForm.location,
-        attendees: eventForm.attendees
-          ? eventForm.attendees
-              .split(',')
-              .map((email) => email.trim())
-              .filter((email) => email)
-          : []
-      }
-
-      const result = await window.electronAPI.calendar.createEvent(eventData)
-
-      if (result.success) {
-        // Reset form after successful creation
-        setEventForm({
-          title: '',
-          date: new Date().toISOString().split('T')[0],
-          startTime: '09:00',
-          endTime: '10:00',
-          description: '',
-          location: '',
-          attendees: ''
-        })
-
-        // Refresh events list
-        await fetchCalendarEvents()
-
-        // Show success message
-        console.log('Event created successfully:', result.event)
-      } else {
-        setError(result.error || 'Failed to create event')
-      }
-    } catch (err) {
-      console.error('Error creating event:', err)
-      setError('Failed to create event')
-    } finally {
-      setIsCreating(false)
-    }
-  }
+  }, [isAuthenticated, authLoading, fetchCalendarEvents])
 
   return (
     <div className="w-full h-full flex overflow-hidden">
@@ -146,13 +44,13 @@ const CalendarAuthorizedNew: React.FC = () => {
           events={events.filter((event) => new Date(event.end) >= new Date())} // Only upcoming events
           isLoadingEvents={isLoadingEvents}
           error={error}
-          onRefresh={fetchCalendarEvents}
+          onRefresh={refreshEvents}
           searchQuery={searchQuery}
         />
       </div>
       <div className="w-2/3 h-full flex flex-col min-h-0">
         <div className="h-14 bg-black/40 flex items-center">
-          <CalendarDateSelector />
+          <CalendarMonthSelector />
         </div>
         <div id="calendar-grid-container" className="h-[500px] overflow-hidden p-4 box-border">
           <CalendarGrid
@@ -162,6 +60,7 @@ const CalendarAuthorizedNew: React.FC = () => {
               start: new Date(event.start),
               end: new Date(event.end)
             }))}
+            selectedDate={DateTime.fromJSDate(currentMonth)}
             onEventCreate={async (eventData) => {
               setIsCreating(true)
               setError(null)
@@ -171,7 +70,7 @@ const CalendarAuthorizedNew: React.FC = () => {
 
                 if (result.success) {
                   // Refresh events list
-                  await fetchCalendarEvents()
+                  await refreshEvents()
                   return { success: true }
                 } else {
                   return { success: false, error: result.error || 'Failed to create event' }

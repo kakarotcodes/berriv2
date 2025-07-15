@@ -1,25 +1,21 @@
 // dependencies
-import React, { useState } from 'react'
+import React from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { DateTime } from 'luxon'
+import { useCalendarStore } from '../store/calendarStore'
 
-interface CalendarDateSelectorProps {
-  onDateChange?: (date: DateTime) => void
-}
+const CalendarMonthSelector: React.FC = () => {
+  const { currentMonth, changeMonth } = useCalendarStore()
+  const currentDate = DateTime.fromJSDate(currentMonth)
 
-const CalendarDateSelector: React.FC<CalendarDateSelectorProps> = ({ onDateChange }) => {
-  const [currentDate, setCurrentDate] = useState(DateTime.now())
-
-  const handlePreviousMonth = () => {
+  const handlePreviousMonth = async () => {
     const newDate = currentDate.minus({ months: 1 }).startOf('month')
-    setCurrentDate(newDate)
-    onDateChange?.(newDate)
+    await changeMonth(newDate.toJSDate())
   }
 
-  const handleNextMonth = () => {
+  const handleNextMonth = async () => {
     const newDate = currentDate.plus({ months: 1 }).startOf('month')
-    setCurrentDate(newDate)
-    onDateChange?.(newDate)
+    await changeMonth(newDate.toJSDate())
   }
 
   const formatMonth = (date: DateTime) => {
@@ -49,4 +45,4 @@ const CalendarDateSelector: React.FC<CalendarDateSelectorProps> = ({ onDateChang
   )
 }
 
-export default CalendarDateSelector
+export default CalendarMonthSelector
