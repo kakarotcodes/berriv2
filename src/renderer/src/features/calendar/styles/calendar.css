@@ -127,3 +127,32 @@
 .calendar-grid-container .rbc-now {
   color: #fff;
 }
+
+.rbc-show-more {
+  background: transparent !important;
+  color: #0a84ff !important;
+  font-weight: 400 !important;
+  font-size: 12px !important;
+  padding-top: 2px !important;
+}
+
+.rbc-show-more:focus {
+  outline: none !important;
+}
+
+.rbc-overlay {
+  background: #0f172a !important;
+  border: none !important;
+  border-radius: 6px !important;
+  row-gap: 4px !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.rbc-overlay-header {
+  display: none !important;
+}
+
+.rbc-button-link:focus {
+  outline: 1px solid rgb(169, 169, 169) !important;
+}

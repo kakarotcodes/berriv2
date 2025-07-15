@@ -27,7 +27,7 @@ const CalendarDateSelector: React.FC<CalendarDateSelectorProps> = ({ onDateChang
   }
 
   return (
-    <div className="flex items-center gap-x-2 px-4">
+    <div className="flex items-center gap-x-2">
       <button
         className="text-gray-400 hover:text-white/70 rounded transition-colors"
         title="Previous month"

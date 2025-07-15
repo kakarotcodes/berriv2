@@ -26,30 +26,20 @@ const CalendarEventsList: React.FC<CalendarEventsListProps> = ({
   onRefresh,
   searchQuery
 }) => {
-  // Generate 100 dummy events for testing
-  const dummyEvents = Array.from({ length: 100 }, (_, i) => ({
-    id: `dummy-${i}`,
-    title: `Test Event ${i + 1}`,
-    start: new Date(Date.now() + i * 60 * 60 * 1000).toISOString(),
-    end: new Date(Date.now() + (i + 1) * 60 * 60 * 1000).toISOString(),
-    description: `This is a test event number ${i + 1}`,
-    location: i % 3 === 0 ? `Location ${i + 1}` : undefined
-  }))
-
-  // Use dummy data instead of real events for testing
-  const testEvents = dummyEvents
+  // Use real events passed from parent component
+  const realEvents = events
 
   // Filter events based on search query
   const filteredEvents =
     searchQuery && searchQuery.trim()
-      ? testEvents.filter(
+      ? realEvents.filter(
           (event) =>
             event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
             (event.description &&
               event.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
             (event.location && event.location.toLowerCase().includes(searchQuery.toLowerCase()))
         )
-      : testEvents
+      : realEvents
 
   const formatEventTime = (startString: string, endString: string) => {
     const start = new Date(startString)

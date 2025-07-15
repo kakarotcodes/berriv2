@@ -18,7 +18,7 @@ const CalendarAuthorizedNew: React.FC = () => {
   const [events, setEvents] = useState<CalendarEvent[]>([])
   const [isLoadingEvents, setIsLoadingEvents] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [searchQuery, setSearchQuery] = useState('')
+  const [searchQuery, setSearchQuery] = useState<string>('')
 
   // Form state
   const [eventType, setEventType] = useState<'event' | 'meeting'>('event')
@@ -132,7 +132,11 @@ const CalendarAuthorizedNew: React.FC = () => {
     <div className="w-full h-full flex overflow-hidden">
       <div className="w-1/3 h-full flex flex-col min-h-0">
         <div className="h-14 bg-black/40 px-4 flex items-center">
-          <Searchbar placeholder="Search events" />
+          <Searchbar
+            placeholder="Search events"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
         <CalendarEventsList
           events={events}
@@ -147,7 +151,13 @@ const CalendarAuthorizedNew: React.FC = () => {
           <CalendarDateSelector />
         </div>
         <div id="calendar-grid-container" className="h-[500px] overflow-hidden p-4 box-border">
-          <CalendarGrid />
+          <CalendarGrid
+            events={events.map((event) => ({
+              ...event,
+              start: new Date(event.start),
+              end: new Date(event.end)
+            }))}
+          />
         </div>
       </div>
     </div>
