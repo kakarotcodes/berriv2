@@ -8,6 +8,8 @@ import {
   Event as RBCEvent
 } from 'react-big-calendar'
 import { DateTime } from 'luxon'
+import { useModal } from '@/hooks/useModal'
+import ModalEventForm from './ModalEventForm'
 import 'react-big-calendar/lib/css/react-big-calendar.css'
 
 const localizer: DateLocalizer = luxonLocalizer(DateTime)
@@ -27,7 +29,14 @@ export interface CalendarGridProps {
   selectedDate?: DateTime
   onDateChange?: (date: DateTime) => void
   onEventSelect?: (event: CalendarEvent) => void
-  onEventCreate?: (event: Partial<CalendarEvent>) => void
+  onEventCreate?: (eventData: {
+    title: string
+    start: string
+    end: string
+    description: string
+    location: string
+    attendees: string[]
+  }) => Promise<{ success: boolean; error?: string }>
 }
 
 /* ——— component ——— */
@@ -39,6 +48,7 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
   onEventCreate
 }) => {
   const [view, setView] = useState(Views.MONTH)
+  const { openModal } = useModal()
 
   /* navigation / interactions */
   const handleNavigate = useCallback(
@@ -47,8 +57,22 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
   )
   const handleSelectEvent = useCallback((e: CalendarEvent) => onEventSelect?.(e), [onEventSelect])
   const handleSelectSlot = useCallback(
-    ({ start, end }: SlotInfo) => onEventCreate?.({ title: 'New Event', start, end }),
-    [onEventCreate]
+    ({ start }: SlotInfo) => {
+      // Open modal with the selected date
+      openModal(
+        <ModalEventForm
+          selectedDate={start}
+          onCreateEvent={
+            onEventCreate || (async () => ({ success: false, error: 'No create handler' }))
+          }
+        />,
+        {
+          shouldCloseOnOverlayClick: true,
+          shouldCloseOnEsc: true
+        }
+      )
+    },
+    [openModal, onEventCreate]
   )
 
   /* day styling */

@@ -36,6 +36,7 @@
 }
 .calendar-grid-container .rbc-day-bg + .rbc-day-bg {
   border-left: 0.5px solid rgba(255, 255, 255, 0.2);
+  cursor: pointer;
 }
 
 .calendar-grid-container .rbc-month-row:first-of-type,

@@ -10,6 +10,9 @@ import { DefaultView, PillView, HoverView } from '@/views'
 // providers
 import { ThemeProvider } from '@/components/providers'
 
+// components
+import { GlobalModal } from '@/components/shared'
+
 /**
  * OverlayContainer - With all animations removed
  */
@@ -65,6 +68,7 @@ const App = memo(() => {
     return (
       <ThemeProvider>
         <main className="w-screen h-screen relative frosted-glass-base frosted-glass-main"></main>
+        <GlobalModal />
       </ThemeProvider>
     )
   }
@@ -75,6 +79,7 @@ const App = memo(() => {
       <main className="w-screen h-screen frosted-glass-base frosted-glass-main">
         {React.createElement(viewComponents[currentView])}
       </main>
+      <GlobalModal />
     </ThemeProvider>
   )
 })

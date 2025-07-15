@@ -157,6 +157,27 @@ const CalendarAuthorizedNew: React.FC = () => {
               start: new Date(event.start),
               end: new Date(event.end)
             }))}
+            onEventCreate={async (eventData) => {
+              setIsCreating(true)
+              setError(null)
+
+              try {
+                const result = await window.electronAPI.calendar.createEvent(eventData)
+
+                if (result.success) {
+                  // Refresh events list
+                  await fetchCalendarEvents()
+                  return { success: true }
+                } else {
+                  return { success: false, error: result.error || 'Failed to create event' }
+                }
+              } catch (err) {
+                console.error('Error creating event:', err)
+                return { success: false, error: 'Failed to create event' }
+              } finally {
+                setIsCreating(false)
+              }
+            }}
           />
         </div>
       </div>

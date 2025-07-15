@@ -81,6 +81,15 @@ const CalendarEventsList: React.FC<CalendarEventsListProps> = ({
     return eventDate === today
   }
 
+  const formatEventCardDate = (dateString: string) => {
+    const date = new Date(dateString)
+    return date.toLocaleDateString('en-GB', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    })
+  }
+
   // Group events by date
   const groupedEvents = filteredEvents.reduce(
     (groups, event) => {
@@ -119,7 +128,10 @@ const CalendarEventsList: React.FC<CalendarEventsListProps> = ({
                   }`}
                 >
                   <div className="font-medium text-white text-sm mb-1">{event.title}</div>
-                  <div className="text-xs text-gray-400">
+                  <div className="text-xs text-gray-500 mb-0.5">
+                    {formatEventCardDate(event.start)}
+                  </div>
+                  <div className="text-[11px] text-gray-400">
                     {formatEventTime(event.start, event.end)}
                   </div>
                   {event.location && (

@@ -140,7 +140,7 @@ With space-separated RGB values, you can use opacity modifiers:
 ### Theme Store Usage
 
 ```tsx
-import { useThemeStore } from '@/stores/themeStore'
+import { useThemeStore } from '@/globalStore'
 
 function MyComponent() {
   const { mode, resolvedTheme, setMode, toggleTheme } = useThemeStore()
