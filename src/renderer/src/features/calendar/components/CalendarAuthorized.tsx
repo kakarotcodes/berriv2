@@ -13,7 +13,7 @@ interface CalendarEvent {
   htmlLink?: string
 }
 
-const CalendarAutorizedNew: React.FC = () => {
+const CalendarAuthorizedNew: React.FC = () => {
   const { isAuthenticated, isLoading: authLoading } = useAuth()
   const [events, setEvents] = useState<CalendarEvent[]>([])
   const [isLoadingEvents, setIsLoadingEvents] = useState(false)
@@ -132,7 +132,7 @@ const CalendarAutorizedNew: React.FC = () => {
     <div className="w-full h-full flex overflow-hidden">
       <div className="w-1/3 h-full flex flex-col min-h-0">
         <div className="h-14 bg-black/40 px-4 flex items-center">
-          <Searchbar />
+          <Searchbar placeholder="Search events" />
         </div>
         <CalendarEventsList
           events={events}
@@ -146,7 +146,7 @@ const CalendarAutorizedNew: React.FC = () => {
         <div className="h-14 bg-black/40 flex items-center">
           <CalendarDateSelector />
         </div>
-        <div id="calendar-grid-container" className="h-[70%] overflow-hidden p-4 box-border">
+        <div id="calendar-grid-container" className="h-[500px] overflow-hidden p-4 box-border">
           <CalendarGrid />
         </div>
       </div>
@@ -154,4 +154,4 @@ const CalendarAutorizedNew: React.FC = () => {
   )
 }
 
-export default CalendarAutorizedNew
+export default CalendarAuthorizedNew

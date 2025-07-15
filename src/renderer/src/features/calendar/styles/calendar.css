@@ -44,7 +44,7 @@
 }
 
 .calendar-grid-container .rbc-date-cell {
-  padding: 4px 6px;
+  padding: 5px 7px;
   font:
     600 13px/1.2 'Inter',
     -apple-system,
@@ -101,4 +101,29 @@
 }
 .calendar-grid-container .rbc-now {
   background: none !important;
+}
+
+.calendar-grid-container .rbc-now .rbc-button-link {
+  position: relative;
+  z-index: 1;
+  color: #e2e8f0;
+  font-weight: 700;
+}
+
+.calendar-grid-container .rbc-now .rbc-button-link::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 25px;
+  height: 25px;
+  transform: translate(-50%, -50%);
+  background: #b91c1c;
+  border-radius: 50%;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.calendar-grid-container .rbc-now {
+  color: #fff;
 }

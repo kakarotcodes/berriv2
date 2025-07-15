@@ -9,7 +9,6 @@ import {
 } from 'react-big-calendar'
 import { DateTime } from 'luxon'
 import 'react-big-calendar/lib/css/react-big-calendar.css'
-// import '../styles/calendar.css' // ← add this import
 
 const localizer: DateLocalizer = luxonLocalizer(DateTime)
 
@@ -95,7 +94,7 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
         onSelectSlot={handleSelectSlot}
         dayPropGetter={dayPropGetter}
         eventPropGetter={eventPropGetter}
-        style={{ height: '100%', background: 'transparent', color: 'white' }}
+        style={{ height: '375px', width: '100%', background: 'transparent', color: 'white' }}
       />
     </div>
   )
