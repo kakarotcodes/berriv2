@@ -1,0 +1,99 @@
+.calendar-grid-container .rbc-month-view {
+  position: relative;
+  background: transparent !important;
+  border: 0.5px solid rgba(255, 255, 255, 0.5) !important;
+  border-radius: 6px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.calendar-grid-container .rbc-month-view::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 0.5px;
+  background: rgba(255, 255, 255, 0.4);
+  pointer-events: none;
+}
+
+.calendar-grid-container .rbc-month-header {
+  border-top: 0.5px solid rgba(255, 255, 255, 0.4);
+  border-bottom: none !important;
+}
+.calendar-grid-container .rbc-month-header .rbc-header + .rbc-header {
+  border-left: 0.5px solid rgba(255, 255, 255, 0.4);
+}
+
+.calendar-grid-container .rbc-month-row + .rbc-month-row {
+  border-top: 0.5px solid rgba(255, 255, 255, 0.4);
+}
+.calendar-grid-container .rbc-day-bg + .rbc-day-bg {
+  border-left: 0.5px solid rgba(255, 255, 255, 0.4);
+}
+
+.calendar-grid-container .rbc-month-row:first-of-type,
+.calendar-grid-container .rbc-month-row:first-of-type .rbc-day-bg {
+  border-top: none !important;
+}
+
+.calendar-grid-container .rbc-date-cell {
+  padding: 4px 6px;
+  font:
+    600 13px/1.2 'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+}
+
+.rbc-day-bg {
+  background: #3a3a3b;
+}
+
+.calendar-grid-container .rbc-in-range {
+  background: transparent !important;
+}
+
+.calendar-grid-container .rbc-today > div:first-child {
+  position: relative;
+}
+.calendar-grid-container .rbc-today > div:first-child::after {
+  content: attr(data-testid);
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  width: 20px;
+  height: 20px;
+  margin: auto;
+  background: #ff3b30;
+  color: #fff;
+  border-radius: 50%;
+  font: 700 13px/1 system-ui;
+}
+
+.calendar-grid-container .rbc-event {
+  background: #0a84ff !important;
+  border: none !important;
+  border-radius: 6px !important;
+  padding-inline: 4px !important;
+  font:
+    500 14px/20px 'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+  color: #fff !important;
+}
+
+.calendar-grid-container .rbc-month-row,
+.calendar-grid-container .rbc-month-row * {
+  box-sizing: border-box;
+}
+.calendar-grid-container .rbc-now {
+  background: none !important;
+}

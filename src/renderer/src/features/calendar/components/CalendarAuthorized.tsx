@@ -1,7 +1,7 @@
 import { Searchbar } from '@/components/shared'
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '../../../hooks/useAuth'
-import { CalendarEventsList, CalendarEventForm, CalendarDateSelector } from '.'
+import { CalendarEventsList, CalendarEventForm, CalendarDateSelector, CalendarGrid } from '.'
 
 interface CalendarEvent {
   id: string
@@ -129,8 +129,8 @@ const CalendarAutorizedNew: React.FC = () => {
   }
 
   return (
-    <div className="w-full h-full flex">
-      <div className="w-1/3 h-full flex flex-col">
+    <div className="w-full h-full flex overflow-hidden">
+      <div className="w-1/3 h-full flex flex-col min-h-0">
         <div className="h-14 bg-black/40 px-4 flex items-center">
           <Searchbar />
         </div>
@@ -142,20 +142,12 @@ const CalendarAutorizedNew: React.FC = () => {
           searchQuery={searchQuery}
         />
       </div>
-      <div className="w-2/3 h-full flex flex-col">
+      <div className="w-2/3 h-full flex flex-col min-h-0">
         <div className="h-14 bg-black/40 flex items-center">
           <CalendarDateSelector />
         </div>
-        <div className="flex-1 p-4">
-          <CalendarEventForm
-            eventType={eventType}
-            eventForm={eventForm}
-            isCreating={isCreating}
-            error={error}
-            onEventTypeChange={setEventType}
-            onFormChange={setEventForm}
-            onCreateEvent={handleCreateEvent}
-          />
+        <div id="calendar-grid-container" className="h-[70%] overflow-hidden p-4 box-border">
+          <CalendarGrid />
         </div>
       </div>
     </div>
