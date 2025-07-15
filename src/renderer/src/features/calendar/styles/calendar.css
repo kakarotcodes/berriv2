@@ -1,7 +1,7 @@
 .calendar-grid-container .rbc-month-view {
   position: relative;
   background: transparent !important;
-  border: 0.5px solid rgba(255, 255, 255, 0.5) !important;
+  border: 0.5px solid rgba(255, 255, 255, 0.2) !important;
   border-radius: 6px;
   box-sizing: border-box;
   overflow: hidden;
@@ -14,28 +14,28 @@
   right: 0;
   bottom: 0;
   width: 0.5px;
-  background: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.2);
   pointer-events: none;
 }
 
 .calendar-grid-container .rbc-month-header {
-  border-top: 0.5px solid rgba(255, 255, 255, 0.4);
+  border-top: 0.5px solid rgba(255, 255, 255, 0.2);
   border-bottom: none !important;
 }
 .calendar-grid-container .rbc-month-header .rbc-header + .rbc-header {
-  border-left: 0.5px solid rgba(255, 255, 255, 0.4);
+  border-left: 0.5px solid rgba(255, 255, 255, 0.2);
 }
 
 .rbc-header {
-  border: 0.5px solid rgba(255, 255, 255, 0.4) !important;
+  border: 0.5px solid rgba(255, 255, 255, 0.2) !important;
   background-color: rgba(0, 0, 0, 0.4);
 }
 
 .calendar-grid-container .rbc-month-row + .rbc-month-row {
-  border-top: 0.5px solid rgba(255, 255, 255, 0.4);
+  border-top: 0.5px solid rgba(255, 255, 255, 0.2);
 }
 .calendar-grid-container .rbc-day-bg + .rbc-day-bg {
-  border-left: 0.5px solid rgba(255, 255, 255, 0.4);
+  border-left: 0.5px solid rgba(255, 255, 255, 0.2);
 }
 
 .calendar-grid-container .rbc-month-row:first-of-type,
@@ -55,7 +55,7 @@
 }
 
 .rbc-day-bg {
-  background: #3a3a3b;
+  background: #3a3a3b !important;
 }
 
 .calendar-grid-container .rbc-in-range {
