@@ -26,6 +26,11 @@
   border-left: 0.5px solid rgba(255, 255, 255, 0.4);
 }
 
+.rbc-header {
+  border: 0.5px solid rgba(255, 255, 255, 0.4) !important;
+  background-color: rgba(0, 0, 0, 0.4);
+}
+
 .calendar-grid-container .rbc-month-row + .rbc-month-row {
   border-top: 0.5px solid rgba(255, 255, 255, 0.4);
 }
