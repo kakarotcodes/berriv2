@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { useAuth } from '../../../hooks/useAuth'
 import { CalendarEventsList, CalendarEventForm } from '.'
 
 interface CalendarEvent {
@@ -11,7 +12,12 @@ interface CalendarEvent {
   htmlLink?: string
 }
 
-const CalendarAuthorized: React.FC = () => {
+interface CalendarAuthorizedProps {
+  searchQuery: string
+}
+
+const CalendarAuthorized: React.FC<CalendarAuthorizedProps> = ({ searchQuery }) => {
+  const { isAuthenticated, isLoading: authLoading } = useAuth()
   const [events, setEvents] = useState<CalendarEvent[]>([])
   const [isLoadingEvents, setIsLoadingEvents] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -29,10 +35,12 @@ const CalendarAuthorized: React.FC = () => {
   })
   const [isCreating, setIsCreating] = useState(false)
 
-  // Fetch calendar events on component mount
+  // Fetch calendar events when authenticated
   useEffect(() => {
-    fetchCalendarEvents()
-  }, [])
+    if (isAuthenticated && !authLoading) {
+      fetchCalendarEvents()
+    }
+  }, [isAuthenticated, authLoading])
 
   const fetchCalendarEvents = async () => {
     setIsLoadingEvents(true)
@@ -121,14 +129,17 @@ const CalendarAuthorized: React.FC = () => {
   }
 
   return (
-    <div className="w-[550px] h-[450px]">
-      <div className="flex h-full space-x-4">
+    <div className="w-full h-full flex">
+      <div className="w-1/3 h-full border-r-[1px] border-white/20 flex flex-col">
         <CalendarEventsList
           events={events}
           isLoadingEvents={isLoadingEvents}
           error={error}
           onRefresh={fetchCalendarEvents}
+          searchQuery={searchQuery}
         />
+      </div>
+      <div className="w-2/3 h-full p-4">
         <CalendarEventForm
           eventType={eventType}
           eventForm={eventForm}
