@@ -23,7 +23,6 @@ const CalendarEventsList: React.FC<CalendarEventsListProps> = ({
   events,
   isLoadingEvents,
   error,
-  onRefresh,
   searchQuery
 }) => {
   // Use real events passed from parent component
@@ -75,11 +74,11 @@ const CalendarEventsList: React.FC<CalendarEventsListProps> = ({
     }
   }
 
-  const isToday = (dateString: string) => {
-    const eventDate = new Date(dateString).toDateString()
-    const today = new Date().toDateString()
-    return eventDate === today
-  }
+  // const isToday = (dateString: string) => {
+  //   const eventDate = new Date(dateString).toDateString()
+  //   const today = new Date().toDateString()
+  //   return eventDate === today
+  // }
 
   const formatEventCardDate = (dateString: string) => {
     const date = new Date(dateString)
@@ -138,42 +137,46 @@ const CalendarEventsList: React.FC<CalendarEventsListProps> = ({
           {searchQuery && searchQuery.trim() ? 'No events found' : 'No upcoming events'}
         </div>
       ) : (
-        Object.entries(groupedEvents).map(([dateKey, dateEvents]) => (
-          <div key={dateKey} className="mb-8 last:mb-0">
-            <div className="text-xs uppercase tracking-wider text-white px-1 mb-4">{dateKey}</div>
-            <div className="flex flex-col">
-              {dateEvents.map((event, idx) => (
-                <div
-                  key={event.id}
-                  className={`bg-white/5 rounded-lg p-3 border border-white/10 relative ${idx < dateEvents.length - 1 ? 'mb-3' : ''}`}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="font-medium text-white text-sm mb-1">{event.title}</div>
-                      <div className="text-xs text-gray-500 mb-0.5">
-                        {formatEventCardDate(event.start)}
-                      </div>
-                      <div className="text-[11px] text-gray-400">
-                        {formatEventTime(event.start, event.end)}
-                      </div>
-                      {cleanLocationText(event.location) && (
-                        <div className="text-xs text-gray-500 mt-1">
-                          {cleanLocationText(event.location)}
+        <div>
+          <p>Upcoming Events</p>
+          <div className="w-full h-5" />
+          {Object.entries(groupedEvents).map(([dateKey, dateEvents]) => (
+            <div key={dateKey} className="mb-8 last:mb-0">
+              <div className="text-xs uppercase tracking-wider text-white px-1 mb-4">{dateKey}</div>
+              <div className="flex flex-col">
+                {dateEvents.map((event, idx) => (
+                  <div
+                    key={event.id}
+                    className={`bg-white/5 rounded-lg p-3 border border-white/10 relative ${idx < dateEvents.length - 1 ? 'mb-3' : ''}`}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="font-medium text-white text-sm mb-1">{event.title}</div>
+                        <div className="text-xs text-gray-500 mb-0.5">
+                          {formatEventCardDate(event.start)}
                         </div>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2 ml-2">
-                      {isMeeting(event) && <VideoIcon className="w-4 h-4 text-gray-400" />}
-                      {!hasEventEnded(event) && (
-                        <EditIcon className="w-4 h-4 text-gray-400 hover:text-white cursor-pointer" />
-                      )}
+                        <div className="text-[11px] text-gray-400">
+                          {formatEventTime(event.start, event.end)}
+                        </div>
+                        {cleanLocationText(event.location) && (
+                          <div className="text-xs text-gray-500 mt-1">
+                            {cleanLocationText(event.location)}
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 ml-2">
+                        {isMeeting(event) && <VideoIcon className="w-4 h-4 text-gray-400" />}
+                        {!hasEventEnded(event) && (
+                          <EditIcon className="w-4 h-4 text-gray-400 hover:text-white cursor-pointer" />
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
-        ))
+          ))}
+        </div>
       )}
     </div>
   )
