@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react'
-import { X } from 'lucide-react'
+import { X, CalendarIcon, VideoIcon } from 'lucide-react'
 import { useModal } from '@/hooks/useModal'
-import CalendarEventForm from './CalendarEventForm'
+import AddEventForm from './AddEventForm'
+import AddMeetingForm from './AddMeetingForm'
 
 interface ModalEventFormProps {
   selectedDate?: Date
@@ -15,10 +16,7 @@ interface ModalEventFormProps {
   }) => Promise<{ success: boolean; error?: string }>
 }
 
-const ModalEventForm: React.FC<ModalEventFormProps> = ({
-  selectedDate,
-  onCreateEvent
-}) => {
+const ModalEventForm: React.FC<ModalEventFormProps> = ({ selectedDate, onCreateEvent }) => {
   const { closeModal } = useModal()
   const [eventType, setEventType] = useState<'event' | 'meeting'>('event')
   const [isCreating, setIsCreating] = useState(false)
@@ -45,7 +43,7 @@ const ModalEventForm: React.FC<ModalEventFormProps> = ({
   // Update form date when selectedDate changes
   useEffect(() => {
     if (selectedDate) {
-      setEventForm(prev => ({
+      setEventForm((prev) => ({
         ...prev,
         date: formatDateForInput(selectedDate)
       }))
@@ -97,11 +95,11 @@ const ModalEventForm: React.FC<ModalEventFormProps> = ({
   }
 
   return (
-    <div className="bg-gray-900/95 backdrop-blur-xl border border-white/20 rounded-lg shadow-2xl overflow-hidden max-w-md w-full mx-4">
+    <div className="bg-stone-900 backdrop-blur-xl border border-white/20 rounded-lg shadow-2xl overflow-hidden w-[28rem] sm:w-[32rem] mx-4">
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-white/10">
         <h2 className="text-lg font-semibold text-white">
-          {eventType === 'event' ? 'Add New Event' : 'Schedule New Meeting'}
+          {eventType === 'event' ? 'New Event' : 'New Meeting'}
         </h2>
         <button
           onClick={closeModal}
@@ -114,15 +112,52 @@ const ModalEventForm: React.FC<ModalEventFormProps> = ({
 
       {/* Content */}
       <div className="p-4">
-        <CalendarEventForm
-          eventType={eventType}
-          eventForm={eventForm}
-          isCreating={isCreating}
-          error={error}
-          onEventTypeChange={setEventType}
-          onFormChange={setEventForm}
-          onCreateEvent={handleCreateEvent}
-        />
+        {/* Event Type Switcher */}
+        <div className="flex mb-4 bg-white/5 rounded-lg p-1 border border-white/10">
+          <button
+            onClick={() => setEventType('event')}
+            className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+              eventType === 'event'
+                ? 'bg-white/10 text-white shadow-sm'
+                : 'text-gray-400 hover:text-white hover:bg-white/5'
+            }`}
+          >
+            <CalendarIcon className="w-4 h-4" />
+            New Event
+          </button>
+          <button
+            onClick={() => setEventType('meeting')}
+            className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+              eventType === 'meeting'
+                ? 'bg-white/10 text-white shadow-sm'
+                : 'text-gray-400 hover:text-white hover:bg-white/5'
+            }`}
+          >
+            <VideoIcon className="w-4 h-4" />
+            New Meeting
+          </button>
+        </div>
+
+        {/* Render appropriate form based on eventType */}
+        <div>
+          {eventType === 'event' ? (
+            <AddEventForm
+              eventForm={eventForm}
+              isCreating={isCreating}
+              error={error}
+              onFormChange={setEventForm}
+              onCreateEvent={handleCreateEvent}
+            />
+          ) : (
+            <AddMeetingForm
+              eventForm={eventForm}
+              isCreating={isCreating}
+              error={error}
+              onFormChange={setEventForm}
+              onCreateEvent={handleCreateEvent}
+            />
+          )}
+        </div>
       </div>
     </div>
   )
