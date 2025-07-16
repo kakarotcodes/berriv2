@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect } from 'react'
 // icons
 import DragHandle from '@/assets/icons/drag-handle.svg?react'
 import { ChevronDownIcon } from '@heroicons/react/24/outline'
+import { Mic } from 'lucide-react'
 
 // hooks
 import { useElectron } from '@/hooks/useElectron'
@@ -68,6 +69,15 @@ const PillLayout: React.FC<PillLayoutProps> = ({ children }) => {
       <div id="drag-handle" className="flex items-center justify-center">
         <DragHandle className="w-5 h-5" />
       </div>
+      <button
+        id="microphone-button"
+        className="w-full flex items-center justify-center py-2"
+        onClick={() => {
+          console.log('Microphone button clicked')
+        }}
+      >
+        <Mic className="w-4 h-4 bg-gradient-to-br from-red-400/30 to-blue-400/30 rounded-full p-1 w-6 h-6 hover:from-red-400/50 hover:to-blue-400/50 transition-all duration-200" />
+      </button>
       <div className="w-full h-full flex flex-col gap-y-5 overflow-y-scroll py-2 px-1 hide-scrollbar">
         {children}
       </div>
