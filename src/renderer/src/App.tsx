@@ -3,6 +3,7 @@ import React, { memo, useEffect } from 'react'
 
 // store
 import { useViewStore } from '@/globalStore'
+import { setupAuthListener, useAuthStore } from '@/globalStore/useAuthStore'
 
 // views
 import { DefaultView, PillView, HoverView } from '@/views'
@@ -10,11 +11,22 @@ import { DefaultView, PillView, HoverView } from '@/views'
 // providers
 import { ThemeProvider } from '@/components/providers'
 
+// components
+import { GlobalModal } from '@/components/shared'
+
 /**
  * OverlayContainer - With all animations removed
  */
 const App = memo(() => {
   const { currentView, isTransitioning, setView } = useViewStore()
+  const { initializeAuth } = useAuthStore()
+
+  // Initialize auth store and setup listener once
+  useEffect(() => {
+    initializeAuth()
+    const cleanup = setupAuthListener()
+    return cleanup
+  }, [initializeAuth])
 
   // Memoized view component mapping
   const viewComponents = React.useMemo(
@@ -65,6 +77,7 @@ const App = memo(() => {
     return (
       <ThemeProvider>
         <main className="w-screen h-screen relative frosted-glass-base frosted-glass-main"></main>
+        <GlobalModal />
       </ThemeProvider>
     )
   }
@@ -75,6 +88,7 @@ const App = memo(() => {
       <main className="w-screen h-screen frosted-glass-base frosted-glass-main">
         {React.createElement(viewComponents[currentView])}
       </main>
+      <GlobalModal />
     </ThemeProvider>
   )
 })

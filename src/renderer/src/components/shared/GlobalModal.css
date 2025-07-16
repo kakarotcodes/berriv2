@@ -1,0 +1,78 @@
+/* Global Modal Overlay */
+.global-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 1rem;
+  opacity: 0;
+  transition: opacity 200ms ease-in-out;
+}
+
+.global-modal-overlay.ReactModal__Overlay--after-open {
+  opacity: 1;
+}
+
+.global-modal-overlay.ReactModal__Overlay--before-close {
+  opacity: 0;
+}
+
+/* Global Modal Content */
+.global-modal {
+  position: relative;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  outline: none;
+  padding: 0;
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow: visible;
+  transform: scale(0.95);
+  transition: transform 200ms ease-in-out;
+}
+
+.global-modal.ReactModal__Content--after-open {
+  transform: scale(1);
+}
+
+.global-modal.ReactModal__Content--before-close {
+  transform: scale(0.95);
+}
+
+/* Ensure modal content is scrollable if needed */
+.global-modal > * {
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+/* Custom scrollbar for modal content */
+.global-modal > *::-webkit-scrollbar {
+  width: 6px;
+}
+
+.global-modal > *::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+.global-modal > *::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+}
+
+.global-modal > *::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* Body scroll lock when modal is open */
+.ReactModal__Body--open {
+  overflow: hidden;
+}

@@ -1,6 +1,6 @@
 import React from 'react'
 import { Sun, Moon, Monitor } from 'lucide-react'
-import { useThemeStore, type ThemeMode } from '@/stores/themeStore'
+import { useThemeStore, type ThemeMode } from '@/globalStore'
 
 interface ThemeToggleProps {
   variant?: 'dropdown' | 'segmented' | 'button'

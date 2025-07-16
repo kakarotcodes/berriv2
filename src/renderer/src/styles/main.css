@@ -1,9 +1,16 @@
+/* -------------------------------------------------------------------------- */
+/*  Global imports – keep exactly as you had                                  */
+/* -------------------------------------------------------------------------- */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 @import './theme.css';
 @import './utilities.css';
 @import './base.css';
 @import './draggable.css';
+@import "../features/calendar/styles/calendar.css";
 
+/* -------------------------------------------------------------------------- */
+/*  Base body                                                                 */
+/* -------------------------------------------------------------------------- */
 body {
   line-height: 1.6;
   font-family:
@@ -29,31 +36,31 @@ body {
   color: rgb(var(--color-text-primary));
 }
 
-/* Custom dark scrollbar styles */
+/* -------------------------------------------------------------------------- */
+/*  Dark-scrollbar utility                                                    */
+/* -------------------------------------------------------------------------- */
 .dark-scrollbar::-webkit-scrollbar {
   width: 8px;
 }
-
 .dark-scrollbar::-webkit-scrollbar-track {
   background: transparent;
 }
-
 .dark-scrollbar::-webkit-scrollbar-thumb {
   background-color: #333;
   border-radius: 4px;
 }
-
 .dark-scrollbar::-webkit-scrollbar-thumb:hover {
   background-color: #444;
 }
-
 /* Firefox */
 .dark-scrollbar {
   scrollbar-width: thin;
   scrollbar-color: #333 transparent;
 }
 
-/* Prevent text selection during drag */
+/* -------------------------------------------------------------------------- */
+/*  Drag / performance helpers                                                */
+/* -------------------------------------------------------------------------- */
 .dragging {
   user-select: none !important;
   -webkit-user-select: none !important;
@@ -69,7 +76,6 @@ body {
   cursor: grabbing !important;
 }
 
-/* Force hardware acceleration for performance */
 .hardware-accelerated {
   transform: translateZ(0);
   backface-visibility: hidden;
@@ -78,44 +84,37 @@ body {
   perspective: 1000;
 }
 
-/* Disable transitions during drag for better performance */
+/* Disable transitions & pointer events on everything **except** handle/header */
 .dragging * {
   transition: none !important;
-}
-
-/* Disable pointer events on other elements during drag */
-.dragging * {
   pointer-events: none;
 }
-
-/* But keep pointer events on the drag handle */
-.dragging #drag-handle {
-  pointer-events: auto;
-}
-
-/* Keep pointer events on the hover-header during drag */
+.dragging #drag-handle,
 .dragging #hover-header {
   pointer-events: auto;
 }
 
-/* Ensure scrollable containers don't cause parent scrolling */
+/* -------------------------------------------------------------------------- */
+/*  Scroll helpers                                                            */
+/* -------------------------------------------------------------------------- */
 .overflow-y-auto {
   overscroll-behavior-y: contain;
   -webkit-overflow-scrolling: touch;
 }
 
-/* Hide scrollbar for webkit browsers (Chrome, Safari, Edge) and Firefox */
+/* Hide scrollbars (FF / WebKit / IE) */
 .hide-scrollbar {
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* Internet Explorer 10+ */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
-
 .hide-scrollbar::-webkit-scrollbar {
-  display: none; /* Webkit browsers */
+  display: none;
 }
 
+/* -------------------------------------------------------------------------- */
+/*  CSS custom-props (light theme)                                            */
+/* -------------------------------------------------------------------------- */
 @theme {
-  /* Light theme colors (default) */
   --color-surface-canvas: 255 255 255;
   --color-surface-primary: 242 242 242;
   --color-surface-secondary: 229 229 231;
@@ -128,9 +127,8 @@ body {
   --color-text-secondary: 60 60 67;
   --color-text-tertiary: 60 60 67;
 
-  /* Text with opacity variants for hierarchy */
-  --color-text-secondary-60: 60 60 67; /* Used with 60% opacity */
-  --color-text-tertiary-24: 60 60 67; /* Used with 24% opacity */
+  --color-text-secondary-60: 60 60 67;
+  --color-text-tertiary-24: 60 60 67;
 
   --color-accent-blue: 10 132 255;
   --color-accent-purple: 191 90 242;
@@ -140,7 +138,6 @@ body {
   --color-status-warning: 255 159 10;
   --color-status-destructive: 255 69 58;
 
-  /* Shadow colors for elevation */
-  --color-shadow-card: 0 0 0; /* Used with 6% opacity */
-  --color-shadow-modal: 0 0 0; /* Used with 15% opacity */
+  --color-shadow-card: 0 0 0; /* use with 6 % alpha */
+  --color-shadow-modal: 0 0 0; /* use with 15 % alpha */
 }

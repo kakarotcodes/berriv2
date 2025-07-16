@@ -1,157 +1,92 @@
-import React, { useState, useEffect } from 'react'
-import { useAuth } from '../../../hooks/useAuth'
-import { CalendarEventsList, CalendarEventForm } from '.'
+import { Searchbar } from '@/components/shared'
+import React, { useEffect } from 'react'
+import { DateTime } from 'luxon'
+import { useAuthStore } from '../../../globalStore/useAuthStore'
+import { CalendarEventsList, CalendarMonthSelector, CalendarGrid } from '.'
+import { useCalendarStore } from '../store/calendarStore'
 
-interface CalendarEvent {
-  id: string
-  title: string
-  start: string
-  end: string
-  description?: string
-  location?: string
-  htmlLink?: string
-}
+const CalendarAuthorizedNew: React.FC = () => {
+  const { isAuthenticated } = useAuthStore()
 
-interface CalendarAuthorizedProps {
-  searchQuery: string
-}
+  // Use calendar store
+  const {
+    gridEvents,
+    listEvents,
+    isLoadingListEvents,
+    error,
+    searchQuery,
+    currentMonth,
+    setSearchQuery,
+    setIsCreating,
+    setError,
+    refreshEvents,
+    initializeCalendar
+  } = useCalendarStore()
 
-const CalendarAuthorized: React.FC<CalendarAuthorizedProps> = ({ searchQuery }) => {
-  const { isAuthenticated, isLoading: authLoading } = useAuth()
-  const [events, setEvents] = useState<CalendarEvent[]>([])
-  const [isLoadingEvents, setIsLoadingEvents] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  // Form state
-  const [eventType, setEventType] = useState<'event' | 'meeting'>('event')
-  const [eventForm, setEventForm] = useState({
-    title: '',
-    date: new Date().toISOString().split('T')[0],
-    startTime: '09:00',
-    endTime: '10:00',
-    description: '',
-    location: '',
-    attendees: ''
-  })
-  const [isCreating, setIsCreating] = useState(false)
-
-  // Fetch calendar events when authenticated
+  // Initialize calendar when authenticated (handles caching automatically)
   useEffect(() => {
-    if (isAuthenticated && !authLoading) {
-      fetchCalendarEvents()
+    if (isAuthenticated) {
+      initializeCalendar()
     }
-  }, [isAuthenticated, authLoading])
-
-  const fetchCalendarEvents = async () => {
-    setIsLoadingEvents(true)
-    setError(null)
-
-    try {
-      const result = await window.electronAPI.calendar.getEvents({
-        maxResults: 10,
-        timeMin: new Date().toISOString(),
-        timeMax: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // Next 7 days
-      })
-
-      if (result.success) {
-        setEvents(result.events || [])
-      } else {
-        setError(result.error || 'Failed to load calendar events')
-      }
-    } catch (err) {
-      console.error('Error fetching calendar events:', err)
-      setError('Failed to load calendar events')
-    } finally {
-      setIsLoadingEvents(false)
-    }
-  }
-
-  const handleCreateEvent = async () => {
-    if (!eventForm.title.trim()) return
-
-    setIsCreating(true)
-    setError(null)
-
-    try {
-      // Combine date and time for start/end
-      const startDateTime = `${eventForm.date}T${eventForm.startTime}:00`
-      const endDateTime = `${eventForm.date}T${eventForm.endTime}:00`
-
-      // Prepare event data
-      const eventData = {
-        title: eventForm.title,
-        start: startDateTime,
-        end: endDateTime,
-        description:
-          eventType === 'meeting'
-            ? `${eventForm.description ? eventForm.description + '\n\n' : ''}Meeting scheduled via Berri`
-            : eventForm.description,
-        location:
-          eventType === 'meeting' && !eventForm.location
-            ? 'Google Meet (link will be generated)'
-            : eventForm.location,
-        attendees: eventForm.attendees
-          ? eventForm.attendees
-              .split(',')
-              .map((email) => email.trim())
-              .filter((email) => email)
-          : []
-      }
-
-      const result = await window.electronAPI.calendar.createEvent(eventData)
-
-      if (result.success) {
-        // Reset form after successful creation
-        setEventForm({
-          title: '',
-          date: new Date().toISOString().split('T')[0],
-          startTime: '09:00',
-          endTime: '10:00',
-          description: '',
-          location: '',
-          attendees: ''
-        })
-
-        // Refresh events list
-        await fetchCalendarEvents()
-
-        // Show success message
-        console.log('Event created successfully:', result.event)
-      } else {
-        setError(result.error || 'Failed to create event')
-      }
-    } catch (err) {
-      console.error('Error creating event:', err)
-      setError('Failed to create event')
-    } finally {
-      setIsCreating(false)
-    }
-  }
+  }, [isAuthenticated, initializeCalendar])
 
   return (
-    <div className="w-full h-full flex">
-      <div className="w-1/3 h-full border-r-[1px] border-white/20 flex flex-col">
+    <div className="w-full h-full flex overflow-hidden">
+      <div className="w-1/3 h-full flex flex-col min-h-0">
+        <div className="h-14 bg-black/40 px-4 flex items-center">
+          <Searchbar
+            placeholder="Search events"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
         <CalendarEventsList
-          events={events}
-          isLoadingEvents={isLoadingEvents}
+          events={listEvents.filter((event) => new Date(event.end) >= new Date())} // Only upcoming events
+          isLoadingEvents={isLoadingListEvents}
           error={error}
-          onRefresh={fetchCalendarEvents}
+          onRefresh={() => useCalendarStore.getState().fetchListEvents(true)}
           searchQuery={searchQuery}
         />
       </div>
-      <div className="w-2/3 h-full p-4">
-        <CalendarEventForm
-          eventType={eventType}
-          eventForm={eventForm}
-          isCreating={isCreating}
-          error={error}
-          onEventTypeChange={setEventType}
-          onFormChange={setEventForm}
-          onCreateEvent={handleCreateEvent}
-        />
+      <div className="w-2/3 h-full flex flex-col min-h-0">
+        <div className="h-14 bg-black/40 flex items-center">
+          <CalendarMonthSelector />
+        </div>
+        <div id="calendar-grid-container" className="h-[500px] overflow-hidden p-4 box-border">
+          <CalendarGrid
+            events={gridEvents.map((event) => ({
+              // Events for the selected month
+              ...event,
+              start: new Date(event.start),
+              end: new Date(event.end)
+            }))}
+            selectedDate={DateTime.fromJSDate(currentMonth)}
+            onEventCreate={async (eventData) => {
+              setIsCreating(true)
+              setError(null)
+
+              try {
+                const result = await window.electronAPI.calendar.createEvent(eventData)
+
+                if (result.success) {
+                  // Refresh both grid and list events
+                  await refreshEvents()
+                  return { success: true }
+                } else {
+                  return { success: false, error: result.error || 'Failed to create event' }
+                }
+              } catch (err) {
+                console.error('Error creating event:', err)
+                return { success: false, error: 'Failed to create event' }
+              } finally {
+                setIsCreating(false)
+              }
+            }}
+          />
+        </div>
       </div>
     </div>
   )
 }
 
-export default CalendarAuthorized
+export default CalendarAuthorizedNew
