@@ -24,7 +24,7 @@ export function registerScreenshotsHandlers() {
       const imageBuffer = await fs.readFile(filePath)
       const ext = filePath.toLowerCase().split('.').pop()
       let mimeType = 'image/png'
-      
+
       switch (ext) {
         case 'jpg':
         case 'jpeg':
@@ -39,7 +39,7 @@ export function registerScreenshotsHandlers() {
         default:
           mimeType = 'image/png'
       }
-      
+
       return `data:${mimeType};base64,${imageBuffer.toString('base64')}`
     } catch (error) {
       console.error(`Error creating thumbnail for ${filePath}:`, error)
@@ -52,9 +52,9 @@ export function registerScreenshotsHandlers() {
     try {
       const screenshotsDir = getScreenshotsDirectory()
       const files = await fs.readdir(screenshotsDir, { withFileTypes: true })
-      
+
       // Filter for screenshot files (common patterns: Screen Shot, Screenshot, etc.)
-      const screenshotFiles = files.filter(file => {
+      const screenshotFiles = files.filter((file) => {
         if (!file.isFile()) return false
         const name = file.name.toLowerCase()
         const isImageFile = /\.(png|jpg|jpeg|gif|webp)$/i.test(name)
@@ -63,15 +63,15 @@ export function registerScreenshotsHandlers() {
       })
 
       const screenshots: Screenshot[] = []
-      
+
       for (const file of screenshotFiles) {
         try {
           const filePath = join(screenshotsDir, file.name)
           const stats = await fs.stat(filePath)
-          
+
           // Create base64 thumbnail for display in renderer
           const thumbnail = await createThumbnail(filePath)
-          
+
           screenshots.push({
             id: `${file.name}_${stats.mtime.getTime()}`,
             name: file.name,
@@ -131,4 +131,4 @@ export function registerScreenshotsHandlers() {
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
     }
   })
-} 
+}

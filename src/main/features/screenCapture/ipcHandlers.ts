@@ -3,8 +3,8 @@ import { exec } from 'child_process'
 import { promisify } from 'util'
 import path from 'path'
 import os from 'os'
-import { handleSnippetCompletion } from './modules/screenshotProcessor'
-import { getPreviewWindow } from './modules/previewWindowManager'
+import { handleSnippetCompletion, renameCurrentScreenshot } from './scripts/screenshotProcessor'
+import { getPreviewWindow } from './scripts/previewWindowManager'
 
 const execAsync = promisify(exec)
 
@@ -95,9 +95,22 @@ export function registerScreenCaptureHandlers() {
     // you'd store the image data and copy it here
   })
 
-  ipcMain.on('preview-save', () => {
-    console.log('[PREVIEW] Save action triggered')
-    // TODO: Implement save functionality
+  ipcMain.on('preview-save', async (event, filename = 'Screenshot') => {
+    console.log('[PREVIEW] IPC preview-save received!')
+    console.log('[PREVIEW] Event object:', event)
+    console.log('[PREVIEW] Filename received:', filename)
+    console.log('[PREVIEW] Filename type:', typeof filename)
+
+    try {
+      const success = await renameCurrentScreenshot(filename)
+      if (success) {
+        console.log('[PREVIEW] Successfully renamed screenshot to:', filename)
+      } else {
+        console.error('[PREVIEW] Failed to rename screenshot - renameCurrentScreenshot returned false')
+      }
+    } catch (error) {
+      console.error('[PREVIEW] Error renaming screenshot:', error)
+    }
   })
 
   ipcMain.on('preview-share', () => {

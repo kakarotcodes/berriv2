@@ -5,7 +5,7 @@
     "module": "ESNext",
     "moduleResolution": "node",
     "outDir": "./src/main/features/screenCapture/scripts-compiled",
-    "rootDir": "./src/main/features/screenCapture/scripts",
+    "rootDir": "./src",
     "strict": false,
     "esModuleInterop": true,
     "skipLibCheck": true,

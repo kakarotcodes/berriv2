@@ -1,10 +1,15 @@
 console.log('[SAVE_BUTTON] Loading save button script...');
 
 async function saveImage(): Promise<void> {
-  console.log('[SAVE_BUTTON] Save button clicked');
+  console.log('[SAVE_BUTTON] Save button clicked - auto-save is now enabled, this button is for manual save only');
   try {
+    const titleInput = document.querySelector('.preview-title-input') as HTMLInputElement;
+    const filename = titleInput ? titleInput.value.trim() || 'Screenshot' : 'Screenshot';
+    
+    console.log('[SAVE_BUTTON] Manual save with filename:', filename);
+    
     const electron = await import('electron');
-    electron.ipcRenderer.send('preview-save');
+    electron.ipcRenderer.send('preview-save', filename);
   } catch (error) {
     console.error('[SAVE_BUTTON] Failed to send save command:', error);
   }

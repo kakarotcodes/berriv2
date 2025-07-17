@@ -85,7 +85,9 @@ function createPreviewWindowInternalOnDisplay(imageDataUrl: string, display: Ele
       contextIsolation: false,
       nodeIntegration: true,
       backgroundThrottling: false,
-      webSecurity: false // Allow data URLs and file URLs to load
+      webSecurity: false, // Allow data URLs and file URLs to load
+      allowRunningInsecureContent: true,
+      experimentalFeatures: true
     },
     // Open DevTools for debugging
     ...(process.env.NODE_ENV === 'development' && {
@@ -102,6 +104,9 @@ function createPreviewWindowInternalOnDisplay(imageDataUrl: string, display: Ele
   })
 
   previewWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
+  
+  // Open dev tools for debugging JavaScript issues (disabled for now)
+  // previewWindow.webContents.openDevTools({ mode: 'detach' })
 
   // Try to load the standalone HTML file first
   const htmlPath = path.resolve(__dirname, '../../src/main/features/screenCapture/ui/preview.html')
@@ -214,7 +219,7 @@ function createPreviewWindowInternalOnDisplay(imageDataUrl: string, display: Ele
             .catch((jsError) => {
               console.error('[PREVIEW_INTERNAL] Failed to execute JavaScript:', jsError)
             })
-        }, 100) // Reduced delay for faster loading
+        }, 80) // Reduced delay for faster loading
       })
 
       previewWindow.webContents.on('did-fail-load', (_, errorCode, errorDescription) => {

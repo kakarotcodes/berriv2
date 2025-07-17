@@ -1,46 +1,66 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Screenshot Preview</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="previewStyles.css">
-</head>
-<body>
-  <div class="preview-header">
-    <div class="preview-title">Screenshot Preview</div>
-    <div class="timer-indicator">
-      <div class="timer-dot"></div>
-      <span>Auto-close</span>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Screenshot Preview</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="previewStyles.css" />
+  </head>
+  <body>
+    <div class="preview-header">
+      <div class="window-controls">
+        <button id="close-window" class="window-btn close" title="Close Preview"></button>
+      </div>
+      <input type="text" class="preview-title-input" value="Screenshot Preview" placeholder="Enter screenshot name..." />
     </div>
-  </div>
-  
-  <div class="image-container">
-    <img class="preview-image" id="previewImage" alt="Screenshot preview" 
-         onload="console.log('[PREVIEW] Image loaded successfully', this.naturalWidth, 'x', this.naturalHeight); document.body.style.borderColor='green';" 
-         onerror="console.error('[PREVIEW] Image failed to load'); document.body.style.borderColor='red'; this.style.display='none';" />
-  </div>
-  
-  <div class="toolbar">
-    <button class="toolbar-btn primary" title="Copy to clipboard">
-      📋
-    </button>
-    <button class="toolbar-btn" title="Save to file">
-      💾
-    </button>
-    <button class="toolbar-btn" title="Share">
-      📤
-    </button>
-    <button class="toolbar-btn destructive" title="Close">
-      ✕
-    </button>
-  </div>
-  
-  <script type="module" src="../scripts-compiled/previewScript.js"></script>
-  <script type="module" src="../scripts-compiled/buttons/copyButton.js"></script>
-  <script type="module" src="../scripts-compiled/buttons/saveButton.js"></script>
-  <script type="module" src="../scripts-compiled/buttons/shareButton.js"></script>
-  <script type="module" src="../scripts-compiled/buttons/closeButton.js"></script>
-</body>
+
+    <div class="image-container">
+      <img
+        class="preview-image"
+        id="previewImage"
+        alt="Screenshot preview"
+        onload="console.log('[PREVIEW] Image loaded successfully', this.naturalWidth, 'x', this.naturalHeight); document.body.style.borderColor='green';"
+        onerror="console.error('[PREVIEW] Image failed to load'); document.body.style.borderColor='red'; this.style.display='none';"
+      />
+    </div>
+
+    <div class="toolbar">
+      <button class="toolbar-btn primary" title="Copy to clipboard">📋</button>
+      <button class="toolbar-btn" title="Save to file">💾</button>
+      <button class="toolbar-btn" title="Share">📤</button>
+    </div>
+
+    <script>
+      const { ipcRenderer } = require('electron');
+      let renameTimer = null;
+      
+      function debouncedRename(filename) {
+        if (renameTimer) clearTimeout(renameTimer);
+        renameTimer = setTimeout(() => {
+          ipcRenderer.send('preview-save', filename);
+        }, 500);
+      }
+      
+      document.addEventListener('DOMContentLoaded', () => {
+        const titleInput = document.querySelector('.preview-title-input');
+        if (titleInput) {
+          titleInput.addEventListener('input', (e) => {
+            const filename = e.target.value.trim() || 'Screenshot';
+            debouncedRename(filename);
+          });
+        }
+        
+        const closeBtn = document.getElementById('close-window');
+        if (closeBtn) {
+          closeBtn.addEventListener('click', () => {
+            ipcRenderer.send('preview-close');
+          });
+        }
+      });
+    </script>
+  </body>
 </html>
