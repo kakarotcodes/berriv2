@@ -74,9 +74,33 @@
       </button>
     </div>
 
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">
+      <div class="toast-content">
+        <svg class="toast-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+        <span class="toast-message" id="toast-message">Image copied to clipboard</span>
+      </div>
+    </div>
+
     <script>
       const { ipcRenderer } = require('electron');
       let renameTimer = null;
+      
+      // Toast notification function
+      function showToast(message) {
+        const toast = document.getElementById('toast');
+        const toastMessage = document.getElementById('toast-message');
+        
+        toastMessage.textContent = message;
+        toast.classList.add('show');
+        
+        // Auto-hide after 2 seconds
+        setTimeout(() => {
+          toast.classList.remove('show');
+        }, 2000);
+      }
       
       function debouncedRename(filename) {
         if (renameTimer) clearTimeout(renameTimer);
@@ -135,9 +159,26 @@
               // Send share request to main process
               ipcRenderer.send('preview-share', appName);
               
+              // Show toast notification
+              showToast('Image copied to clipboard');
+              
               // Close the share menu
               shareMenu.classList.remove('show');
             });
+          });
+        }
+        
+        // Clipboard copy functionality
+        const copyBtn = document.querySelector('.toolbar-btn[title="Copy to clipboard"]');
+        if (copyBtn) {
+          copyBtn.addEventListener('click', (e) => {
+            console.log('Copy to clipboard clicked');
+            
+            // Send copy request to main process
+            ipcRenderer.send('preview-copy');
+            
+            // Show toast notification
+            showToast('Image copied to clipboard');
           });
         }
       });

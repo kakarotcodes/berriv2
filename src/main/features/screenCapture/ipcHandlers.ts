@@ -229,12 +229,37 @@ export function registerScreenCaptureHandlers() {
     }
   })
 
-  ipcMain.on('preview-copy', () => {
+  ipcMain.on('preview-copy', async () => {
     console.log('[PREVIEW] Copy action triggered')
-    // The image data is already in the preview window,
-    // we'll copy from the original data that created the window
-    // This is a simplified approach - in a real implementation,
-    // you'd store the image data and copy it here
+    
+    try {
+      const { getCurrentScreenshotPath } = await import('./scripts/screenshotProcessor')
+      const screenshotPath = getCurrentScreenshotPath()
+      
+      if (!screenshotPath) {
+        console.error('[PREVIEW] No screenshot path available for copying')
+        return
+      }
+      
+      // Check if file exists
+      const fs = await import('fs/promises')
+      try {
+        await fs.access(screenshotPath)
+      } catch (error) {
+        console.error('[PREVIEW] Screenshot file not found:', screenshotPath)
+        return
+      }
+      
+      // Copy image to clipboard
+      const imageBuffer = await fs.readFile(screenshotPath)
+      const image = nativeImage.createFromBuffer(imageBuffer)
+      clipboard.writeImage(image)
+      
+      console.log('[PREVIEW] Image copied to clipboard successfully')
+      
+    } catch (error) {
+      console.error('[PREVIEW] Error copying image to clipboard:', error)
+    }
   })
 
   ipcMain.on('preview-save', async (event, filename = 'Screenshot') => {
