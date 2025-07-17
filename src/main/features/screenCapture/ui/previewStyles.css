@@ -271,6 +271,137 @@ body {
   outline-offset: 2px;
 }
 
+/* Share menu styles */
+.share-container {
+  position: relative;
+  display: inline-block;
+}
+
+.share-menu {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgb(var(--color-surface-elevated) / 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgb(var(--color-border-subtle) / 0.3);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgb(var(--color-shadow-card) / 0.2);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(-50%) translateY(8px);
+  transition: all 0.2s ease;
+  z-index: 1000;
+  width: 160px;
+  margin-bottom: 8px;
+  padding: 8px 0;
+}
+
+.share-menu.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+
+.share-menu-item {
+  display: flex;
+  align-items: center;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  gap: 12px;
+}
+
+.share-menu-item:hover {
+  background: rgb(var(--color-surface-primary) / 0.5);
+}
+
+.app-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: white;
+  text-transform: uppercase;
+}
+
+.app-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: rgb(var(--color-text-primary));
+  letter-spacing: -0.01em;
+}
+
+/* App-specific icon styles */
+.discord-icon {
+  background: #5865F2;
+}
+
+.discord-icon::before {
+  content: "D";
+}
+
+.slack-icon {
+  background: #4A154B;
+}
+
+.slack-icon::before {
+  content: "S";
+}
+
+.whatsapp-icon {
+  background: #25D366;
+}
+
+.whatsapp-icon::before {
+  content: "W";
+}
+
+.telegram-icon {
+  background: #0088CC;
+}
+
+.telegram-icon::before {
+  content: "T";
+}
+
+.messages-icon {
+  background: #007AFF;
+}
+
+.messages-icon::before {
+  content: "M";
+}
+
+.mail-icon {
+  background: #FF6B35;
+}
+
+.mail-icon::before {
+  content: "✉";
+  font-size: 10px;
+}
+
+/* Arrow for the share menu */
+.share-menu::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid rgb(var(--color-surface-elevated) / 0.95);
+}
+
 @media (prefers-color-scheme: dark) {
   .preview-image {
     box-shadow: 0 2px 8px rgb(var(--color-shadow-card) / 0.3);
@@ -278,5 +409,9 @@ body {
 
   .toolbar-btn:hover {
     box-shadow: 0 4px 12px rgb(var(--color-shadow-card) / 0.4);
+  }
+  
+  .share-menu {
+    box-shadow: 0 8px 32px rgb(var(--color-shadow-card) / 0.4);
   }
 }

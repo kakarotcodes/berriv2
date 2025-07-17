@@ -34,11 +34,39 @@
     </div>
 
     <div class="toolbar">
-      <button class="toolbar-btn" title="Share">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.935-2.186 2.25 2.25 0 0 0-3.935 2.186Z" />
-        </svg>
-      </button>
+      <div class="share-container">
+        <button class="toolbar-btn" id="share-btn" title="Share">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.935-2.186 2.25 2.25 0 0 0-3.935 2.186Z" />
+          </svg>
+        </button>
+        <div class="share-menu" id="share-menu">
+          <div class="share-menu-item" data-app="discord">
+            <div class="app-icon discord-icon"></div>
+            <span class="app-name">Discord</span>
+          </div>
+          <div class="share-menu-item" data-app="slack">
+            <div class="app-icon slack-icon"></div>
+            <span class="app-name">Slack</span>
+          </div>
+          <div class="share-menu-item" data-app="whatsapp">
+            <div class="app-icon whatsapp-icon"></div>
+            <span class="app-name">WhatsApp</span>
+          </div>
+          <div class="share-menu-item" data-app="telegram">
+            <div class="app-icon telegram-icon"></div>
+            <span class="app-name">Telegram</span>
+          </div>
+          <div class="share-menu-item" data-app="messages">
+            <div class="app-icon messages-icon"></div>
+            <span class="app-name">Messages</span>
+          </div>
+          <div class="share-menu-item" data-app="mail">
+            <div class="app-icon mail-icon"></div>
+            <span class="app-name">Mail</span>
+          </div>
+        </div>
+      </div>
       <button class="toolbar-btn" title="Copy to clipboard">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
           <path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184" />
@@ -77,6 +105,39 @@
         if (closeBtn) {
           closeBtn.addEventListener('click', () => {
             ipcRenderer.send('preview-close');
+          });
+        }
+        
+        // Share menu functionality
+        const shareBtn = document.getElementById('share-btn');
+        const shareMenu = document.getElementById('share-menu');
+        
+        if (shareBtn && shareMenu) {
+          shareBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            shareMenu.classList.toggle('show');
+          });
+          
+          // Close menu when clicking outside
+          document.addEventListener('click', (e) => {
+            if (!shareBtn.contains(e.target) && !shareMenu.contains(e.target)) {
+              shareMenu.classList.remove('show');
+            }
+          });
+          
+          // Handle app selection
+          const shareMenuItems = shareMenu.querySelectorAll('.share-menu-item');
+          shareMenuItems.forEach(item => {
+            item.addEventListener('click', (e) => {
+              const appName = item.getAttribute('data-app');
+              console.log('Selected app:', appName);
+              
+              // Send share request to main process
+              ipcRenderer.send('preview-share', appName);
+              
+              // Close the share menu
+              shareMenu.classList.remove('show');
+            });
           });
         }
       });
