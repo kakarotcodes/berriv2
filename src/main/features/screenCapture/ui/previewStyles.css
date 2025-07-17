@@ -58,9 +58,9 @@ body {
   display: flex;
   justify-content: flex-start;
   align-items: center;
-  padding: 12px 16px;
+  padding: 10px 8px;
   background: rgb(var(--color-surface-elevated) / 0.1);
-  border-bottom: 1px solid rgb(var(--color-border-subtle) / 0.3);
+  /* border-bottom: 1px solid rgb(var(--color-border-subtle) / 0.3); */
   gap: 12px;
 }
 
@@ -87,17 +87,23 @@ body {
 
 .preview-title-input {
   flex: 1;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
   color: rgb(var(--color-text-primary));
   letter-spacing: -0.01em;
   background: transparent;
   border: none;
+  text-align: center;
   outline: none;
   font-family: inherit;
   padding: 4px 8px;
   border-radius: 4px;
   transition: background-color 0.15s ease;
+}
+
+.preview-title-input:focus {
+  outline: 1px solid rgb(var(--color-accent-blue) / 0.5);
+  border-color: rgb(--var(--color-border-primary) / 0.5);
 }
 
 .edit-icon {
@@ -114,17 +120,15 @@ body {
 
 .preview-title-input:focus {
   background: rgb(var(--color-surface-primary) / 0.3);
-  outline: 1px solid rgb(var(--color-accent-blue) / 0.5);
-}
-
-.preview-title-input:hover {
-  background: rgb(var(--color-surface-primary) / 0.2);
+  outline: 1px solid rgb(var(--color-border-subtle) / 0.5);
 }
 
 .window-controls {
   display: flex;
   align-items: center;
-  gap: 8px;
+  position: absolute;
+  top: 10px;
+  left: 10px;
 }
 
 .window-btn {
@@ -138,17 +142,13 @@ body {
   padding: 0;
 }
 
-.window-btn:hover {
-  transform: scale(1.1);
-}
-
 .image-container {
   flex: 1;
-  margin: 16px;
+  margin: 8px;
+  margin-top: 0px;
   border-radius: 8px;
   overflow: hidden;
   background: rgb(var(--color-surface-primary) / 0.3);
-  border: 1px solid rgb(var(--color-border-subtle) / 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -164,39 +164,79 @@ body {
 }
 
 .toolbar {
+  width: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 8px;
-  padding: 12px 16px;
-  background: rgb(var(--color-surface-elevated) / 0.05);
-  border-top: 1px solid rgb(var(--color-border-subtle) / 0.3);
+  column-gap: 12px; /* reduced from 8px */
+  padding: 4px 10px; /* reduced padding */
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  position: absolute;
+  bottom: 0;
+  border-bottom-left-radius: 6px; /* slightly smaller radius */
+  border-bottom-right-radius: 6px; /* slightly smaller radius */
+  box-shadow: 0 3px 8px rgb(var(--color-shadow-card) / 0.12); /* lighter shadow */
+  z-index: 10;
+  overflow: visible; /* Important */
+}
+
+/* Enhance the existing fade effect */
+.toolbar::before {
+  content: '';
+  position: absolute;
+  top: -12px;
+  left: 0;
+  width: 100%;
+  height: 12px;
+  pointer-events: none;
+  background: linear-gradient(to bottom, transparent, rgb(var(--color-surface-elevated) / 0.4));
+  z-index: -1;
+}
+
+/* Create the blur effect on top border */
+.toolbar::after {
+  content: '';
+  position: absolute;
+  top: -8px;
+  left: 0;
+  width: 100%;
+  height: 8px;
+  background: inherit;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: -1;
+  pointer-events: none;
+  border-top-left-radius: inherit;
+  border-top-right-radius: inherit;
 }
 
 .toolbar-btn {
   width: 32px;
   height: 32px;
   border: none;
-  background: rgb(var(--color-surface-primary) / 0.6);
+  background: rgb(0,0,0,1);
   cursor: pointer;
   border-radius: 6px;
   color: rgb(var(--color-text-primary));
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.15s ease;
-  border: 1px solid rgb(var(--color-border-subtle) / 0.5);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
+  -webkit-border-radius: 100px;
+  -moz-border-radius: 100px;
+  -ms-border-radius: 100px;
+  -o-border-radius: 100px;
 }
 
 .toolbar-btn:hover {
   background: rgb(var(--color-surface-elevated) / 0.8);
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgb(var(--color-shadow-card) / 0.15);
-  border-color: rgb(var(--color-border-primary) / 0.8);
 }
 
 .toolbar-btn:active {
@@ -205,14 +245,14 @@ body {
 }
 
 .toolbar-btn.primary {
-  background: rgb(var(--color-accent-blue));
-  color: white;
-  border-color: rgb(var(--color-accent-blue));
+  background: rgb(var(--color-surface-primary) / 0.6);
+  color: rgb(var(--color-text-primary));
 }
 
 .toolbar-btn.primary:hover {
-  background: rgb(var(--color-accent-blue) / 0.9);
-  border-color: rgb(var(--color-accent-blue) / 0.9);
+  background: rgb(var(--color-surface-elevated) / 0.8);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgb(var(--color-shadow-card) / 0.15);
 }
 
 .toolbar-btn.destructive {
