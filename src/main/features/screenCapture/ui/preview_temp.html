@@ -16,7 +16,13 @@
       <div class="window-controls">
         <button id="close-window" class="window-btn close" title="Close Preview"></button>
       </div>
-      <input type="text" class="preview-title-input" value="Screenshot Preview" placeholder="Enter screenshot name..." />
+      <div class="title-container">
+        <input type="text" class="preview-title-input" value="Screenshot Preview" placeholder="Enter screenshot name..." />
+        <svg class="edit-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+        </svg>
+      </div>
     </div>
 
     <div class="image-container">
@@ -52,6 +58,13 @@
           titleInput.addEventListener('input', (e) => {
             const filename = e.target.value.trim() || 'Screenshot';
             debouncedRename(filename);
+          });
+        }
+        
+        const editIcon = document.querySelector('.edit-icon');
+        if (editIcon && titleInput) {
+          editIcon.addEventListener('click', () => {
+            titleInput.focus();
           });
         }
         

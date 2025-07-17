@@ -71,6 +71,20 @@ body {
   letter-spacing: -0.01em;
 }
 
+.title-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  padding: 2px 6px;
+  border-radius: 6px;
+  transition: background-color 0.15s ease;
+}
+
+.title-container:hover {
+  background: rgb(var(--color-surface-primary) / 0.2);
+}
+
 .preview-title-input {
   flex: 1;
   font-size: 13px;
@@ -84,6 +98,18 @@ body {
   padding: 4px 8px;
   border-radius: 4px;
   transition: background-color 0.15s ease;
+}
+
+.edit-icon {
+  color: rgb(var(--color-text-secondary));
+  opacity: 0.6;
+  transition: opacity 0.15s ease;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.title-container:hover .edit-icon {
+  opacity: 1;
 }
 
 .preview-title-input:focus {
