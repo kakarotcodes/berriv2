@@ -183,6 +183,11 @@
               
               // Close the share menu
               shareMenu.classList.remove('show');
+              
+              // Close preview window after a short delay to show the toast
+              setTimeout(() => {
+                ipcRenderer.send('preview-close');
+              }, 500);
             });
           });
         }
