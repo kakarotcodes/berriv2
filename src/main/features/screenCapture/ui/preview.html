@@ -87,6 +87,25 @@
     <script>
       const { ipcRenderer } = require('electron');
       let renameTimer = null;
+      let autoCloseTimer = null;
+      
+      // Auto-close functionality
+      function startAutoCloseTimer() {
+        console.log('[PREVIEW] Starting auto-close timer (3 seconds)...');
+        if (autoCloseTimer) clearTimeout(autoCloseTimer);
+        autoCloseTimer = setTimeout(() => {
+          console.log('[PREVIEW] Auto-close timer firing...');
+          ipcRenderer.send('preview-close');
+        }, 3000); // 3 seconds
+      }
+      
+      function stopAutoCloseTimer() {
+        console.log('[PREVIEW] Stopping auto-close timer...');
+        if (autoCloseTimer) {
+          clearTimeout(autoCloseTimer);
+          autoCloseTimer = null;
+        }
+      }
       
       // Toast notification function
       function showToast(message) {
@@ -181,6 +200,20 @@
             showToast('Image copied to clipboard');
           });
         }
+        
+        // Start auto-close timer when page loads
+        startAutoCloseTimer();
+        
+        // Pause timer on mouse enter, resume on mouse leave
+        document.body.addEventListener('mouseenter', () => {
+          console.log('[PREVIEW] Mouse entered, pausing auto-close timer');
+          stopAutoCloseTimer();
+        });
+        
+        document.body.addEventListener('mouseleave', () => {
+          console.log('[PREVIEW] Mouse left, resuming auto-close timer');
+          startAutoCloseTimer();
+        });
       });
     </script>
   </body>

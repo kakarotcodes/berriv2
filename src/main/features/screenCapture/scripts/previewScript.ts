@@ -56,7 +56,7 @@ async function startAutoCloseTimer(): Promise<void> {
       console.error('[PREVIEW] IPC failed, using window.close():', error)
       window.close()
     }
-  }, 20000)
+  }, 3000)
 }
 
 // Log when DOM is ready
