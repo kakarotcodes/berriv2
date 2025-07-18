@@ -18,7 +18,7 @@ const ClipBoardHoverView: React.FC = () => {
           onChange={(e) => setSearchQuery(e.target.value)}
         />
       </div>
-      <ClipboardHistory />
+      <ClipboardHistory searchTerm={searchQuery} />
     </div>
   )
 }
