@@ -3,7 +3,6 @@ import React from 'react'
 
 // components
 import ClipboardItem from './ClipboardItem'
-import { Divider } from '@/components/shared'
 
 // hooks
 import { useClipboardHistory } from '../hooks/clipboardHooks'
@@ -12,15 +11,9 @@ const ClipboardHistory: React.FC = () => {
   const history = useClipboardHistory()
 
   return (
-    <div className="w-full h-full flex flex-col text-white overflow-hidden">
-      {/* Fixed header */}
-      <div className="flex-shrink-0">
-        <p className="text-xs font-bold">Clipboard History</p>
-        <Divider />
-      </div>
-
+    <div className="w-full h-full flex flex-col text-white overflow-hidden p-4">
       {/* Scrollable container with custom scrollbar styles */}
-      <div className="flex flex-col flex-1 min-h-0 overflow-y-auto rounded-md border border-zinc-600 p-2 mt-2 dark-scrollbar">
+      <div className="flex flex-col flex-1 min-h-0 overflow-y-auto rounded-md mt-2 hide-scrollbar">
         <ul className="space-y-2 text-sm w-full">
           {history.length > 0 ? (
             history.map((entry) => (
