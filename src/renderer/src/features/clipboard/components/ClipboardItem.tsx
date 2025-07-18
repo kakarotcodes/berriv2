@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState, memo } from 'react'
 import { Copy, ChevronDown, Check } from 'lucide-react'
 import { DateTime } from 'luxon'
+import { toast } from 'react-toastify'
 
 type ClipboardItemProps = {
   content: string
@@ -13,8 +14,10 @@ const ClipboardItem = memo(({ content, timestamp }: ClipboardItemProps) => {
   const [expanded, setExpanded] = useState(false)
   const [copied, setCopied] = useState(false)
   const [isTruncated, setIsTruncated] = useState(false)
+  const [isHovering, setIsHovering] = useState(false)
 
   const textRef = useRef<HTMLDivElement>(null)
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // Truncation detection
   useEffect(() => {
@@ -30,13 +33,6 @@ const ClipboardItem = memo(({ content, timestamp }: ClipboardItemProps) => {
     return () => window.removeEventListener('resize', checkTruncation)
   }, [content])
 
-  const handleCopy = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    navigator.clipboard.writeText(content)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 1500)
-  }
-
   // Check if content is likely code
   const isCode =
     content.includes('{') &&
@@ -49,29 +45,68 @@ const ClipboardItem = memo(({ content, timestamp }: ClipboardItemProps) => {
 
   // Handler for clicking on the item
   const handleItemClick = () => {
-    // If not expanded yet, expand it
-    if (!expanded) {
-      setExpanded(true)
-      return
-    }
+    // Copy content to clipboard
+    navigator.clipboard.writeText(content)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1500)
 
-    // If expanded and text is selected, don't collapse
-    const selection = window.getSelection()
-    if (selection && selection.toString().trim() !== '') {
-      // User is selecting text, don't collapse
-      return
-    }
-
-    // Otherwise toggle expanded state
-    setExpanded((prev) => !prev)
+    // Show toast notification
+    toast.success('Content copied!', {
+      position: 'bottom-center',
+      autoClose: 2000,
+      hideProgressBar: true,
+      closeOnClick: true,
+      pauseOnHover: false,
+      draggable: false,
+      style: {
+        backgroundColor: 'black',
+        color: 'white',
+        fontSize: '12px',
+        padding: '8px 12px',
+        minHeight: 'auto',
+        width: 'auto',
+        borderRadius: '6px'
+      }
+    })
   }
+
+  // Handler for mouse enter
+  const handleMouseEnter = () => {
+    setIsHovering(true)
+    if (isTruncated) {
+      hoverTimeoutRef.current = setTimeout(() => {
+        setExpanded(true)
+      }, 500)
+    }
+  }
+
+  // Handler for mouse leave
+  const handleMouseLeave = () => {
+    setIsHovering(false)
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current)
+      hoverTimeoutRef.current = null
+    }
+    setExpanded(false)
+  }
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current)
+      }
+    }
+  }, [])
 
   return (
     <li
-      className={`flex flex-col justify-center border border-zinc-600 p-2 rounded text-white transition-all ${
-        expanded ? 'h-auto' : 'h-10 overflow-hidden'
+      className={`flex flex-col justify-center border border-zinc-600 pt-2 px-2 pb-2 rounded text-white cursor-pointer ${
+        expanded ? 'h-auto' : 'h-12 overflow-hidden'
       }`}
       onClick={handleItemClick}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       <div className="flex justify-between items-start gap-2">
         <div
@@ -91,21 +126,12 @@ const ClipboardItem = memo(({ content, timestamp }: ClipboardItemProps) => {
         </div>
 
         <div className="flex-shrink-0 flex items-center gap-2">
-          {isTruncated && !expanded && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                setExpanded(true)
-              }}
-              className="text-zinc-400 hover:text-white"
-              title="Expand"
-            >
-              <ChevronDown size={15} />
-            </button>
-          )}
-
           <button
-            onClick={handleCopy}
+            onClick={(e) => {
+              e.stopPropagation()
+              // Copy functionality is handled by the card click
+              handleItemClick()
+            }}
             className={`transition-colors ${
               copied ? 'text-green-500' : 'text-zinc-400 hover:text-white'
             }`}

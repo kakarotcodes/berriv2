@@ -10,13 +10,13 @@ const ClipBoardHoverView: React.FC = () => {
 
   return (
     <div className="h-full w-full overflow-hidden">
-      <div className="h-14 bg-black/40 px-4 flex items-center">
+      <div className="h-14 bg-black/40 px-4 flex items-center gap-x-10">
+        <p className="text-center font-bold">Clipboard History</p>
         <Searchbar
           placeholder="Search clipboard"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
-        <p className="absolute m-auto left-0 right-0 text-center font-bold">Clipboard History</p>
       </div>
       <ClipboardHistory />
     </div>
