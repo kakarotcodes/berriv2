@@ -12,7 +12,9 @@ const ClipboardHistory: React.FC = () => {
 
   return (
     <div className="w-full h-full flex flex-col text-white overflow-hidden p-4">
-      <p className="text-xs italic text-white/60">Click anywhere on a card to copy its content</p>
+      <p className="w-full text-xs italic text-white/60">
+        Click anywhere on a card to copy its content. Hover on a card to expand it
+      </p>
       <div className="w-full h-1" />
       {/* Scrollable container with custom scrollbar styles */}
       <div className="flex flex-col flex-1 min-h-0 overflow-y-auto rounded-md mt-2 hide-scrollbar">
