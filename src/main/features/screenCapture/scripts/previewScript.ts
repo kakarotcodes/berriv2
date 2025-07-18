@@ -17,7 +17,7 @@ async function autoSaveFilename(filename: string): Promise<void> {
       console.log('[PREVIEW] Auto-saved filename via window.require:', filename)
       return
     }
-    
+
     // Fallback to dynamic import
     console.log('[PREVIEW] Attempting to import electron...')
     const electron = await import('electron')
@@ -48,7 +48,7 @@ async function startAutoCloseTimer(): Promise<void> {
         ipcRenderer.send('preview-close')
         return
       }
-      
+
       // Fallback to dynamic import
       const electron = await import('electron')
       electron.ipcRenderer.send('preview-close')
@@ -56,7 +56,7 @@ async function startAutoCloseTimer(): Promise<void> {
       console.error('[PREVIEW] IPC failed, using window.close():', error)
       window.close()
     }
-  }, 3000)
+  }, 5000)
 }
 
 // Log when DOM is ready
