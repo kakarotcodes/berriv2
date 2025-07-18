@@ -28,7 +28,6 @@ const ClipboardHistory: React.FC<ClipboardHistoryProps> = ({ searchTerm = '' }) 
         Click anywhere on a card to copy its content. Hover on a card to expand it
       </p>
       <div className="w-full h-1" />
-
       {/* Scrollable container with custom scrollbar styles */}
       <div className="flex flex-col flex-1 min-h-0 overflow-y-auto rounded-md mt-2 hide-scrollbar">
         <ul className="space-y-2 text-sm w-full">

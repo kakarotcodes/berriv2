@@ -9,7 +9,7 @@ const ClipBoardHoverView: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string>('')
 
   return (
-    <div className="h-full w-full overflow-hidden">
+    <div className="h-full w-full overflow-hidden flex flex-col">
       <div className="h-14 bg-black/40 px-4 flex items-center gap-x-10">
         <p className="text-center font-bold">Clipboard History</p>
         <Searchbar

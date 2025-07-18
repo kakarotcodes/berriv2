@@ -101,7 +101,7 @@ const ClipboardItem = memo(({ content, timestamp }: ClipboardItemProps) => {
 
   return (
     <li
-      className={`flex flex-col justify-center border border-zinc-600 pt-2 px-2 pb-2 rounded text-white cursor-pointer ${
+      className={`flex flex-col justify-center border border-white/20 pt-2 px-2 pb-2 rounded text-white cursor-pointer ${
         expanded ? 'h-auto' : 'h-12 overflow-hidden'
       }`}
       onClick={handleItemClick}
