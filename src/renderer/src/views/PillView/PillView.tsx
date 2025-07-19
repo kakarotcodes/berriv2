@@ -1,6 +1,9 @@
 // dependencies
 import { useEffect } from 'react'
 
+// utils
+import { startGoogleMeet, openScreenCapture, openSnippingTool } from '@/utils/appActions'
+
 // assets
 import GoogleCalendar from '@/assets/pill-icons/calendar.svg?react'
 import Gmail from '@/assets/pill-icons/gmail.svg?react'
@@ -59,50 +62,7 @@ const PillView: React.FC = () => {
     setMainWindowResizable(true)
   }
 
-  const startGoogleMeet = async () => {
-    try {
-      await window.electronAPI.startGoogleMeet()
-    } catch (e) {
-      console.error('Google Meet failed:', e)
-      alert('Failed to start meeting.')
-    }
-  }
-
-  const openScreenCapture = async () => {
-    console.log('[SCREEN_CAPTURE] Camera button clicked')
-    try {
-      console.log('[SCREEN_CAPTURE] Calling electronAPI.screenCapture.openToolbar()')
-      const result = await window.electronAPI.screenCapture.openToolbar()
-      console.log('[SCREEN_CAPTURE] Result:', result)
-      if (!result.success) {
-        console.error('Screen capture failed:', result.error)
-        alert('Failed to open screen capture toolbar.')
-      } else {
-        console.log('[SCREEN_CAPTURE] Screen capture toolbar opened successfully')
-      }
-    } catch (e) {
-      console.error('Screen capture failed:', e)
-      alert('Failed to open screen capture toolbar.')
-    }
-  }
-
-  const openSnippingTool = async () => {
-    console.log('[SNIPPING_TOOL] Scissors button clicked')
-    try {
-      console.log('[SNIPPING_TOOL] Calling electronAPI.screenCapture.openSnippingTool()')
-      const result = await window.electronAPI.screenCapture.openSnippingTool()
-      console.log('[SNIPPING_TOOL] Result:', result)
-      if (!result.success) {
-        console.error('Snipping tool failed:', result.error)
-        alert('Failed to open snipping tool.')
-      } else {
-        console.log('[SNIPPING_TOOL] Snipping tool opened successfully')
-      }
-    } catch (e) {
-      console.error('Snipping tool failed:', e)
-      alert('Failed to open snipping tool.')
-    }
-  }
+  // Using imported common functions for consistency
 
   if (targetView === 'default' && isTransitioning) {
     return <div className="w-full h-full bg-transparent flex items-center justify-center" />

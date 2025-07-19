@@ -1,14 +1,17 @@
 // dependencies
 import React from 'react'
 
+// utils
+import { startGoogleMeet, openScreenCapture, openSnippingTool } from '@/utils/appActions'
+
 // assets
 import GoogleCalendar from '@/assets/pill-icons/calendar.svg?react'
 import Gmail from '@/assets/pill-icons/gmail.svg?react'
 import ClipBoardHistory from '@/assets/pill-icons/clipboard.svg?react'
-// import GoogleMeet from '@/assets/pill-icons/meet.svg?react'
+import GoogleMeet from '@/assets/pill-icons/meet.svg?react'
 import Notes from '@/assets/pill-icons/notes.svg?react'
-// import Snipping from '@/assets/pill-icons/snipping.svg?react'
-// import Record from '@/assets/pill-icons/record.svg?react'
+import Snipping from '@/assets/pill-icons/snipping.svg?react'
+import Record from '@/assets/pill-icons/record.svg?react'
 import CameraFolder from '@/assets/pill-icons/camera-folder.svg?react'
 
 // controller
@@ -23,8 +26,27 @@ const Navigation: React.FC = () => {
     setActiveFeature(feature)
   }
 
+  // Using imported common functions for consistency
+
   return (
-    <div className="w-full flex items-center justify-center py-3">
+    <div className="relative w-full flex items-center justify-center py-3">
+      <div className="absolute left-3 frosted-glass-navbar flex items-center gap-x-6 py-2 px-4 rounded-[100px]">
+        <HoverNavigationButton
+          featureKey="screen-capture"
+          onClick={openScreenCapture}
+          icon={<Record className="w-4.5 h-4.5" />}
+        />
+        <HoverNavigationButton
+          featureKey="snipping"
+          onClick={openSnippingTool}
+          icon={<Snipping className="w-4.5 h-4.5" />}
+        />
+        <HoverNavigationButton
+          featureKey="meet"
+          onClick={startGoogleMeet}
+          icon={<GoogleMeet className="w-4.5 h-4.5" />}
+        />
+      </div>
       <nav className="frosted-glass-navbar flex items-center gap-x-6 py-2 px-4 rounded-[100px]">
         <HoverNavigationButton
           featureKey="mail"
