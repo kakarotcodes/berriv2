@@ -21,6 +21,23 @@ const ScreenshotsViewHover: React.FC = () => {
     loadScreenshots()
   }, [])
 
+  // Refresh screenshots when component becomes visible
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        loadScreenshots()
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('focus', loadScreenshots)
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('focus', loadScreenshots)
+    }
+  }, [])
+
   useEffect(() => {
     // Cleanup timeout on unmount
     return () => {

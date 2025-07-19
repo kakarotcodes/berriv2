@@ -53,12 +53,12 @@ export function registerScreenshotsHandlers() {
       const screenshotsDir = getScreenshotsDirectory()
       const files = await fs.readdir(screenshotsDir, { withFileTypes: true })
 
-      // Filter for screenshot files (common patterns: Screen Shot, Screenshot, etc.)
+      // Filter for screenshot files (common patterns: Screen Shot, Screenshot, CleanShot, etc.)
       const screenshotFiles = files.filter((file) => {
         if (!file.isFile()) return false
         const name = file.name.toLowerCase()
         const isImageFile = /\.(png|jpg|jpeg|gif|webp)$/i.test(name)
-        const isScreenshot = /^(screen shot|screenshot|capture|snap)/i.test(name)
+        const isScreenshot = /(screen shot|screenshot|capture|snap|cleanshot|lightshot|monosnap|skitch)/i.test(name)
         return isImageFile && isScreenshot
       })
 

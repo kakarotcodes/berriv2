@@ -1,6 +1,6 @@
 // dependencies
 import React from 'react'
-import { StarIcon, EnvelopeIcon, EnvelopeOpenIcon } from '@heroicons/react/24/outline'
+import { StarIcon, PaperClipIcon } from '@heroicons/react/24/outline'
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid'
 
 // types
@@ -41,31 +41,19 @@ const MailItem: React.FC<MailItemProps> = ({ mail }) => {
   }
 
   return (
-    <div 
-      className={`p-3 rounded-lg border cursor-pointer transition-colors ${
-        mail.isRead 
-          ? 'bg-gray-800 border-gray-700 hover:bg-gray-750' 
-          : 'bg-gray-700 border-gray-600 hover:bg-gray-650'
+    <div
+      className={`p-3 rounded-lg border-[0.5px] border-white/20 cursor-pointer transition-colors ${
+        mail.isRead ? 'bg-black' : ''
       }`}
     >
       <div className="flex items-start space-x-3">
-        {/* Read/Unread indicator */}
-        <button
-          onClick={handleToggleRead}
-          className="mt-1 text-gray-400 hover:text-white transition-colors"
-        >
-          {mail.isRead ? (
-            <EnvelopeOpenIcon className="size-4" />
-          ) : (
-            <EnvelopeIcon className="size-4" />
-          )}
-        </button>
-
         {/* Mail content */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between mb-1">
             <div className="flex items-center space-x-2">
-              <span className={`text-sm ${mail.isRead ? 'text-gray-300' : 'text-white font-medium'}`}>
+              <span
+                className={`text-sm ${mail.isRead ? 'text-gray-300' : 'text-white font-medium'}`}
+              >
                 {mail.sender}
               </span>
               {mail.labels.includes('important') && (
@@ -75,26 +63,31 @@ const MailItem: React.FC<MailItemProps> = ({ mail }) => {
               )}
             </div>
             <div className="flex items-center space-x-2">
-              <span className="text-xs text-gray-400">
-                {formatTime(mail.timestamp)}
-              </span>
-              <button
-                onClick={handleToggleStar}
-                className="text-gray-400 hover:text-yellow-400 transition-colors"
-              >
-                {mail.isStarred ? (
-                  <StarIconSolid className="size-4 text-yellow-400" />
-                ) : (
-                  <StarIcon className="size-4" />
+              <span className="text-xs text-gray-400">{formatTime(mail.timestamp)}</span>
+              <div className="flex flex-col items-center space-y-1">
+                <button
+                  onClick={handleToggleStar}
+                  className="text-gray-400 hover:text-yellow-400 transition-colors"
+                >
+                  {mail.isStarred ? (
+                    <StarIconSolid className="size-4 text-yellow-400" />
+                  ) : (
+                    <StarIcon className="size-4" />
+                  )}
+                </button>
+                {mail.hasAttachments && (
+                  <PaperClipIcon className="size-3 text-gray-400 rotate-45" />
                 )}
-              </button>
+              </div>
             </div>
           </div>
-          
-          <div className={`text-sm mb-1 ${mail.isRead ? 'text-gray-300' : 'text-white font-medium'}`}>
+
+          <div
+            className={`text-sm mb-1 ${mail.isRead ? 'text-gray-300' : 'text-white font-medium'}`}
+          >
             {mail.subject}
           </div>
-          
+
           <div className="text-xs text-gray-400 truncate">
             {mail.body.length > 100 ? `${mail.body.substring(0, 100)}...` : mail.body}
           </div>
@@ -104,4 +97,4 @@ const MailItem: React.FC<MailItemProps> = ({ mail }) => {
   )
 }
 
-export default MailItem 
+export default MailItem
