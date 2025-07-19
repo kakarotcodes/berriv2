@@ -1,4 +1,4 @@
-import { ipcMain, shell } from 'electron'
+import { ipcMain, shell, nativeImage } from 'electron'
 import { promises as fs } from 'fs'
 import { join } from 'path'
 import { homedir } from 'os'
@@ -129,6 +129,29 @@ export function registerScreenshotsHandlers() {
     } catch (error) {
       console.error('[SCREENSHOTS] Error setting up directory watch:', error)
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
+    }
+  })
+
+  // Start drag operation for file
+  ipcMain.on('screenshots:start-drag', async (event, filePath: string) => {
+    try {
+      console.log(`[SCREENSHOTS] Starting drag operation for: ${filePath}`)
+      
+      // Verify file exists
+      await fs.access(filePath)
+      
+      // Create native image for drag
+      const image = nativeImage.createFromPath(filePath)
+      
+      // Start the drag operation using the event sender
+      event.sender.startDrag({
+        file: filePath,
+        icon: image.resize({ width: 64, height: 64 })
+      })
+      
+      console.log(`[SCREENSHOTS] Drag operation started successfully`)
+    } catch (error) {
+      console.error('[SCREENSHOTS] Error starting drag operation:', error)
     }
   })
 }

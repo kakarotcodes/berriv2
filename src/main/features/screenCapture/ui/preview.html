@@ -28,6 +28,7 @@
         class="preview-image"
         id="previewImage"
         alt="Screenshot preview"
+        draggable="true"
         onload="console.log('[PREVIEW] Image loaded successfully', this.naturalWidth, 'x', this.naturalHeight); document.body.style.borderColor='green';"
         onerror="console.error('[PREVIEW] Image failed to load'); document.body.style.borderColor='red'; this.style.display='none';"
       />
@@ -134,6 +135,44 @@
           titleInput.addEventListener('input', (e) => {
             const filename = e.target.value.trim() || 'Screenshot';
             debouncedRename(filename);
+          });
+        }
+        
+        // Add drag and drop functionality to the preview image
+        const previewImage = document.getElementById('previewImage');
+        if (previewImage) {
+          previewImage.addEventListener('dragstart', (e) => {
+            console.log('[PREVIEW] Starting drag operation');
+            
+            // Request the file path from the main process
+            ipcRenderer.invoke('preview-get-file-path').then((filePath) => {
+              if (filePath) {
+                console.log('[PREVIEW] Got file path for drag:', filePath);
+                e.dataTransfer.effectAllowed = 'copy';
+                e.dataTransfer.setData('text/uri-list', `file://${filePath}`);
+                e.dataTransfer.setData('text/plain', filePath);
+                e.dataTransfer.setData('application/x-moz-file-promise-url', `file://${filePath}`);
+                
+                // Get filename from path
+                const filename = filePath.split('/').pop() || 'screenshot.png';
+                e.dataTransfer.setData('application/x-moz-file-promise', filename);
+              } else {
+                console.error('[PREVIEW] No file path available for drag');
+                e.preventDefault();
+              }
+            }).catch((error) => {
+              console.error('[PREVIEW] Failed to get file path for drag:', error);
+              e.preventDefault();
+            });
+          });
+          
+          // Add cursor styles for drag indication
+          previewImage.style.cursor = 'grab';
+          previewImage.addEventListener('mousedown', () => {
+            previewImage.style.cursor = 'grabbing';
+          });
+          previewImage.addEventListener('mouseup', () => {
+            previewImage.style.cursor = 'grab';
           });
         }
         

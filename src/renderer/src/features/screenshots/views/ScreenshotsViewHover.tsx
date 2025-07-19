@@ -151,6 +151,19 @@ const ScreenshotsViewHover: React.FC = () => {
                     src={screenshot.thumbnail}
                     alt={screenshot.name}
                     className="w-full h-full object-cover"
+                    draggable="true"
+                    onMouseDown={(e) => {
+                      if (e.button === 0) { // Left mouse button
+                        // Use Electron's native drag API
+                        window.electronAPI.screenshots.startDrag(screenshot.path)
+                      }
+                    }}
+                    onDragStart={(e) => {
+                      // Still provide fallback drag data
+                      e.dataTransfer.effectAllowed = 'copy'
+                      e.dataTransfer.setData('text/uri-list', `file://${screenshot.path}`)
+                      e.dataTransfer.setData('text/plain', screenshot.path)
+                    }}
                   />
                 ) : (
                   <Image size={24} className="text-zinc-600" />
@@ -236,7 +249,20 @@ const ScreenshotsViewHover: React.FC = () => {
                 <img
                   src={selectedScreenshot.thumbnail}
                   alt={selectedScreenshot.name}
-                  className="max-w-full max-h-96 object-contain mx-auto"
+                  className="max-w-full max-h-96 object-contain mx-auto cursor-grab active:cursor-grabbing"
+                  draggable="true"
+                  onMouseDown={(e) => {
+                    if (e.button === 0) { // Left mouse button
+                      // Use Electron's native drag API
+                      window.electronAPI.screenshots.startDrag(selectedScreenshot.path)
+                    }
+                  }}
+                  onDragStart={(e) => {
+                    // Still provide fallback drag data
+                    e.dataTransfer.effectAllowed = 'copy'
+                    e.dataTransfer.setData('text/uri-list', `file://${selectedScreenshot.path}`)
+                    e.dataTransfer.setData('text/plain', selectedScreenshot.path)
+                  }}
                 />
               ) : (
                 <div className="flex items-center justify-center h-96 text-zinc-400">

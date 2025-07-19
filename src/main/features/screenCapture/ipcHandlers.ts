@@ -307,4 +307,72 @@ export function registerScreenCaptureHandlers() {
       console.error('[PREVIEW] Error sharing screenshot:', error)
     }
   })
+
+  ipcMain.handle('preview-get-file-path', async () => {
+    console.log('[PREVIEW] Get file path action triggered for drag and drop')
+    
+    try {
+      const { getCurrentScreenshotPath } = await import('./scripts/screenshotProcessor')
+      const screenshotPath = getCurrentScreenshotPath()
+      
+      if (!screenshotPath) {
+        console.error('[PREVIEW] No screenshot path available for drag and drop')
+        return null
+      }
+      
+      // Check if file exists
+      const fs = await import('fs/promises')
+      try {
+        await fs.access(screenshotPath)
+        console.log('[PREVIEW] File path for drag and drop:', screenshotPath)
+        return screenshotPath
+      } catch (error) {
+        console.error('[PREVIEW] Screenshot file not found:', screenshotPath)
+        return null
+      }
+      
+    } catch (error) {
+      console.error('[PREVIEW] Error getting file path for drag and drop:', error)
+      return null
+    }
+  })
+
+  ipcMain.handle('preview-start-drag', async (event) => {
+    console.log('[PREVIEW] Start drag operation triggered')
+    
+    try {
+      const { getCurrentScreenshotPath } = await import('./scripts/screenshotProcessor')
+      const screenshotPath = getCurrentScreenshotPath()
+      
+      if (!screenshotPath) {
+        console.error('[PREVIEW] No screenshot path available for drag operation')
+        return { success: false, error: 'No screenshot path available' }
+      }
+      
+      // Check if file exists
+      const fs = await import('fs/promises')
+      try {
+        await fs.access(screenshotPath)
+      } catch (error) {
+        console.error('[PREVIEW] Screenshot file not found:', screenshotPath)
+        return { success: false, error: 'Screenshot file not found' }
+      }
+      
+      // Create native image for drag
+      const image = nativeImage.createFromPath(screenshotPath)
+      
+      // Start the drag operation
+      event.sender.startDrag({
+        file: screenshotPath,
+        icon: image.resize({ width: 64, height: 64 })
+      })
+      
+      console.log('[PREVIEW] Drag operation started successfully for:', screenshotPath)
+      return { success: true }
+      
+    } catch (error) {
+      console.error('[PREVIEW] Error starting drag operation:', error)
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
+    }
+  })
 }

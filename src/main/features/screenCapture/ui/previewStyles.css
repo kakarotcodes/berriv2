@@ -161,6 +161,14 @@ body {
   object-fit: contain;
   border-radius: 6px;
   box-shadow: 0 2px 8px rgb(var(--color-shadow-card) / 0.1);
+  cursor: grab;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.preview-image:active {
+  cursor: grabbing;
+  transform: scale(0.98);
+  box-shadow: 0 4px 16px rgb(var(--color-shadow-card) / 0.2);
 }
 
 .toolbar {
