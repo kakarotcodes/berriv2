@@ -13,9 +13,12 @@ interface Screenshot {
 }
 
 export function registerScreenshotsHandlers() {
-  // Get default macOS screenshots directory
-  const getScreenshotsDirectory = () => {
-    return join(homedir(), 'Desktop')
+  // Get directories to scan for images
+  const getImageDirectories = () => {
+    return [
+      join(homedir(), 'Desktop'),
+      join(homedir(), 'Downloads')
+    ]
   }
 
   // Helper function to create base64 data URL from image file
@@ -36,6 +39,16 @@ export function registerScreenshotsHandlers() {
         case 'webp':
           mimeType = 'image/webp'
           break
+        case 'bmp':
+          mimeType = 'image/bmp'
+          break
+        case 'tiff':
+        case 'tif':
+          mimeType = 'image/tiff'
+          break
+        case 'svg':
+          mimeType = 'image/svg+xml'
+          break
         default:
           mimeType = 'image/png'
       }
@@ -47,51 +60,56 @@ export function registerScreenshotsHandlers() {
     }
   }
 
-  // Get all screenshots from the desktop (default macOS location)
+  // Get all image files from Desktop and Downloads
   ipcMain.handle('screenshots:get-screenshots', async () => {
     try {
-      const screenshotsDir = getScreenshotsDirectory()
-      const files = await fs.readdir(screenshotsDir, { withFileTypes: true })
-
-      // Filter for screenshot files (common patterns: Screen Shot, Screenshot, CleanShot, etc.)
-      const screenshotFiles = files.filter((file) => {
-        if (!file.isFile()) return false
-        const name = file.name.toLowerCase()
-        const isImageFile = /\.(png|jpg|jpeg|gif|webp)$/i.test(name)
-        const isScreenshot = /(screen shot|screenshot|capture|snap|cleanshot|lightshot|monosnap|skitch)/i.test(name)
-        return isImageFile && isScreenshot
-      })
-
+      const imageDirectories = getImageDirectories()
       const screenshots: Screenshot[] = []
 
-      for (const file of screenshotFiles) {
+      for (const directory of imageDirectories) {
         try {
-          const filePath = join(screenshotsDir, file.name)
-          const stats = await fs.stat(filePath)
+          const files = await fs.readdir(directory, { withFileTypes: true })
 
-          // Create base64 thumbnail for display in renderer
-          const thumbnail = await createThumbnail(filePath)
-
-          screenshots.push({
-            id: `${file.name}_${stats.mtime.getTime()}`,
-            name: file.name,
-            path: filePath,
-            dateAdded: stats.mtime, // Use modification time as creation time
-            size: stats.size,
-            thumbnail
+          // Filter for all image files
+          const imageFiles = files.filter((file) => {
+            if (!file.isFile()) return false
+            const name = file.name.toLowerCase()
+            const isImageFile = /\.(png|jpg|jpeg|gif|webp|bmp|tiff|svg)$/i.test(name)
+            return isImageFile
           })
+
+          for (const file of imageFiles) {
+            try {
+              const filePath = join(directory, file.name)
+              const stats = await fs.stat(filePath)
+
+              // Create base64 thumbnail for display in renderer
+              const thumbnail = await createThumbnail(filePath)
+
+              screenshots.push({
+                id: `${file.name}_${stats.mtime.getTime()}_${directory}`,
+                name: file.name,
+                path: filePath,
+                dateAdded: stats.mtime,
+                size: stats.size,
+                thumbnail
+              })
+            } catch (error) {
+              console.error(`Error processing image file ${file.name}:`, error)
+            }
+          }
         } catch (error) {
-          console.error(`Error processing screenshot file ${file.name}:`, error)
+          console.error(`Error reading directory ${directory}:`, error)
         }
       }
 
       // Sort by date (newest first)
       screenshots.sort((a, b) => new Date(b.dateAdded).getTime() - new Date(a.dateAdded).getTime())
 
-      console.log(`[SCREENSHOTS] Found ${screenshots.length} screenshots`)
+      console.log(`[SCREENSHOTS] Found ${screenshots.length} image files`)
       return { success: true, screenshots }
     } catch (error) {
-      console.error('[SCREENSHOTS] Error getting screenshots:', error)
+      console.error('[SCREENSHOTS] Error getting images:', error)
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
     }
   })
