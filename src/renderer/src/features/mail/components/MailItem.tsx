@@ -1,6 +1,6 @@
 // dependencies
 import React from 'react'
-import { StarIcon, PaperClipIcon } from '@heroicons/react/24/outline'
+import { StarIcon } from '@heroicons/react/24/outline'
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid'
 
 // types
@@ -15,6 +15,13 @@ interface MailItemProps {
 
 const MailItem: React.FC<MailItemProps> = ({ mail }) => {
   const { updateMail } = useMailStore()
+
+  // Debug attachment data - check both old and new structure
+  const hasAttachments = mail.attachments && Array.isArray(mail.attachments) && mail.attachments.length > 0
+  if (hasAttachments) {
+    console.log(`[MAILITEM] 📎 Email "${mail.subject}" has ${mail.attachments.length} attachments:`, 
+      mail.attachments.map((a: any) => a.filename || a))
+  }
 
   const handleToggleRead = () => {
     updateMail(mail.id, { isRead: !mail.isRead })
@@ -75,9 +82,6 @@ const MailItem: React.FC<MailItemProps> = ({ mail }) => {
                     <StarIcon className="size-4" />
                   )}
                 </button>
-                {mail.hasAttachments && (
-                  <PaperClipIcon className="size-3 text-gray-400 rotate-45" />
-                )}
               </div>
             </div>
           </div>
@@ -91,6 +95,20 @@ const MailItem: React.FC<MailItemProps> = ({ mail }) => {
           <div className="text-xs text-gray-400 truncate">
             {mail.body.length > 100 ? `${mail.body.substring(0, 100)}...` : mail.body}
           </div>
+
+          {hasAttachments && (
+            <div className="flex items-center text-xs text-gray-400 space-x-1 mt-2">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 shrink-0" fill="none"
+                   viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d="M15.172 7l-6.586 6.586a2 2 0 002.828 2.828l6.586-6.586M8 16V8a4 4 0 014-4h6"/>
+              </svg>
+              <span className="truncate">
+                {(mail.attachments?.[0] as any)?.filename || mail.attachments?.[0]}
+                {mail.attachments && mail.attachments.length > 1 && ` (+${mail.attachments.length - 1})`}
+              </span>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -52,15 +52,17 @@ const MailList: React.FC = () => {
     setError(null)
 
     try {
-      console.log('[MAIL] Fetching emails with filter:', filterType)
-      const result = await window.electronAPI.gmail.getEmails({
+      console.log('[MAIL] 🔄 Fetching emails with NEW API, filter:', filterType)
+      const result = await (window as any).electronAPI.gmail.getEmailsNew({
         maxResults: 20,
         query: GMAIL_FILTERS[filterType]
       })
+      
+      console.log('[MAIL] 📨 MailList API result:', result)
 
       if (result.success && result.emails) {
         // Convert Gmail API format to our mail format
-        const convertedMails = result.emails.map((email) => ({
+        const convertedMails = result.emails.map((email: any) => ({
           id: email.id,
           subject: email.subject,
           sender: email.sender,
@@ -69,8 +71,18 @@ const MailList: React.FC = () => {
           timestamp: new Date(email.timestamp),
           isRead: email.isRead,
           isStarred: email.isStarred,
-          labels: email.labels
+          labels: email.labels,
+          attachments: email.attachments || []
         }))
+        
+        // Log emails with attachments
+        const emailsWithAttachments = convertedMails.filter(e => e.attachments.length > 0)
+        if (emailsWithAttachments.length > 0) {
+          console.log(`[MAIL] 📎 Found ${emailsWithAttachments.length} emails with attachments:`)
+          emailsWithAttachments.forEach(email => {
+            console.log(`  - "${email.subject}": ${email.attachments.map((a: any) => a.filename || a).join(', ')}`)
+          })
+        }
 
         setMails(convertedMails)
         console.log(

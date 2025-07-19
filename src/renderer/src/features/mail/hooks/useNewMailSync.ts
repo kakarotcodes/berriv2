@@ -1,13 +1,10 @@
-// dependencies
+// New mail sync hook with attachment support
 import { useEffect, useCallback } from 'react'
-
-// hooks
 import { useAuth } from '../../../hooks/useAuth'
-
-// store
 import { useMailStore } from '../store'
+import type { NewMailItem } from '../types/newTypes'
 
-export const useMailSync = () => {
+export const useNewMailSync = () => {
   const { isAuthenticated } = useAuth()
   const { 
     settings, 
@@ -19,7 +16,7 @@ export const useMailSync = () => {
 
   const syncMails = useCallback(async () => {
     if (!isAuthenticated) {
-      console.log('[MAIL] Not authenticated, skipping sync')
+      console.log('[NEW_MAIL] Not authenticated, skipping sync')
       return
     }
 
@@ -27,19 +24,16 @@ export const useMailSync = () => {
       setLoading(true)
       setError(null)
       
-      console.log('[MAIL] 🔄 Syncing emails with NEW Gmail API...')
+      console.log('[NEW_MAIL] Syncing emails with new API...')
       
-      // Use new API temporarily
+      // Use the new IPC handler
       const result = await (window as any).electronAPI.gmail.getEmailsNew({
         maxResults: 20
       })
       
-      console.log('[MAIL] 📨 New API result:', result)
-      
       if (result.success && result.emails) {
-        console.log('[MAIL] Raw API response:', result.emails.find(e => e.subject === 'test'))
-        // Convert Gmail API format to our mail format
-        const convertedMails = result.emails.map((email: any) => ({
+        // Convert API format to our mail format
+        const convertedMails: NewMailItem[] = result.emails.map((email: any) => ({
           id: email.id,
           subject: email.subject,
           sender: email.sender,
@@ -49,21 +43,27 @@ export const useMailSync = () => {
           isRead: email.isRead,
           isStarred: email.isStarred,
           labels: email.labels,
-          hasAttachments: email.hasAttachments,
-          attachments: email.attachments
+          attachments: email.attachments || []
         }))
         
-        console.log('[MAIL] Converted mails:', convertedMails.find(e => e.subject === 'test'))
+        console.log(`[NEW_MAIL] ✅ Successfully synced ${convertedMails.length} emails`)
+        console.log(`[NEW_MAIL] Emails with attachments: ${convertedMails.filter(e => e.attachments.length > 0).length}`)
+        
+        // Log emails with attachments for debugging
+        convertedMails.forEach(email => {
+          if (email.attachments.length > 0) {
+            console.log(`[NEW_MAIL] 📎 "${email.subject}" has attachments:`, email.attachments.map(a => a.filename))
+          }
+        })
         
         setMails(convertedMails)
-        console.log(`[MAIL] Successfully synced ${convertedMails.length} emails`)
       } else {
         setError(result.error || 'Failed to sync emails')
-        console.error('[MAIL] Failed to sync emails:', result.error)
+        console.error('[NEW_MAIL] Failed to sync emails:', result.error)
       }
       
     } catch (error) {
-      console.error('[MAIL] Sync failed:', error)
+      console.error('[NEW_MAIL] Sync failed:', error)
       setError('Failed to sync emails')
     } finally {
       setLoading(false)
@@ -82,4 +82,4 @@ export const useMailSync = () => {
     syncMails,
     isLoading
   }
-} 
+}

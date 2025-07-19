@@ -1,5 +1,12 @@
-// Mail types
-export interface MailItem {
+// New email types with attachment-first design
+
+export interface EmailAttachment {
+  filename: string
+  mimeType: string
+  size?: number
+}
+
+export interface NewMailItem {
   id: string
   subject: string
   sender: string
@@ -9,19 +16,19 @@ export interface MailItem {
   isRead: boolean
   isStarred: boolean
   labels: string[]
-  hasAttachments?: boolean
-  attachments?: string[]
+  attachments: EmailAttachment[]
 }
 
-export interface MailFilter {
+export interface NewMailFilter {
   isRead?: boolean
   isStarred?: boolean
+  hasAttachments?: boolean
   label?: string
   searchQuery?: string
 }
 
-export interface MailSettings {
+export interface NewMailSettings {
   autoRefresh: boolean
   refreshInterval: number
   showNotifications: boolean
-} 
+}
