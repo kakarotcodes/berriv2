@@ -90,22 +90,33 @@
       const { ipcRenderer } = require('electron');
       let renameTimer = null;
       let autoCloseTimer = null;
+      let isHovering = false;
       
-      // Auto-close functionality
-      function startAutoCloseTimer() {
-        console.log('[PREVIEW] Starting auto-close timer (3 seconds)...');
-        if (autoCloseTimer) clearTimeout(autoCloseTimer);
+      // Simplified auto-close - just start/stop, no complex logic
+      function startTimer() {
+        stopTimer();
+        console.log('[PREVIEW] Starting 3-second auto-close timer');
         autoCloseTimer = setTimeout(() => {
-          console.log('[PREVIEW] Auto-close timer firing...');
-          ipcRenderer.send('preview-close');
-        }, 3000); // 3 seconds
+          console.log('[PREVIEW] Timer expired - closing window');
+          closeWindow();
+        }, 3000);
       }
       
-      function stopAutoCloseTimer() {
-        console.log('[PREVIEW] Stopping auto-close timer...');
+      function stopTimer() {
         if (autoCloseTimer) {
+          console.log('[PREVIEW] Stopping auto-close timer');
           clearTimeout(autoCloseTimer);
           autoCloseTimer = null;
+        }
+      }
+      
+      function closeWindow() {
+        console.log('[PREVIEW] Attempting to close window');
+        try {
+          ipcRenderer.send('preview-close');
+        } catch (error) {
+          console.error('[PREVIEW] Error with IPC close, trying window.close():', error);
+          window.close();
         }
       }
       
@@ -142,39 +153,92 @@
         // Add drag and drop functionality to the preview image
         const previewImage = document.getElementById('previewImage');
         if (previewImage) {
-          previewImage.addEventListener('dragstart', (e) => {
-            console.log('[PREVIEW] Starting drag operation');
-            
-            // Request the file path from the main process
-            ipcRenderer.invoke('preview-get-file-path').then((filePath) => {
-              if (filePath) {
-                console.log('[PREVIEW] Got file path for drag:', filePath);
-                e.dataTransfer.effectAllowed = 'copy';
-                e.dataTransfer.setData('text/uri-list', `file://${filePath}`);
-                e.dataTransfer.setData('text/plain', filePath);
-                e.dataTransfer.setData('application/x-moz-file-promise-url', `file://${filePath}`);
-                
-                // Get filename from path
-                const filename = filePath.split('/').pop() || 'screenshot.png';
-                e.dataTransfer.setData('application/x-moz-file-promise', filename);
-              } else {
-                console.error('[PREVIEW] No file path available for drag');
-                e.preventDefault();
-              }
-            }).catch((error) => {
-              console.error('[PREVIEW] Failed to get file path for drag:', error);
-              e.preventDefault();
-            });
+          let dragTimeout = null;
+          let currentFilePath = null;
+          
+          // Get file path once and cache it
+          ipcRenderer.invoke('preview-get-file-path').then((filePath) => {
+            currentFilePath = filePath;
+            console.log('[PREVIEW] Cached file path for drag:', filePath);
+          }).catch((error) => {
+            console.error('[PREVIEW] Failed to get file path:', error);
           });
           
-          // Add cursor styles for drag indication
-          previewImage.style.cursor = 'grab';
-          previewImage.addEventListener('mousedown', () => {
-            previewImage.style.cursor = 'grabbing';
+          // Mouse down - start drag timeout (similar to screenshots gallery)
+          previewImage.addEventListener('mousedown', (e) => {
+            if (e.button === 0) { // Left mouse button
+              previewImage.style.cursor = 'grabbing';
+              
+              // Stop timer during interaction
+              stopTimer();
+              
+              // Set a timeout to start drag only if mouse is held down
+              dragTimeout = setTimeout(() => {
+                console.log('[PREVIEW] Starting native drag operation');
+                // Use IPC to start native drag from main process
+                ipcRenderer.send('preview-start-native-drag');
+              }, 150); // 150ms delay to allow for clicks
+            }
           });
+          
+          // Mouse up - clear drag timeout
           previewImage.addEventListener('mouseup', () => {
             previewImage.style.cursor = 'grab';
+            
+            // Clear drag timeout on mouse up (this was a click, not a drag)
+            if (dragTimeout) {
+              clearTimeout(dragTimeout);
+              dragTimeout = null;
+            }
+            
+            // Restart timer if not hovering
+            if (!isHovering) {
+              startTimer();
+            }
           });
+          
+          // Standard HTML5 drag events for fallback
+          previewImage.addEventListener('dragstart', (e) => {
+            console.log('[PREVIEW] HTML5 dragstart event');
+            
+            // Add visual feedback
+            previewImage.classList.add('dragging');
+            
+            // Clear timeout since drag has started
+            if (dragTimeout) {
+              clearTimeout(dragTimeout);
+              dragTimeout = null;
+            }
+            
+            if (currentFilePath) {
+              console.log('[PREVIEW] Using cached file path for drag:', currentFilePath);
+              e.dataTransfer.effectAllowed = 'copy';
+              e.dataTransfer.setData('text/uri-list', `file://${currentFilePath}`);
+              e.dataTransfer.setData('text/plain', currentFilePath);
+              
+              // Get filename from path
+              const filename = currentFilePath.split('/').pop() || 'screenshot.png';
+              e.dataTransfer.setData('application/x-moz-file-promise', filename);
+            } else {
+              console.error('[PREVIEW] No file path available for drag');
+              e.preventDefault();
+            }
+          });
+          
+          // Remove visual feedback when drag ends
+          previewImage.addEventListener('dragend', () => {
+            console.log('[PREVIEW] Drag operation ended');
+            previewImage.classList.remove('dragging');
+            previewImage.style.cursor = 'grab';
+            
+            // Restart timer if not hovering
+            if (!isHovering) {
+              startTimer();
+            }
+          });
+          
+          // Initial cursor style
+          previewImage.style.cursor = 'grab';
         }
         
         const editIcon = document.querySelector('.edit-icon');
@@ -246,19 +310,28 @@
           });
         }
         
-        // Start auto-close timer when page loads
-        startAutoCloseTimer();
+        // Start the initial timer
+        console.log('[PREVIEW] Page loaded, starting initial timer');
+        startTimer();
         
-        // Pause timer on mouse enter, resume on mouse leave
-        document.body.addEventListener('mouseenter', () => {
-          console.log('[PREVIEW] Mouse entered, pausing auto-close timer');
-          stopAutoCloseTimer();
+        // Simple hover detection
+        document.addEventListener('mouseenter', () => {
+          console.log('[PREVIEW] Mouse entered - stopping timer');
+          isHovering = true;
+          stopTimer();
         });
         
-        document.body.addEventListener('mouseleave', () => {
-          console.log('[PREVIEW] Mouse left, resuming auto-close timer');
-          startAutoCloseTimer();
+        document.addEventListener('mouseleave', () => {
+          console.log('[PREVIEW] Mouse left - starting timer');
+          isHovering = false;
+          startTimer();
         });
+        
+        // Emergency fallback - force close after 30 seconds
+        setTimeout(() => {
+          console.log('[PREVIEW] Emergency timeout - forcing close after 30 seconds');
+          closeWindow();
+        }, 30000);
       });
     </script>
   </body>

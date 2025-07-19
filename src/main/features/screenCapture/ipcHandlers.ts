@@ -11,7 +11,7 @@ const execAsync = promisify(exec)
 // Function to share screenshot with specific apps
 async function shareWithApp(imagePath: string, appName: string) {
   console.log(`[SHARE] Sharing image with ${appName}:`, imagePath)
-  
+
   try {
     switch (appName.toLowerCase()) {
       case 'discord':
@@ -45,26 +45,25 @@ async function shareWithDiscord(imagePath: string) {
   try {
     // Method 1: Copy image to clipboard using Electron's clipboard API
     console.log('[SHARE] Copying image to clipboard and opening Discord')
-    
+
     // Read image and put it on clipboard
     const fs = await import('fs/promises')
     const imageBuffer = await fs.readFile(imagePath)
     const image = nativeImage.createFromBuffer(imageBuffer)
-    
+
     // Copy to clipboard
     clipboard.writeImage(image)
     console.log('[SHARE] Image copied to clipboard')
-    
+
     // Open Discord
     await execAsync('open -a Discord')
     console.log('[SHARE] Discord opened - you can now paste (Cmd+V) the image')
-    
+
     // Show a notification or log message
     console.log('[SHARE] TIP: Go to Discord and press Cmd+V to paste the image')
-    
   } catch (error) {
     console.error('[SHARE] Error with Discord clipboard method:', error)
-    
+
     // Fallback: Try drag and drop approach
     try {
       console.log('[SHARE] Trying drag and drop approach')
@@ -73,7 +72,9 @@ async function shareWithDiscord(imagePath: string) {
       setTimeout(async () => {
         await execAsync(`open -R "${imagePath}"`)
       }, 1000)
-      console.log('[SHARE] Discord opened and image will be revealed in Finder - drag the image to Discord')
+      console.log(
+        '[SHARE] Discord opened and image will be revealed in Finder - drag the image to Discord'
+      )
     } catch (fallbackError) {
       console.error('[SHARE] Fallback method failed:', fallbackError)
       // Last resort: Use native share
@@ -231,16 +232,16 @@ export function registerScreenCaptureHandlers() {
 
   ipcMain.on('preview-copy', async () => {
     console.log('[PREVIEW] Copy action triggered')
-    
+
     try {
       const { getCurrentScreenshotPath } = await import('./scripts/screenshotProcessor')
       const screenshotPath = getCurrentScreenshotPath()
-      
+
       if (!screenshotPath) {
         console.error('[PREVIEW] No screenshot path available for copying')
         return
       }
-      
+
       // Check if file exists
       const fs = await import('fs/promises')
       try {
@@ -249,14 +250,13 @@ export function registerScreenCaptureHandlers() {
         console.error('[PREVIEW] Screenshot file not found:', screenshotPath)
         return
       }
-      
+
       // Copy image to clipboard
       const imageBuffer = await fs.readFile(screenshotPath)
       const image = nativeImage.createFromBuffer(imageBuffer)
       clipboard.writeImage(image)
-      
+
       console.log('[PREVIEW] Image copied to clipboard successfully')
-      
     } catch (error) {
       console.error('[PREVIEW] Error copying image to clipboard:', error)
     }
@@ -273,7 +273,9 @@ export function registerScreenCaptureHandlers() {
       if (success) {
         console.log('[PREVIEW] Successfully renamed screenshot to:', filename)
       } else {
-        console.error('[PREVIEW] Failed to rename screenshot - renameCurrentScreenshot returned false')
+        console.error(
+          '[PREVIEW] Failed to rename screenshot - renameCurrentScreenshot returned false'
+        )
       }
     } catch (error) {
       console.error('[PREVIEW] Error renaming screenshot:', error)
@@ -282,16 +284,16 @@ export function registerScreenCaptureHandlers() {
 
   ipcMain.on('preview-share', async (event, appName) => {
     console.log('[PREVIEW] Share action triggered for app:', appName)
-    
+
     try {
       const { getCurrentScreenshotPath } = await import('./scripts/screenshotProcessor')
       const screenshotPath = getCurrentScreenshotPath()
-      
+
       if (!screenshotPath) {
         console.error('[PREVIEW] No screenshot path available for sharing')
         return
       }
-      
+
       // Check if file exists
       const fs = await import('fs/promises')
       try {
@@ -300,9 +302,8 @@ export function registerScreenCaptureHandlers() {
         console.error('[PREVIEW] Screenshot file not found:', screenshotPath)
         return
       }
-      
+
       await shareWithApp(screenshotPath, appName)
-      
     } catch (error) {
       console.error('[PREVIEW] Error sharing screenshot:', error)
     }
@@ -310,16 +311,16 @@ export function registerScreenCaptureHandlers() {
 
   ipcMain.handle('preview-get-file-path', async () => {
     console.log('[PREVIEW] Get file path action triggered for drag and drop')
-    
+
     try {
       const { getCurrentScreenshotPath } = await import('./scripts/screenshotProcessor')
       const screenshotPath = getCurrentScreenshotPath()
-      
+
       if (!screenshotPath) {
         console.error('[PREVIEW] No screenshot path available for drag and drop')
         return null
       }
-      
+
       // Check if file exists
       const fs = await import('fs/promises')
       try {
@@ -330,7 +331,6 @@ export function registerScreenCaptureHandlers() {
         console.error('[PREVIEW] Screenshot file not found:', screenshotPath)
         return null
       }
-      
     } catch (error) {
       console.error('[PREVIEW] Error getting file path for drag and drop:', error)
       return null
@@ -339,16 +339,16 @@ export function registerScreenCaptureHandlers() {
 
   ipcMain.handle('preview-start-drag', async (event) => {
     console.log('[PREVIEW] Start drag operation triggered')
-    
+
     try {
       const { getCurrentScreenshotPath } = await import('./scripts/screenshotProcessor')
       const screenshotPath = getCurrentScreenshotPath()
-      
+
       if (!screenshotPath) {
         console.error('[PREVIEW] No screenshot path available for drag operation')
         return { success: false, error: 'No screenshot path available' }
       }
-      
+
       // Check if file exists
       const fs = await import('fs/promises')
       try {
@@ -357,22 +357,57 @@ export function registerScreenCaptureHandlers() {
         console.error('[PREVIEW] Screenshot file not found:', screenshotPath)
         return { success: false, error: 'Screenshot file not found' }
       }
-      
+
       // Create native image for drag
       const image = nativeImage.createFromPath(screenshotPath)
-      
+
       // Start the drag operation
       event.sender.startDrag({
         file: screenshotPath,
         icon: image.resize({ width: 64, height: 64 })
       })
-      
+
       console.log('[PREVIEW] Drag operation started successfully for:', screenshotPath)
       return { success: true }
-      
     } catch (error) {
       console.error('[PREVIEW] Error starting drag operation:', error)
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
+    }
+  })
+
+  ipcMain.on('preview-start-native-drag', async (event) => {
+    console.log('[PREVIEW] Native drag operation triggered via send')
+
+    try {
+      const { getCurrentScreenshotPath } = await import('./scripts/screenshotProcessor')
+      const screenshotPath = getCurrentScreenshotPath()
+
+      if (!screenshotPath) {
+        console.error('[PREVIEW] No screenshot path available for native drag')
+        return
+      }
+
+      // Check if file exists
+      const fs = await import('fs/promises')
+      try {
+        await fs.access(screenshotPath)
+      } catch (error) {
+        console.error('[PREVIEW] Screenshot file not found:', screenshotPath)
+        return
+      }
+
+      // Create native image for drag
+      const image = nativeImage.createFromPath(screenshotPath)
+
+      // Start the drag operation
+      event.sender.startDrag({
+        file: screenshotPath,
+        icon: image.resize({ width: 64, height: 64 })
+      })
+
+      console.log('[PREVIEW] Native drag operation started successfully for:', screenshotPath)
+    } catch (error) {
+      console.error('[PREVIEW] Error starting native drag operation:', error)
     }
   })
 }
