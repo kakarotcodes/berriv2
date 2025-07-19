@@ -42,7 +42,15 @@ export const screenshotsFeature: FeatureModule = {
   id: 'screenshots',
   name: 'Screenshots',
   icon: null, // Will be set by the consuming component
-  component: ScreenshotsViewHover
+  component: ScreenshotsViewHover,
+  initialize: async () => {
+    // Refresh screenshots when feature is accessed
+    try {
+      await window.electronAPI.screenshots.getScreenshots()
+    } catch (error) {
+      console.error('[SCREENSHOTS] Failed to refresh on initialize:', error)
+    }
+  }
 }
 
 export const mailFeature: FeatureModule = {

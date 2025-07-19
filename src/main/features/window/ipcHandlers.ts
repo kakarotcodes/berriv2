@@ -138,7 +138,7 @@ export function registerWindowHandlers(mainWindow: BrowserWindow) {
     dragState.startWindowY = bounds.y
     dragState.windowWidth = bounds.width
     dragState.windowHeight = bounds.height
-    
+
     // Reset tracking variables
     lastDragUpdate = 0
     lastProcessedX = 0
@@ -321,24 +321,27 @@ export function registerWindowHandlers(mainWindow: BrowserWindow) {
     console.log('[HOVER] fix-hover-dimensions called with:', { width, height })
 
     const bounds = mainWindow.getBounds()
-    
+
     // Check if we have smart positioning coordinates saved
     const smartX = prefs.get('smartHoverX') as number | undefined
     const smartY = prefs.get('smartHoverY') as number | undefined
-    
+
     let targetX = bounds.x
     let targetY = bounds.y
-    
+
     if (smartX !== undefined && smartY !== undefined) {
       targetX = smartX
       targetY = smartY
       console.log('[HOVER] 🎯 Using smart positioning coordinates:', { smartX, smartY })
-      
+
       // Clear the smart positioning after use to avoid stale data
       prefs.delete('smartHoverX')
       prefs.delete('smartHoverY')
     } else {
-      console.log('[HOVER] 📍 No smart positioning found, using current position:', { x: bounds.x, y: bounds.y })
+      console.log('[HOVER] 📍 No smart positioning found, using current position:', {
+        x: bounds.x,
+        y: bounds.y
+      })
     }
 
     mainWindow.setBounds(

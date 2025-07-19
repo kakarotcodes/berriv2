@@ -110,7 +110,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     deleteScreenshot: (filePath: string) =>
       ipcRenderer.invoke('screenshots:delete-screenshot', filePath),
     openInFinder: (filePath: string) => ipcRenderer.invoke('screenshots:open-in-finder', filePath),
-    watchDirectory: () => ipcRenderer.invoke('screenshots:watch-directory')
+    watchDirectory: () => ipcRenderer.invoke('screenshots:watch-directory'),
+    startDrag: (filePath: string) => ipcRenderer.send('screenshots:start-drag', filePath)
   },
 
   // Sleep/wake handlers

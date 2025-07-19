@@ -237,7 +237,7 @@ const NotesEditor: React.FC = () => {
       </div>
 
       {/* Editor */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto hide-scrollbar">
         <EditorContent editor={editor} className="h-full text-white" />
       </div>
 

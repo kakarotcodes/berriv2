@@ -44,7 +44,8 @@ export const useMailSync = () => {
           timestamp: new Date(email.timestamp),
           isRead: email.isRead,
           isStarred: email.isStarred,
-          labels: email.labels
+          labels: email.labels,
+          hasAttachments: Math.random() > 0.7 // 30% chance of having attachments for testing
         }))
         
         setMails(convertedMails)

@@ -13,6 +13,8 @@ import { ThemeProvider } from '@/components/providers'
 
 // components
 import { GlobalModal } from '@/components/shared'
+import { ToastContainer } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
 
 /**
  * OverlayContainer - With all animations removed
@@ -78,6 +80,29 @@ const App = memo(() => {
       <ThemeProvider>
         <main className="w-screen h-screen relative frosted-glass-base frosted-glass-main"></main>
         <GlobalModal />
+        <ToastContainer
+          toastStyle={{
+            fontSize: '12px',
+            padding: '8px 12px',
+            minHeight: 'auto'
+          }}
+          icon={({ type }) => {
+            if (type === 'success') {
+              return (
+                <div className="w-4 h-4 bg-green-500 rounded-full flex-shrink-0 flex items-center justify-center mr-0.5">
+                  <svg className="w-2.5 h-2.5 text-black" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      fillRule="evenodd"
+                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </div>
+              )
+            }
+            return null
+          }}
+        />
       </ThemeProvider>
     )
   }
@@ -89,6 +114,29 @@ const App = memo(() => {
         {React.createElement(viewComponents[currentView])}
       </main>
       <GlobalModal />
+      <ToastContainer
+        toastStyle={{
+          fontSize: '12px',
+          padding: '8px 12px',
+          minHeight: 'auto'
+        }}
+        icon={({ type }) => {
+          if (type === 'success') {
+            return (
+              <div className="w-4 h-4 bg-green-500 rounded-full flex-shrink-0 flex items-center justify-center mr-0.5">
+                <svg className="w-2.5 h-2.5 text-black" fill="currentColor" viewBox="0 0 20 20">
+                  <path
+                    fillRule="evenodd"
+                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </div>
+            )
+          }
+          return null
+        }}
+      />
     </ThemeProvider>
   )
 })

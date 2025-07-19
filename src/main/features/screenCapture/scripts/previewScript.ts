@@ -1,14 +1,39 @@
 console.log('[PREVIEW] Script loading...')
+console.log('[PREVIEW] Window location:', window.location.href)
+console.log('[PREVIEW] Script execution starting...')
 
 let timer: NodeJS.Timeout | null = null
+let renameTimer: NodeJS.Timeout | null = null
 
-// Function to set the image URL
-function setImageUrl(imageUrl: string): void {
-  const img = document.getElementById('previewImage') as HTMLImageElement
-  if (img) {
-    img.src = imageUrl
-    console.log('[PREVIEW] Image URL set:', imageUrl.startsWith('data:') ? 'data URL' : 'file URL')
+async function autoSaveFilename(filename: string): Promise<void> {
+  console.log('[PREVIEW] autoSaveFilename called with:', filename)
+  try {
+    console.log('[PREVIEW] Attempting to access electron...')
+    // Try direct access first (since nodeIntegration is enabled)
+    if (typeof window !== 'undefined' && (window as any).require) {
+      console.log('[PREVIEW] Using window.require for electron')
+      const { ipcRenderer } = (window as any).require('electron')
+      ipcRenderer.send('preview-save', filename)
+      console.log('[PREVIEW] Auto-saved filename via window.require:', filename)
+      return
+    }
+
+    // Fallback to dynamic import
+    console.log('[PREVIEW] Attempting to import electron...')
+    const electron = await import('electron')
+    console.log('[PREVIEW] Electron imported successfully, sending IPC...')
+    electron.ipcRenderer.send('preview-save', filename)
+    console.log('[PREVIEW] Auto-saved filename:', filename)
+  } catch (error) {
+    console.error('[PREVIEW] Auto-save failed:', error)
   }
+}
+
+function debouncedAutoSave(filename: string): void {
+  if (renameTimer) clearTimeout(renameTimer)
+  renameTimer = setTimeout(() => {
+    autoSaveFilename(filename)
+  }, 500) // 500ms debounce
 }
 
 async function startAutoCloseTimer(): Promise<void> {
@@ -17,6 +42,14 @@ async function startAutoCloseTimer(): Promise<void> {
   timer = setTimeout(async () => {
     console.log('[PREVIEW] Auto-close timer firing...')
     try {
+      // Try direct access first (since nodeIntegration is enabled)
+      if (typeof window !== 'undefined' && (window as any).require) {
+        const { ipcRenderer } = (window as any).require('electron')
+        ipcRenderer.send('preview-close')
+        return
+      }
+
+      // Fallback to dynamic import
       const electron = await import('electron')
       electron.ipcRenderer.send('preview-close')
     } catch (error) {
@@ -68,6 +101,23 @@ document.addEventListener('DOMContentLoaded', () => {
     console.error('[PREVIEW] Image element not found!')
     // Start timer anyway
     startAutoCloseTimer()
+  }
+
+  // Set up auto-save for title input
+  console.log('[PREVIEW] Looking for title input element...')
+  const titleInput = document.querySelector('.preview-title-input') as HTMLInputElement
+  console.log('[PREVIEW] Title input element found:', !!titleInput)
+  if (titleInput) {
+    console.log('[PREVIEW] Title input current value:', titleInput.value)
+    titleInput.addEventListener('input', (e) => {
+      const target = e.target as HTMLInputElement
+      const filename = target.value.trim() || 'Screenshot'
+      console.log('[PREVIEW] Title changed to:', filename)
+      debouncedAutoSave(filename)
+    })
+    console.log('[PREVIEW] Auto-save listener added to title input')
+  } else {
+    console.error('[PREVIEW] Title input element not found!')
   }
 })
 

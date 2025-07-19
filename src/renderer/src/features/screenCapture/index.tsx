@@ -1,18 +1,7 @@
 import React from 'react'
+import { openScreenCapture } from '@/utils/appActions'
 
 export const ScreenCaptureFeature: React.FC = () => {
-  const openScreenCapture = async () => {
-    try {
-      const result = await window.electronAPI.screenCapture.openToolbar()
-      if (!result.success) {
-        console.error('Screen capture failed:', result.error)
-        alert('Failed to open screen capture toolbar.')
-      }
-    } catch (e) {
-      console.error('Screen capture failed:', e)
-      alert('Failed to open screen capture toolbar.')
-    }
-  }
 
   return (
     <div className="p-4">

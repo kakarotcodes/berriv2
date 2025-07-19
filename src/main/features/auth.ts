@@ -29,5 +29,8 @@ export function requestGmailPermissions(): void {
   // Using the same calendar auth route since no dedicated Gmail route exists
   const gmailPermissionUrl = 'http://localhost:3000/auth/calendar?source=electron'
   shell.openExternal(gmailPermissionUrl)
-  console.log('Opened Gmail permissions request in external browser (using calendar route):', gmailPermissionUrl)
+  console.log(
+    'Opened Gmail permissions request in external browser (using calendar route):',
+    gmailPermissionUrl
+  )
 }

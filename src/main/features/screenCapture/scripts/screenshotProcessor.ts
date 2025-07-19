@@ -4,6 +4,9 @@ import path from 'path'
 import os from 'os'
 import { handlePreviewWindowManagement } from './previewWindowManager'
 
+// Store the current screenshot path for renaming
+let currentScreenshotPath: string | null = null
+
 export async function handleSnippetCompletion(tempScreenshotPath: string) {
   console.log('[SNIPPET_EVENT] Handling snippet completion event')
 
@@ -39,6 +42,9 @@ export async function handleSnippetCompletion(tempScreenshotPath: string) {
 
     await fs.copyFile(tempScreenshotPath, finalScreenshotPath)
     console.log('[SNIPPET_EVENT] Screenshot saved to desktop:', finalScreenshotPath)
+    
+    // Store the current screenshot path for potential renaming
+    currentScreenshotPath = finalScreenshotPath
 
     // Create data URL for preview
     const dataUrl = image.toDataURL()
@@ -74,5 +80,69 @@ export async function handleSnippetCompletion(tempScreenshotPath: string) {
     }, 5000)
   } catch (accessError) {
     console.log('[SNIPPET_EVENT] No screenshot file found (user cancelled/escaped)')
+  }
+}
+
+export function getCurrentScreenshotPath(): string | null {
+  return currentScreenshotPath
+}
+
+export async function renameCurrentScreenshot(newFilename: string): Promise<boolean> {
+  console.log('[RENAME_SCREENSHOT] Function called with:', newFilename)
+  console.log('[RENAME_SCREENSHOT] Current screenshot path:', currentScreenshotPath)
+  
+  if (!currentScreenshotPath) {
+    console.error('[RENAME_SCREENSHOT] No current screenshot path available')
+    return false
+  }
+
+  try {
+    // Check if the current file exists before renaming
+    const currentExists = await fs.access(currentScreenshotPath).then(() => true).catch(() => false)
+    console.log('[RENAME_SCREENSHOT] Current file exists:', currentExists)
+    
+    if (!currentExists) {
+      console.error('[RENAME_SCREENSHOT] Current screenshot file does not exist:', currentScreenshotPath)
+      return false
+    }
+
+    // Sanitize filename to remove invalid characters
+    const sanitizedFilename = newFilename.replace(/[<>:"/\\|?*]/g, '-').trim()
+    console.log('[RENAME_SCREENSHOT] Sanitized filename:', sanitizedFilename)
+
+    // Ensure the filename has .png extension
+    const filename = sanitizedFilename.endsWith('.png')
+      ? sanitizedFilename
+      : `${sanitizedFilename}.png`
+    console.log('[RENAME_SCREENSHOT] Final filename:', filename)
+
+    // Create new path with custom filename
+    const desktopPath = path.join(os.homedir(), 'Desktop')
+    const newScreenshotPath = path.join(desktopPath, filename)
+    console.log('[RENAME_SCREENSHOT] New screenshot path:', newScreenshotPath)
+
+    // Check if target file already exists
+    const targetExists = await fs.access(newScreenshotPath).then(() => true).catch(() => false)
+    if (targetExists) {
+      console.log('[RENAME_SCREENSHOT] Target file already exists, will overwrite')
+    }
+
+    // Rename the file
+    await fs.rename(currentScreenshotPath, newScreenshotPath)
+    console.log(
+      '[RENAME_SCREENSHOT] Successfully renamed screenshot from:',
+      currentScreenshotPath,
+      'to:',
+      newScreenshotPath
+    )
+
+    // Update the current path
+    currentScreenshotPath = newScreenshotPath
+
+    return true
+  } catch (error) {
+    console.error('[RENAME_SCREENSHOT] Failed to rename screenshot:', error)
+    console.error('[RENAME_SCREENSHOT] Error details:', error instanceof Error ? error.message : String(error))
+    return false
   }
 }

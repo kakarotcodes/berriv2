@@ -15,10 +15,37 @@ const ScreenshotsViewHover: React.FC = () => {
   const [loading, setLoading] = useState(true)
   const [selectedScreenshot, setSelectedScreenshot] = useState<Screenshot | null>(null)
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest')
+  const [dragTimeout, setDragTimeout] = useState<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     loadScreenshots()
   }, [])
+
+  // Refresh screenshots when component becomes visible
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        loadScreenshots()
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('focus', loadScreenshots)
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('focus', loadScreenshots)
+    }
+  }, [])
+
+  useEffect(() => {
+    // Cleanup timeout on unmount
+    return () => {
+      if (dragTimeout) {
+        clearTimeout(dragTimeout)
+      }
+    }
+  }, [dragTimeout])
 
   const loadScreenshots = async () => {
     setLoading(true)
@@ -151,6 +178,34 @@ const ScreenshotsViewHover: React.FC = () => {
                     src={screenshot.thumbnail}
                     alt={screenshot.name}
                     className="w-full h-full object-cover"
+                    draggable="true"
+                    onMouseDown={(e) => {
+                      if (e.button === 0) { // Left mouse button
+                        // Set a timeout to start drag only if mouse is held down
+                        const timeout = setTimeout(() => {
+                          window.electronAPI.screenshots.startDrag(screenshot.path)
+                        }, 150) // 150ms delay to allow for clicks
+                        setDragTimeout(timeout)
+                      }
+                    }}
+                    onMouseUp={() => {
+                      // Clear drag timeout on mouse up (this was a click, not a drag)
+                      if (dragTimeout) {
+                        clearTimeout(dragTimeout)
+                        setDragTimeout(null)
+                      }
+                    }}
+                    onDragStart={(e) => {
+                      // Clear timeout since drag has started
+                      if (dragTimeout) {
+                        clearTimeout(dragTimeout)
+                        setDragTimeout(null)
+                      }
+                      // Still provide fallback drag data
+                      e.dataTransfer.effectAllowed = 'copy'
+                      e.dataTransfer.setData('text/uri-list', `file://${screenshot.path}`)
+                      e.dataTransfer.setData('text/plain', screenshot.path)
+                    }}
                   />
                 ) : (
                   <Image size={24} className="text-zinc-600" />
@@ -236,7 +291,35 @@ const ScreenshotsViewHover: React.FC = () => {
                 <img
                   src={selectedScreenshot.thumbnail}
                   alt={selectedScreenshot.name}
-                  className="max-w-full max-h-96 object-contain mx-auto"
+                  className="max-w-full max-h-96 object-contain mx-auto cursor-grab active:cursor-grabbing"
+                  draggable="true"
+                  onMouseDown={(e) => {
+                    if (e.button === 0) { // Left mouse button
+                      // Set a timeout to start drag only if mouse is held down
+                      const timeout = setTimeout(() => {
+                        window.electronAPI.screenshots.startDrag(selectedScreenshot.path)
+                      }, 150) // 150ms delay to allow for clicks
+                      setDragTimeout(timeout)
+                    }
+                  }}
+                  onMouseUp={() => {
+                    // Clear drag timeout on mouse up
+                    if (dragTimeout) {
+                      clearTimeout(dragTimeout)
+                      setDragTimeout(null)
+                    }
+                  }}
+                  onDragStart={(e) => {
+                    // Clear timeout since drag has started
+                    if (dragTimeout) {
+                      clearTimeout(dragTimeout)
+                      setDragTimeout(null)
+                    }
+                    // Still provide fallback drag data
+                    e.dataTransfer.effectAllowed = 'copy'
+                    e.dataTransfer.setData('text/uri-list', `file://${selectedScreenshot.path}`)
+                    e.dataTransfer.setData('text/plain', selectedScreenshot.path)
+                  }}
                 />
               ) : (
                 <div className="flex items-center justify-center h-96 text-zinc-400">

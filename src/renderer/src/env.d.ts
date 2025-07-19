@@ -151,6 +151,7 @@ interface ElectronAPI {
     deleteScreenshot: (filePath: string) => Promise<{ success: boolean; error?: string }>
     openInFinder: (filePath: string) => Promise<{ success: boolean; error?: string }>
     watchDirectory: () => Promise<{ success: boolean; error?: string }>
+    startDrag: (filePath: string) => void
   }
 
   // Sleep/wake handlers

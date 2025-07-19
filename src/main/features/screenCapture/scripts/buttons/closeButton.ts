@@ -30,6 +30,11 @@ document.addEventListener('DOMContentLoaded', () => {
   if (closeBtn) {
     closeBtn.addEventListener('click', closeWindow)
   }
+
+  const windowCloseBtn = document.getElementById('close-window')
+  if (windowCloseBtn) {
+    windowCloseBtn.addEventListener('click', closeWindow)
+  }
 })
 
 console.log('[CLOSE_BUTTON] Close button script loaded successfully')

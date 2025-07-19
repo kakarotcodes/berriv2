@@ -1,4 +1,4 @@
-import { ipcMain, shell } from 'electron'
+import { ipcMain, shell, nativeImage } from 'electron'
 import { promises as fs } from 'fs'
 import { join } from 'path'
 import { homedir } from 'os'
@@ -24,7 +24,7 @@ export function registerScreenshotsHandlers() {
       const imageBuffer = await fs.readFile(filePath)
       const ext = filePath.toLowerCase().split('.').pop()
       let mimeType = 'image/png'
-      
+
       switch (ext) {
         case 'jpg':
         case 'jpeg':
@@ -39,7 +39,7 @@ export function registerScreenshotsHandlers() {
         default:
           mimeType = 'image/png'
       }
-      
+
       return `data:${mimeType};base64,${imageBuffer.toString('base64')}`
     } catch (error) {
       console.error(`Error creating thumbnail for ${filePath}:`, error)
@@ -52,26 +52,26 @@ export function registerScreenshotsHandlers() {
     try {
       const screenshotsDir = getScreenshotsDirectory()
       const files = await fs.readdir(screenshotsDir, { withFileTypes: true })
-      
-      // Filter for screenshot files (common patterns: Screen Shot, Screenshot, etc.)
-      const screenshotFiles = files.filter(file => {
+
+      // Filter for screenshot files (common patterns: Screen Shot, Screenshot, CleanShot, etc.)
+      const screenshotFiles = files.filter((file) => {
         if (!file.isFile()) return false
         const name = file.name.toLowerCase()
         const isImageFile = /\.(png|jpg|jpeg|gif|webp)$/i.test(name)
-        const isScreenshot = /^(screen shot|screenshot|capture|snap)/i.test(name)
+        const isScreenshot = /(screen shot|screenshot|capture|snap|cleanshot|lightshot|monosnap|skitch)/i.test(name)
         return isImageFile && isScreenshot
       })
 
       const screenshots: Screenshot[] = []
-      
+
       for (const file of screenshotFiles) {
         try {
           const filePath = join(screenshotsDir, file.name)
           const stats = await fs.stat(filePath)
-          
+
           // Create base64 thumbnail for display in renderer
           const thumbnail = await createThumbnail(filePath)
-          
+
           screenshots.push({
             id: `${file.name}_${stats.mtime.getTime()}`,
             name: file.name,
@@ -131,4 +131,27 @@ export function registerScreenshotsHandlers() {
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
     }
   })
-} 
+
+  // Start drag operation for file
+  ipcMain.on('screenshots:start-drag', async (event, filePath: string) => {
+    try {
+      console.log(`[SCREENSHOTS] Starting drag operation for: ${filePath}`)
+      
+      // Verify file exists
+      await fs.access(filePath)
+      
+      // Create native image for drag
+      const image = nativeImage.createFromPath(filePath)
+      
+      // Start the drag operation using the event sender
+      event.sender.startDrag({
+        file: filePath,
+        icon: image.resize({ width: 64, height: 64 })
+      })
+      
+      console.log(`[SCREENSHOTS] Drag operation started successfully`)
+    } catch (error) {
+      console.error('[SCREENSHOTS] Error starting drag operation:', error)
+    }
+  })
+}
