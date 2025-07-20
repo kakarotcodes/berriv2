@@ -10,7 +10,6 @@ export interface MailItem {
   isStarred: boolean
   labels: string[]
   hasAttachments?: boolean
-  attachments?: string[]
 }
 
 export interface MailFilter {

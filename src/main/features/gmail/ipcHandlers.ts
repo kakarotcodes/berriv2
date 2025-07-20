@@ -13,8 +13,6 @@ interface GmailResponse {
     isRead: boolean
     isStarred: boolean
     labels: string[]
-    hasAttachments: boolean
-    attachments: string[]
   }>
   error?: string
 }

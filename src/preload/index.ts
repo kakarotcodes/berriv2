@@ -62,8 +62,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // ------------------------------------------------------------
 
   gmail: {
-    getEmails: (options) => ipcRenderer.invoke('gmail:get-emails', options),
-    getEmailsNew: (options) => ipcRenderer.invoke('gmail:get-emails-new', options)
+    getEmails: (options) => ipcRenderer.invoke('gmail:get-emails', options)
   },
 
   // ------------------------------------------------------------

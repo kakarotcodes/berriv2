@@ -6,7 +6,6 @@ import { registerExternalHandlers } from './features/external/ipcHandlers'
 import { registerAuthHandlers } from './features/auth/ipcHandlers'
 import { registerCalendarHandlers } from './features/calendar/ipcHandlers'
 import { registerGmailHandlers } from './features/gmail/ipcHandlers'
-import { registerNewGmailHandlers } from './features/gmail/newIpcHandlers'
 import { registerScreenCaptureHandlers } from './features/screenCapture/ipcHandlers'
 import { registerScreenshotsHandlers } from './features/screenshots/ipcHandlers'
 import { registerThemeHandlers } from './features/theme/ipcHandlers'
@@ -21,7 +20,6 @@ export function registerAllHandlers(mainWindow: BrowserWindow) {
   registerAuthHandlers()
   registerCalendarHandlers()
   registerGmailHandlers()
-  registerNewGmailHandlers()
   registerScreenCaptureHandlers()
   registerScreenshotsHandlers()
   registerThemeHandlers(mainWindow)

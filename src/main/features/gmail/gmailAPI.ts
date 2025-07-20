@@ -10,8 +10,6 @@ interface GmailEmail {
   isRead: boolean
   isStarred: boolean
   labels: string[]
-  hasAttachments: boolean
-  attachments: string[]
 }
 
 interface GmailAPIResponse {
@@ -71,29 +69,6 @@ export class GmailAPI {
     return ''
   }
 
-  private getAttachments(payload: any): { hasAttachments: boolean; attachments: string[] } {
-    const names: string[] = []
-
-    function walk(part?: any) {
-      if (!part) return
-      // Case 1: real filename
-      if (part.filename && part.filename.trim() !== '') {
-        names.push(part.filename)
-      }
-      // Case 2: no filename but attachment bytes present
-      else if (part.body?.attachmentId) {
-        names.push(part.mimeType?.split('/')[1] ?? 'unnamed')
-      }
-      // Recurse
-      for (const child of part.parts ?? []) {
-        walk(child)
-      }
-    }
-
-    walk(payload)
-    return { hasAttachments: names.length > 0, attachments: names }
-  }
-
   async getEmails(accessToken: string, refreshToken?: string, options: GetEmailsOptions = {}): Promise<GmailAPIResponse> {
     try {
       console.log('[GMAIL_API] Starting optimized email fetch...')
@@ -104,7 +79,7 @@ export class GmailAPI {
 
       const gmail = google.gmail({ version: 'v1', auth: this.oauth2Client })
 
-      const { maxResults = 20, query = GMAIL_FILTERS.ALL_INBOX } = options
+      const { maxResults = 20, query = GMAIL_FILTERS.PRIMARY } = options
 
       console.log('[GMAIL_API] Using query:', query)
       console.log('[GMAIL_API] Requesting Gmail message list...')
@@ -128,15 +103,16 @@ export class GmailAPI {
         }
       }
 
-      console.log(`[GMAIL_API] Found ${listResponse.data.messages.length} messages, fetching full details for attachment detection...`)
+      console.log(`[GMAIL_API] Found ${listResponse.data.messages.length} messages, fetching metadata concurrently...`)
 
       // Fetch all message details concurrently using Promise.all
-      // Use full format to get payload for attachment detection
+      // Use metadata format for much faster responses (no body content)
       const messagePromises = listResponse.data.messages.slice(0, maxResults).map(message =>
         gmail.users.messages.get({
           userId: 'me',
           id: message.id!,
-          format: 'full' // Need full format to detect attachments
+          format: 'metadata', // Much faster than 'full' - only headers and labels
+          metadataHeaders: ['Subject', 'From', 'To', 'Date'] // Only fetch required headers
         }).catch(error => {
           console.error('[GMAIL_API] Error fetching message:', message.id, error)
           return null // Return null for failed requests
@@ -173,13 +149,6 @@ export class GmailAPI {
           const isRead = !emailData.labelIds?.includes('UNREAD')
           const isStarred = emailData.labelIds?.includes('STARRED') || false
           const labels = emailData.labelIds || []
-          
-          // Get attachment information
-          const attachmentInfo = this.getAttachments(emailData.payload)
-          console.log(`[GMAIL_API] Processing "${subject}" - attachments:`, attachmentInfo)
-          if (attachmentInfo.hasAttachments) {
-            console.log(`[GMAIL_API] ✅ Found attachments in "${subject}":`, attachmentInfo.attachments)
-          }
 
           emails.push({
             id: emailData.id || '',
@@ -190,9 +159,7 @@ export class GmailAPI {
             timestamp,
             isRead,
             isStarred,
-            labels,
-            hasAttachments: attachmentInfo.hasAttachments,
-            attachments: attachmentInfo.attachments.filter(Boolean)
+            labels
           })
 
         } catch (messageError) {

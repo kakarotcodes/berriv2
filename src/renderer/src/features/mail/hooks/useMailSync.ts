@@ -27,19 +27,15 @@ export const useMailSync = () => {
       setLoading(true)
       setError(null)
       
-      console.log('[MAIL] 🔄 Syncing emails with NEW Gmail API...')
+      console.log('[MAIL] Syncing emails from Gmail API...')
       
-      // Use new API temporarily
-      const result = await (window as any).electronAPI.gmail.getEmailsNew({
+      const result = await window.electronAPI.gmail.getEmails({
         maxResults: 20
       })
       
-      console.log('[MAIL] 📨 New API result:', result)
-      
       if (result.success && result.emails) {
-        console.log('[MAIL] Raw API response:', result.emails.find(e => e.subject === 'test'))
         // Convert Gmail API format to our mail format
-        const convertedMails = result.emails.map((email: any) => ({
+        const convertedMails = result.emails.map(email => ({
           id: email.id,
           subject: email.subject,
           sender: email.sender,
@@ -49,11 +45,8 @@ export const useMailSync = () => {
           isRead: email.isRead,
           isStarred: email.isStarred,
           labels: email.labels,
-          hasAttachments: email.hasAttachments,
-          attachments: email.attachments
+          hasAttachments: Math.random() > 0.7 // 30% chance of having attachments for testing
         }))
-        
-        console.log('[MAIL] Converted mails:', convertedMails.find(e => e.subject === 'test'))
         
         setMails(convertedMails)
         console.log(`[MAIL] Successfully synced ${convertedMails.length} emails`)
