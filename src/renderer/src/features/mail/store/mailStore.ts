@@ -1,10 +1,11 @@
 import { create } from 'zustand'
-import { MailItem, MailFilter, MailSettings } from '../types'
+import { MailItem, MailFilter, MailSettings, GmailFilterType } from '../types'
 
 interface MailStore {
   // State
   mails: MailItem[]
   filter: MailFilter
+  gmailFilter: GmailFilterType
   settings: MailSettings
   isLoading: boolean
   error: string | null
@@ -15,6 +16,7 @@ interface MailStore {
   updateMail: (id: string, updates: Partial<MailItem>) => void
   deleteMail: (id: string) => void
   setFilter: (filter: MailFilter) => void
+  setGmailFilter: (filter: GmailFilterType) => void
   setSettings: (settings: MailSettings) => void
   setLoading: (loading: boolean) => void
   setError: (error: string | null) => void
@@ -28,6 +30,7 @@ export const useMailStore = create<MailStore>((set, get) => ({
   // Initial state
   mails: [],
   filter: {},
+  gmailFilter: 'PRIMARY',
   settings: {
     autoRefresh: true,
     refreshInterval: 300000, // 5 minutes
@@ -54,6 +57,7 @@ export const useMailStore = create<MailStore>((set, get) => ({
   })),
   
   setFilter: (filter) => set({ filter }),
+  setGmailFilter: (gmailFilter) => set({ gmailFilter }),
   setSettings: (settings) => set({ settings }),
   setLoading: (loading) => set({ isLoading: loading }),
   setError: (error) => set({ error }),

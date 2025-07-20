@@ -1,5 +1,5 @@
 // dependencies
-import React, { useEffect, useState } from 'react'
+import React, { useEffect } from 'react'
 import { EnvelopeIcon } from '@heroicons/react/24/outline'
 
 // hooks
@@ -8,46 +8,25 @@ import { useAuth } from '../../../hooks/useAuth'
 // store
 import { useMailStore } from '../store'
 
+// types
+import { GMAIL_FILTERS, FILTER_LABELS, GmailFilterType } from '../types'
+
 // components
 import MailItem from './MailItem'
 
-// Gmail filter options
-const GMAIL_FILTERS = {
-  PRIMARY: 'category:primary',
-  ALL_INBOX: 'in:inbox',
-  UNREAD: 'in:inbox is:unread',
-  IMPORTANT: 'in:inbox is:important',
-  STARRED: 'in:inbox is:starred',
-  PERSONAL:
-    'category:primary -from:noreply -from:no-reply -from:newsletter -from:donotreply -from:notifications -subject:unsubscribe'
-} as const
-
-type FilterType = keyof typeof GMAIL_FILTERS
-
-const FILTER_LABELS: Record<FilterType, string> = {
-  PRIMARY: 'Primary',
-  ALL_INBOX: 'All Inbox',
-  UNREAD: 'Unread',
-  IMPORTANT: 'Important',
-  STARRED: 'Starred',
-  PERSONAL: 'Personal'
-}
-
 const MailList: React.FC = () => {
   const { isAuthenticated } = useAuth()
-  const { isLoading, error, getFilteredMails, getUnreadCount, setMails, setLoading, setError } =
+  const { isLoading, error, getFilteredMails, getUnreadCount, setMails, setLoading, setError, gmailFilter } =
     useMailStore()
-
-  const [activeFilter, setActiveFilter] = useState<FilterType>('PRIMARY')
 
   // Fetch emails when authenticated or filter changes
   useEffect(() => {
     if (isAuthenticated) {
-      fetchEmails(activeFilter)
+      fetchEmails(gmailFilter)
     }
-  }, [isAuthenticated, activeFilter])
+  }, [isAuthenticated, gmailFilter])
 
-  const fetchEmails = async (filterType: FilterType = activeFilter) => {
+  const fetchEmails = async (filterType: GmailFilterType = gmailFilter) => {
     setLoading(true)
     setError(null)
 
@@ -88,9 +67,6 @@ const MailList: React.FC = () => {
     }
   }
 
-  const handleFilterChange = (filterType: FilterType) => {
-    setActiveFilter(filterType)
-  }
 
   const filteredMails = getFilteredMails()
   const unreadCount = getUnreadCount()
@@ -132,7 +108,7 @@ const MailList: React.FC = () => {
             <div className="text-gray-400 text-center">
               <EnvelopeIcon className="size-8 mx-auto mb-2 opacity-50" />
               <p>No emails found</p>
-              <p className="text-xs mt-1">Filter: {FILTER_LABELS[activeFilter]}</p>
+              <p className="text-xs mt-1">Filter: {FILTER_LABELS[gmailFilter]}</p>
             </div>
           </div>
         ) : (
