@@ -3,6 +3,7 @@ import React from 'react'
 
 // utils
 import { startGoogleMeet, openScreenCapture, openSnippingTool } from '@/utils/appActions'
+import { Crop } from 'lucide-react'
 
 // assets
 import GoogleCalendar from '@/assets/pill-icons/calendar.svg?react'
@@ -30,7 +31,10 @@ const Navigation: React.FC = () => {
 
   return (
     <div className="relative w-full flex items-center justify-center py-3">
-      <div className="absolute left-3 frosted-glass-navbar flex items-center gap-x-6 py-2 px-4 rounded-[100px]">
+      <div
+        id="action-buttons"
+        className="absolute left-3 frosted-glass-navbar flex items-center gap-x-6 py-2 px-4 rounded-[100px] max-[555px]:hidden"
+      >
         <HoverNavigationButton
           featureKey="screen-capture"
           onClick={openScreenCapture}
@@ -39,7 +43,7 @@ const Navigation: React.FC = () => {
         <HoverNavigationButton
           featureKey="snipping"
           onClick={openSnippingTool}
-          icon={<Snipping className="w-4.5 h-4.5" />}
+          icon={<Snipping className="w-4.5 h-4.5 flex-shrink-0" />}
         />
         <HoverNavigationButton
           featureKey="meet"
@@ -47,6 +51,28 @@ const Navigation: React.FC = () => {
           icon={<GoogleMeet className="w-4.5 h-4.5" />}
         />
       </div>
+
+      <div
+        id="action-buttons-mobile"
+        className="fixed bottom-5 left-1/2 -translate-x-1/2 frosted-glass-navbar flex items-center justify-center gap-x-4 px-3 py-2 rounded-[100px] hidden max-[555px]:flex z-[9999]"
+      >
+        <HoverNavigationButton
+          featureKey="screen-capture"
+          onClick={openScreenCapture}
+          icon={<Record className="w-4.5 h-4.5" />}
+        />
+        <HoverNavigationButton
+          featureKey="snipping"
+          onClick={openSnippingTool}
+          icon={<Crop className="w-4.5 h-4.5" />}
+        />
+        <HoverNavigationButton
+          featureKey="meet"
+          onClick={startGoogleMeet}
+          icon={<GoogleMeet className="w-4.5 h-4.5" />}
+        />
+      </div>
+
       <nav className="frosted-glass-navbar flex items-center gap-x-6 py-2 px-4 rounded-[100px]">
         <HoverNavigationButton
           featureKey="mail"

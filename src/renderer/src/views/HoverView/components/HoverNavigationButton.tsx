@@ -21,7 +21,7 @@ const HoverNavigationButton: React.FC<HoverNavigationButtonProps> = ({
   const isActive = currentView === 'hover' && activeFeature === featureKey
 
   return (
-    <button onClick={onClick} className={`cursor-pointer flex flex-col items-center gap-y-1`}>
+    <button onClick={onClick} className="cursor-pointer flex flex-col items-center gap-y-1">
       {icon}
       {isActive && <div className="h-1 w-1 bg-white rounded-[8px]" />}
     </button>
