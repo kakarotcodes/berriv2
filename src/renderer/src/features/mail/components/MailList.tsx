@@ -16,8 +16,19 @@ import MailItem from './MailItem'
 
 const MailList: React.FC = () => {
   const { isAuthenticated } = useAuth()
-  const { isLoading, error, getFilteredMails, getUnreadCount, setMails, setLoading, setError, gmailFilter, searchQuery } =
-    useMailStore()
+  const {
+    isLoading,
+    error,
+    getFilteredMails,
+    getUnreadCount,
+    setMails,
+    setLoading,
+    setError,
+    gmailFilter,
+    searchQuery,
+    getCachedEmails,
+    updateCache
+  } = useMailStore()
 
   // Debounced fetch function
   const debouncedFetch = useCallback(
@@ -49,7 +60,21 @@ const MailList: React.FC = () => {
     }
   }, [searchQuery, isAuthenticated, gmailFilter, debouncedFetch])
 
-  const fetchEmails = async (filterType: GmailFilterType = gmailFilter, search: string = searchQuery) => {
+  const fetchEmails = async (
+    filterType: GmailFilterType = gmailFilter,
+    search: string = searchQuery,
+    forceRefresh = false
+  ) => {
+    // Check cache first if no search query and not forcing refresh
+    if (!search.trim() && !forceRefresh) {
+      const cachedEmails = getCachedEmails(filterType)
+      if (cachedEmails) {
+        console.log(`[MAIL] Using cached emails for filter: ${filterType}`)
+        setMails(cachedEmails)
+        return
+      }
+    }
+
     setLoading(true)
     setError(null)
 
@@ -59,7 +84,7 @@ const MailList: React.FC = () => {
       if (search.trim()) {
         combinedQuery = `${combinedQuery} ${search.trim()}`
       }
-      
+
       console.log('[MAIL] Fetching emails with query:', combinedQuery)
       const result = await window.electronAPI.gmail.getEmails({
         maxResults: 20,
@@ -81,6 +106,13 @@ const MailList: React.FC = () => {
         }))
 
         setMails(convertedMails)
+
+        // Cache emails only if no search query (cache base filter results)
+        if (!search.trim()) {
+          updateCache(filterType, convertedMails)
+          console.log(`[MAIL] Cached ${convertedMails.length} emails for filter: ${filterType}`)
+        }
+
         console.log(
           `[MAIL] Successfully fetched ${convertedMails.length} emails with query: ${combinedQuery}`
         )
@@ -96,6 +128,9 @@ const MailList: React.FC = () => {
     }
   }
 
+  const refreshEmails = () => {
+    fetchEmails(gmailFilter, searchQuery, true) // Force refresh
+  }
 
   const filteredMails = getFilteredMails()
   const unreadCount = getUnreadCount()
