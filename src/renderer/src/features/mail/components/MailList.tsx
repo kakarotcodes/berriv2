@@ -1,5 +1,5 @@
 // dependencies
-import React, { useEffect } from 'react'
+import React, { useEffect, useCallback } from 'react'
 import { EnvelopeIcon } from '@heroicons/react/24/outline'
 
 // hooks
@@ -16,25 +16,54 @@ import MailItem from './MailItem'
 
 const MailList: React.FC = () => {
   const { isAuthenticated } = useAuth()
-  const { isLoading, error, getFilteredMails, getUnreadCount, setMails, setLoading, setError, gmailFilter } =
+  const { isLoading, error, getFilteredMails, getUnreadCount, setMails, setLoading, setError, gmailFilter, searchQuery } =
     useMailStore()
+
+  // Debounced fetch function
+  const debouncedFetch = useCallback(
+    (() => {
+      let timeoutId: NodeJS.Timeout
+      return (filter: GmailFilterType, search: string) => {
+        clearTimeout(timeoutId)
+        timeoutId = setTimeout(() => {
+          fetchEmails(filter, search)
+        }, 300) // 300ms debounce
+      }
+    })(),
+    []
+  )
 
   // Fetch emails when authenticated or filter changes
   useEffect(() => {
     if (isAuthenticated) {
-      fetchEmails(gmailFilter)
+      fetchEmails(gmailFilter, searchQuery)
     }
   }, [isAuthenticated, gmailFilter])
 
-  const fetchEmails = async (filterType: GmailFilterType = gmailFilter) => {
+  // Debounced search when search query changes
+  useEffect(() => {
+    if (isAuthenticated && searchQuery !== '') {
+      debouncedFetch(gmailFilter, searchQuery)
+    } else if (isAuthenticated && searchQuery === '') {
+      fetchEmails(gmailFilter, searchQuery)
+    }
+  }, [searchQuery, isAuthenticated, gmailFilter, debouncedFetch])
+
+  const fetchEmails = async (filterType: GmailFilterType = gmailFilter, search: string = searchQuery) => {
     setLoading(true)
     setError(null)
 
     try {
-      console.log('[MAIL] Fetching emails with filter:', filterType)
+      // Combine filter query with search query
+      let combinedQuery = GMAIL_FILTERS[filterType]
+      if (search.trim()) {
+        combinedQuery = `${combinedQuery} ${search.trim()}`
+      }
+      
+      console.log('[MAIL] Fetching emails with query:', combinedQuery)
       const result = await window.electronAPI.gmail.getEmails({
         maxResults: 20,
-        query: GMAIL_FILTERS[filterType]
+        query: combinedQuery
       })
 
       if (result.success && result.emails) {
@@ -53,7 +82,7 @@ const MailList: React.FC = () => {
 
         setMails(convertedMails)
         console.log(
-          `[MAIL] Successfully fetched ${convertedMails.length} emails with filter: ${filterType}`
+          `[MAIL] Successfully fetched ${convertedMails.length} emails with query: ${combinedQuery}`
         )
       } else {
         setError(result.error || 'Failed to load emails')

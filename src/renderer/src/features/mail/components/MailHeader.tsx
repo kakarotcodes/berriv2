@@ -4,15 +4,23 @@ import { useMailStore } from '../store/mailStore'
 import { GMAIL_FILTERS, FILTER_LABELS, GmailFilterType } from '../types'
 
 const MailHeader: React.FC = () => {
-  const { gmailFilter, setGmailFilter } = useMailStore()
+  const { gmailFilter, setGmailFilter, searchQuery, setSearchQuery } = useMailStore()
 
   const handleFilterChange = (filterType: GmailFilterType) => {
     setGmailFilter(filterType)
   }
 
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value)
+  }
+
   return (
     <div className="w-full bg-black/40 px-4 h-14 flex items-center gap-x-4">
-      <Searchbar placeholder="Search mails" />
+      <Searchbar 
+        placeholder="Search mails" 
+        value={searchQuery}
+        onChange={handleSearchChange}
+      />
       <div className="flex gap-2 overflow-x-auto hide-scrollbar" id="mail-filters">
         {(Object.keys(GMAIL_FILTERS) as GmailFilterType[]).map((filterType) => (
           <button

@@ -6,6 +6,7 @@ interface MailStore {
   mails: MailItem[]
   filter: MailFilter
   gmailFilter: GmailFilterType
+  searchQuery: string
   filterCounts: Record<GmailFilterType, number>
   isLoadingCounts: boolean
   settings: MailSettings
@@ -19,6 +20,7 @@ interface MailStore {
   deleteMail: (id: string) => void
   setFilter: (filter: MailFilter) => void
   setGmailFilter: (filter: GmailFilterType) => void
+  setSearchQuery: (query: string) => void
   setFilterCounts: (counts: Record<GmailFilterType, number>) => void
   setLoadingCounts: (loading: boolean) => void
   fetchFilterCounts: () => Promise<void>
@@ -36,6 +38,7 @@ export const useMailStore = create<MailStore>((set, get) => ({
   mails: [],
   filter: {},
   gmailFilter: 'PRIMARY',
+  searchQuery: '',
   filterCounts: {
     PRIMARY: 0,
     ALL_INBOX: 0,
@@ -72,6 +75,7 @@ export const useMailStore = create<MailStore>((set, get) => ({
   
   setFilter: (filter) => set({ filter }),
   setGmailFilter: (gmailFilter) => set({ gmailFilter }),
+  setSearchQuery: (searchQuery) => set({ searchQuery }),
   setFilterCounts: (filterCounts) => set({ filterCounts }),
   setLoadingCounts: (isLoadingCounts) => set({ isLoadingCounts }),
   
@@ -123,12 +127,6 @@ export const useMailStore = create<MailStore>((set, get) => ({
       if (filter.isRead !== undefined && mail.isRead !== filter.isRead) return false
       if (filter.isStarred !== undefined && mail.isStarred !== filter.isStarred) return false
       if (filter.label && !mail.labels.includes(filter.label)) return false
-      if (filter.searchQuery) {
-        const query = filter.searchQuery.toLowerCase()
-        return mail.subject.toLowerCase().includes(query) ||
-               mail.sender.toLowerCase().includes(query) ||
-               mail.body.toLowerCase().includes(query)
-      }
       return true
     })
   },
