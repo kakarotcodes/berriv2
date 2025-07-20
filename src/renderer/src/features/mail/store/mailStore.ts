@@ -1,11 +1,13 @@
 import { create } from 'zustand'
-import { MailItem, MailFilter, MailSettings, GmailFilterType } from '../types'
+import { MailItem, MailFilter, MailSettings, GmailFilterType, GMAIL_FILTERS } from '../types'
 
 interface MailStore {
   // State
   mails: MailItem[]
   filter: MailFilter
   gmailFilter: GmailFilterType
+  filterCounts: Record<GmailFilterType, number>
+  isLoadingCounts: boolean
   settings: MailSettings
   isLoading: boolean
   error: string | null
@@ -17,6 +19,9 @@ interface MailStore {
   deleteMail: (id: string) => void
   setFilter: (filter: MailFilter) => void
   setGmailFilter: (filter: GmailFilterType) => void
+  setFilterCounts: (counts: Record<GmailFilterType, number>) => void
+  setLoadingCounts: (loading: boolean) => void
+  fetchFilterCounts: () => Promise<void>
   setSettings: (settings: MailSettings) => void
   setLoading: (loading: boolean) => void
   setError: (error: string | null) => void
@@ -31,6 +36,15 @@ export const useMailStore = create<MailStore>((set, get) => ({
   mails: [],
   filter: {},
   gmailFilter: 'PRIMARY',
+  filterCounts: {
+    PRIMARY: 0,
+    ALL_INBOX: 0,
+    UNREAD: 0,
+    IMPORTANT: 0,
+    STARRED: 0,
+    PERSONAL: 0
+  },
+  isLoadingCounts: false,
   settings: {
     autoRefresh: true,
     refreshInterval: 300000, // 5 minutes
@@ -58,6 +72,46 @@ export const useMailStore = create<MailStore>((set, get) => ({
   
   setFilter: (filter) => set({ filter }),
   setGmailFilter: (gmailFilter) => set({ gmailFilter }),
+  setFilterCounts: (filterCounts) => set({ filterCounts }),
+  setLoadingCounts: (isLoadingCounts) => set({ isLoadingCounts }),
+  
+  fetchFilterCounts: async () => {
+    set({ isLoadingCounts: true })
+    
+    try {
+      const counts: Record<GmailFilterType, number> = {
+        PRIMARY: 0,
+        ALL_INBOX: 0,
+        UNREAD: 0,
+        IMPORTANT: 0,
+        STARRED: 0,
+        PERSONAL: 0
+      }
+      
+      // Fetch counts for each filter
+      for (const [filterType, query] of Object.entries(GMAIL_FILTERS)) {
+        try {
+          const result = await window.electronAPI.gmail.getEmails({
+            maxResults: 1,
+            query: query
+          })
+          
+          if (result.success && result.totalCount !== undefined) {
+            counts[filterType as GmailFilterType] = result.totalCount
+          }
+        } catch (err) {
+          console.error(`Failed to fetch count for ${filterType}:`, err)
+        }
+      }
+      
+      set({ filterCounts: counts })
+    } catch (err) {
+      console.error('Failed to fetch filter counts:', err)
+    } finally {
+      set({ isLoadingCounts: false })
+    }
+  },
+  
   setSettings: (settings) => set({ settings }),
   setLoading: (loading) => set({ isLoading: loading }),
   setError: (error) => set({ error }),
