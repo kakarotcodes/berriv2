@@ -71,8 +71,26 @@ export function registerAuthHandlers(): void {
   // Handle getting current auth tokens
   ipcMain.handle('auth:get-tokens', async (): Promise<AuthResponse> => {
     try {
-      const tokens = (global as { authTokens?: unknown }).authTokens
-      return { success: true, tokens }
+      const authData = (global as { authTokens?: { access: string; refresh?: string; timestamp: number } }).authTokens
+      
+      // Check if tokens exist and are valid
+      if (!authData?.access) {
+        console.log('[AUTH] No access token found')
+        return { success: true, tokens: null }
+      }
+      
+      // Check token age (expire after 1 hour for security)
+      const tokenAge = Date.now() - (authData.timestamp || 0)
+      const maxAge = 60 * 60 * 1000 // 1 hour in milliseconds
+      
+      if (tokenAge > maxAge) {
+        console.log('[AUTH] Token expired, clearing from memory')
+        ;(global as { authTokens?: any }).authTokens = undefined
+        return { success: true, tokens: null }
+      }
+      
+      console.log('[AUTH] Valid tokens found')
+      return { success: true, tokens: { access: authData.access, refresh: authData.refresh } }
     } catch (error) {
       console.error('Failed to get auth tokens:', error)
       return {

@@ -27,7 +27,8 @@ const MailList: React.FC = () => {
     gmailFilter,
     searchQuery,
     getCachedEmails,
-    updateCache
+    updateCache,
+    clearCache
   } = useMailStore()
 
   // Debounced fetch function
@@ -60,11 +61,26 @@ const MailList: React.FC = () => {
     }
   }, [searchQuery, isAuthenticated, gmailFilter, debouncedFetch])
 
+  // Clear cache when user logs out
+  useEffect(() => {
+    if (!isAuthenticated) {
+      console.log('[MAIL] User logged out, clearing email cache')
+      clearCache()
+      setMails([])
+    }
+  }, [isAuthenticated, clearCache, setMails])
+
   const fetchEmails = async (
     filterType: GmailFilterType = gmailFilter,
     search: string = searchQuery,
     forceRefresh = false
   ) => {
+    // Check authentication first
+    if (!isAuthenticated) {
+      console.log('[MAIL] User not authenticated, skipping email fetch')
+      return
+    }
+
     // Check cache first if no search query and not forcing refresh
     if (!search.trim() && !forceRefresh) {
       const cachedEmails = getCachedEmails(filterType)
