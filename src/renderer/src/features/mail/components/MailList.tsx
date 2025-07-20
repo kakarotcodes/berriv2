@@ -1,5 +1,5 @@
 // dependencies
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useCallback } from 'react'
 import { EnvelopeIcon } from '@heroicons/react/24/outline'
 
 // hooks
@@ -8,54 +8,103 @@ import { useAuth } from '../../../hooks/useAuth'
 // store
 import { useMailStore } from '../store'
 
+// types
+import { GMAIL_FILTERS, FILTER_LABELS, GmailFilterType } from '../types'
+
 // components
 import MailItem from './MailItem'
 
-// Gmail filter options
-const GMAIL_FILTERS = {
-  PRIMARY: 'category:primary',
-  ALL_INBOX: 'in:inbox',
-  UNREAD: 'in:inbox is:unread',
-  IMPORTANT: 'in:inbox is:important',
-  STARRED: 'in:inbox is:starred',
-  PERSONAL:
-    'category:primary -from:noreply -from:no-reply -from:newsletter -from:donotreply -from:notifications -subject:unsubscribe'
-} as const
-
-type FilterType = keyof typeof GMAIL_FILTERS
-
-const FILTER_LABELS: Record<FilterType, string> = {
-  PRIMARY: 'Primary',
-  ALL_INBOX: 'All Inbox',
-  UNREAD: 'Unread',
-  IMPORTANT: 'Important',
-  STARRED: 'Starred',
-  PERSONAL: 'Personal'
-}
-
 const MailList: React.FC = () => {
   const { isAuthenticated } = useAuth()
-  const { isLoading, error, getFilteredMails, getUnreadCount, setMails, setLoading, setError } =
-    useMailStore()
+  const {
+    isLoading,
+    error,
+    getFilteredMails,
+    getUnreadCount,
+    setMails,
+    setLoading,
+    setError,
+    gmailFilter,
+    searchQuery,
+    getCachedEmails,
+    updateCache,
+    clearCache
+  } = useMailStore()
 
-  const [activeFilter, setActiveFilter] = useState<FilterType>('PRIMARY')
+  // Debounced fetch function
+  const debouncedFetch = useCallback(
+    (() => {
+      let timeoutId: NodeJS.Timeout
+      return (filter: GmailFilterType, search: string) => {
+        clearTimeout(timeoutId)
+        timeoutId = setTimeout(() => {
+          fetchEmails(filter, search)
+        }, 300) // 300ms debounce
+      }
+    })(),
+    []
+  )
 
   // Fetch emails when authenticated or filter changes
   useEffect(() => {
     if (isAuthenticated) {
-      fetchEmails(activeFilter)
+      fetchEmails(gmailFilter, searchQuery)
     }
-  }, [isAuthenticated, activeFilter])
+  }, [isAuthenticated, gmailFilter])
 
-  const fetchEmails = async (filterType: FilterType = activeFilter) => {
+  // Debounced search when search query changes
+  useEffect(() => {
+    if (isAuthenticated && searchQuery !== '') {
+      debouncedFetch(gmailFilter, searchQuery)
+    } else if (isAuthenticated && searchQuery === '') {
+      fetchEmails(gmailFilter, searchQuery)
+    }
+  }, [searchQuery, isAuthenticated, gmailFilter, debouncedFetch])
+
+  // Clear cache when user logs out
+  useEffect(() => {
+    if (!isAuthenticated) {
+      console.log('[MAIL] User logged out, clearing email cache')
+      clearCache()
+      setMails([])
+    }
+  }, [isAuthenticated, clearCache, setMails])
+
+  const fetchEmails = async (
+    filterType: GmailFilterType = gmailFilter,
+    search: string = searchQuery,
+    forceRefresh = false
+  ) => {
+    // Check authentication first
+    if (!isAuthenticated) {
+      console.log('[MAIL] User not authenticated, skipping email fetch')
+      return
+    }
+
+    // Check cache first if no search query and not forcing refresh
+    if (!search.trim() && !forceRefresh) {
+      const cachedEmails = getCachedEmails(filterType)
+      if (cachedEmails) {
+        console.log(`[MAIL] Using cached emails for filter: ${filterType}`)
+        setMails(cachedEmails)
+        return
+      }
+    }
+
     setLoading(true)
     setError(null)
 
     try {
-      console.log('[MAIL] Fetching emails with filter:', filterType)
+      // Combine filter query with search query
+      let combinedQuery = GMAIL_FILTERS[filterType]
+      if (search.trim()) {
+        combinedQuery = `${combinedQuery} ${search.trim()}`
+      }
+
+      console.log('[MAIL] Fetching emails with query:', combinedQuery)
       const result = await window.electronAPI.gmail.getEmails({
         maxResults: 20,
-        query: GMAIL_FILTERS[filterType]
+        query: combinedQuery
       })
 
       if (result.success && result.emails) {
@@ -73,8 +122,15 @@ const MailList: React.FC = () => {
         }))
 
         setMails(convertedMails)
+
+        // Cache emails only if no search query (cache base filter results)
+        if (!search.trim()) {
+          updateCache(filterType, convertedMails)
+          console.log(`[MAIL] Cached ${convertedMails.length} emails for filter: ${filterType}`)
+        }
+
         console.log(
-          `[MAIL] Successfully fetched ${convertedMails.length} emails with filter: ${filterType}`
+          `[MAIL] Successfully fetched ${convertedMails.length} emails with query: ${combinedQuery}`
         )
       } else {
         setError(result.error || 'Failed to load emails')
@@ -88,8 +144,8 @@ const MailList: React.FC = () => {
     }
   }
 
-  const handleFilterChange = (filterType: FilterType) => {
-    setActiveFilter(filterType)
+  const refreshEmails = () => {
+    fetchEmails(gmailFilter, searchQuery, true) // Force refresh
   }
 
   const filteredMails = getFilteredMails()
@@ -132,7 +188,7 @@ const MailList: React.FC = () => {
             <div className="text-gray-400 text-center">
               <EnvelopeIcon className="size-8 mx-auto mb-2 opacity-50" />
               <p>No emails found</p>
-              <p className="text-xs mt-1">Filter: {FILTER_LABELS[activeFilter]}</p>
+              <p className="text-xs mt-1">Filter: {FILTER_LABELS[gmailFilter]}</p>
             </div>
           </div>
         ) : (
