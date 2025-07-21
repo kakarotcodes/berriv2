@@ -134,6 +134,12 @@ if (!gotTheLock) {
     // Set app user model id for windows
     electronApp.setAppUserModelId('com.berri.app')
 
+    // In development, clear any existing auth tokens to prevent stale sessions
+    if (is.dev) {
+      console.log('[AUTH] Development mode: clearing any existing auth tokens')
+      ;(global as { authTokens?: any }).authTokens = undefined
+    }
+
     // Default open or close DevTools by F12 in development
     // and ignore CommandOrControl + R in production.
     // see https://github.com/alex8088/electron-toolkit/tree/master/packages/utils
@@ -177,6 +183,10 @@ app.on('window-all-closed', () => {
 // clear window resize before app quit
 app.on('before-quit', () => {
   if (mainWindow) cancelWindowResize(mainWindow)
+  
+  // Clear auth tokens from memory for security
+  console.log('[AUTH] Clearing auth tokens on app quit')
+  ;(global as { authTokens?: any }).authTokens = undefined
   globalShortcut.unregisterAll()
 })
 
