@@ -11,7 +11,9 @@ import {
   List,
   CheckSquare,
   ImageIcon,
-  Sparkles
+  Sparkles,
+  FileOutput,
+  FileDown
 } from 'lucide-react'
 import { useAIStore } from '../../ai/store/aiStore'
 
@@ -19,6 +21,7 @@ const NotesEditorToolbar: React.FC = () => {
   const { editor, getSelectedNote } = useNotesStore()
   const { generateSummary, isGeneratingSummary, getSummary } = useAIStore()
   const selectedNote = getSelectedNote()
+  const [isExporting, setIsExporting] = React.useState<'pdf' | 'docx' | null>(null)
 
   if (!editor) return null
 
@@ -58,6 +61,32 @@ const NotesEditorToolbar: React.FC = () => {
       })
     } catch (error) {
       console.error('Failed to generate summary:', error)
+    }
+  }
+
+  const handleExport = async (format: 'pdf' | 'docx') => {
+    try {
+      setIsExporting(format)
+
+      if (!selectedNote) {
+        alert('Please select a note to export')
+        return
+      }
+
+      const result = format === 'pdf' 
+        ? await window.electronAPI.notesAPI.exportPDF([selectedNote.id])
+        : await window.electronAPI.notesAPI.exportDOCX([selectedNote.id])
+
+      if (result.success) {
+        alert(`Note exported successfully!`)
+      } else {
+        alert(`Export failed: ${result.error || 'Unknown error'}`)
+      }
+    } catch (error) {
+      console.error('Export error:', error)
+      alert(`Export failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    } finally {
+      setIsExporting(null)
     }
   }
 
@@ -158,6 +187,30 @@ const NotesEditorToolbar: React.FC = () => {
           size={16}
           className={isGeneratingSummary(selectedNote?.id || '') ? 'animate-pulse' : ''}
         />
+      </button>
+      <button
+        onClick={() => handleExport('pdf')}
+        disabled={!selectedNote || isExporting !== null}
+        className="p-1 rounded hover:bg-zinc-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-red-400"
+        title="Export as PDF"
+      >
+        {isExporting === 'pdf' ? (
+          <div className="w-4 h-4 border-2 border-red-400 border-t-transparent rounded-full animate-spin" />
+        ) : (
+          <FileOutput size={16} />
+        )}
+      </button>
+      <button
+        onClick={() => handleExport('docx')}
+        disabled={!selectedNote || isExporting !== null}
+        className="p-1 rounded hover:bg-zinc-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-blue-400"
+        title="Export as DOCX"
+      >
+        {isExporting === 'docx' ? (
+          <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+        ) : (
+          <FileDown size={16} />
+        )}
       </button>
     </div>
   )

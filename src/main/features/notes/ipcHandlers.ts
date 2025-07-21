@@ -1,7 +1,9 @@
-import { ipcMain, app } from 'electron'
+import { ipcMain, app, dialog } from 'electron'
 import path from 'path'
 import fs from 'fs/promises'
 import { NotesDB } from '../../../renderer/src/features/notes/db/notesDB'
+import pdf from 'html-pdf-node'
+import { Document, Paragraph, TextRun, HeadingLevel, Packer } from 'docx'
 
 export function registerNotesHandlers() {
   // Get all notes
@@ -70,6 +72,184 @@ export function registerNotesHandlers() {
     } catch (error) {
       console.error('[IMAGES] Error saving image:', error)
       return null
+    }
+  })
+
+  // Export notes as PDF
+  ipcMain.handle('notes:export-pdf', async (_, noteIds: string[]) => {
+    try {
+      // Get selected notes
+      const allNotes = NotesDB.getAllNotes()
+      const validNotes = allNotes.filter(note => noteIds.includes(note.id))
+
+      if (validNotes.length === 0) {
+        return { success: false, error: 'No valid notes found' }
+      }
+
+      // Show save dialog
+      const result = await dialog.showSaveDialog({
+        filters: [
+          { name: 'PDF Files', extensions: ['pdf'] }
+        ],
+        defaultPath: `notes-export-${new Date().toISOString().split('T')[0]}.pdf`
+      })
+
+      if (result.canceled || !result.filePath) {
+        return { success: false, error: 'Save canceled' }
+      }
+
+      // Generate HTML content
+      let htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.6; margin: 40px; }
+            h1 { color: #333; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+            h2 { color: #555; margin-top: 30px; }
+            .note { margin-bottom: 40px; page-break-inside: avoid; }
+            .note-meta { color: #666; font-size: 0.9em; margin-bottom: 15px; }
+            .note-content { color: #333; }
+          </style>
+        </head>
+        <body>
+          <h1>Notes Export</h1>
+      `
+
+      validNotes.forEach(note => {
+        const createdAt = new Date(note.createdAt).toLocaleString()
+        const contentHtml = typeof note.content === 'string' ? note.content : JSON.stringify(note.content)
+        htmlContent += `
+          <div class="note">
+            <h2>${note.title}</h2>
+            <div class="note-meta">Created: ${createdAt}</div>
+            <div class="note-content">${contentHtml}</div>
+          </div>
+        `
+      })
+
+      htmlContent += '</body></html>'
+
+      // Generate PDF
+      const options = { 
+        format: 'A4',
+        border: { top: '0.5in', right: '0.5in', bottom: '0.5in', left: '0.5in' }
+      }
+
+      const file = { content: htmlContent }
+      const pdfBuffer = await pdf.generatePdf(file, options)
+      
+      await fs.writeFile(result.filePath, pdfBuffer)
+
+      return { success: true, filePath: result.filePath }
+    } catch (error) {
+      console.error('[NOTES] Export PDF Error:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to export PDF'
+      }
+    }
+  })
+
+  // Export notes as DOCX
+  ipcMain.handle('notes:export-docx', async (_, noteIds: string[]) => {
+    try {
+      // Get selected notes
+      const allNotes = NotesDB.getAllNotes()
+      const validNotes = allNotes.filter(note => noteIds.includes(note.id))
+
+      if (validNotes.length === 0) {
+        return { success: false, error: 'No valid notes found' }
+      }
+
+      // Show save dialog
+      const result = await dialog.showSaveDialog({
+        filters: [
+          { name: 'Word Documents', extensions: ['docx'] }
+        ],
+        defaultPath: `notes-export-${new Date().toISOString().split('T')[0]}.docx`
+      })
+
+      if (result.canceled || !result.filePath) {
+        return { success: false, error: 'Save canceled' }
+      }
+
+      // Create document
+      const children: Paragraph[] = []
+
+      // Add title
+      children.push(
+        new Paragraph({
+          text: 'Notes Export',
+          heading: HeadingLevel.HEADING_1,
+        })
+      )
+
+      // Add notes
+      validNotes.forEach((note, index) => {
+        if (index > 0) {
+          children.push(new Paragraph({ text: '' })) // Add spacing
+        }
+
+        // Note title
+        children.push(
+          new Paragraph({
+            text: note.title,
+            heading: HeadingLevel.HEADING_2,
+          })
+        )
+
+        // Note metadata
+        const createdAt = new Date(note.createdAt).toLocaleString()
+        children.push(
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: `Created: ${createdAt}`,
+                italics: true,
+                size: 20,
+                color: '666666',
+              }),
+            ],
+          })
+        )
+
+        // Note content - strip HTML tags for DOCX
+        const contentString = typeof note.content === 'string' ? note.content : JSON.stringify(note.content)
+        const plainContent = contentString.replace(/<[^>]*>/g, '\n').replace(/&nbsp;/g, ' ').trim()
+        const contentLines = plainContent.split('\n').filter(line => line.trim())
+        
+        contentLines.forEach(line => {
+          children.push(
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: line.trim(),
+                }),
+              ],
+            })
+          )
+        })
+      })
+
+      const doc = new Document({
+        sections: [{
+          properties: {},
+          children,
+        }],
+      })
+
+      const buffer = await Packer.toBuffer(doc)
+      await fs.writeFile(result.filePath, buffer)
+
+      return { success: true, filePath: result.filePath }
+    } catch (error) {
+      console.error('[NOTES] Export DOCX Error:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to export DOCX'
+      }
     }
   })
 }

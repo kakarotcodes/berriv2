@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
-import { Trash2, ExternalLink, Calendar, Image } from 'lucide-react'
+import { Trash2, ExternalLink, Calendar, Image, FileText } from 'lucide-react'
+import { aiApi } from '../../../api/ai'
 
 interface Screenshot {
   id: string
@@ -89,6 +90,58 @@ const ScreenshotsViewHover: React.FC = () => {
       await window.electronAPI.screenshots.openInFinder(screenshot.path)
     } catch (error) {
       console.error('Failed to open in Finder:', error)
+    }
+  }
+
+  const handleOCR = async (screenshot: Screenshot) => {
+    try {
+      // Convert image to base64 using canvas
+      const img = new window.Image()
+      img.crossOrigin = 'anonymous'
+      
+      return new Promise<void>((resolve, reject) => {
+        img.onload = async () => {
+          try {
+            const canvas = document.createElement('canvas')
+            const ctx = canvas.getContext('2d')
+            if (!ctx) {
+              reject(new Error('Could not create canvas context'))
+              return
+            }
+            
+            canvas.width = img.naturalWidth
+            canvas.height = img.naturalHeight
+            ctx.drawImage(img, 0, 0)
+            
+            const imageData = canvas.toDataURL('image/png')
+            
+            // Extract text using Gemini AI
+            const result = await aiApi.extractText(imageData)
+            
+            if (result.success && result.text) {
+              // Copy extracted text to clipboard
+              await navigator.clipboard.writeText(result.text)
+              alert('Text extracted and copied to clipboard!')
+            } else {
+              alert('No text found in image')
+            }
+            resolve()
+          } catch (error) {
+            console.error('OCR error:', error)
+            alert('Failed to extract text from image')
+            reject(error)
+          }
+        }
+        
+        img.onerror = () => {
+          reject(new Error('Failed to load image'))
+        }
+        
+        img.src = screenshot.thumbnail || `file://${screenshot.path}`
+      })
+    } catch (error) {
+      console.error('Failed to perform OCR:', error)
+      alert('Failed to extract text from image')
     }
   }
 
@@ -241,6 +294,16 @@ const ScreenshotsViewHover: React.FC = () => {
                 <button
                   onClick={(e) => {
                     e.stopPropagation()
+                    handleOCR(screenshot)
+                  }}
+                  className="p-1 bg-black/50 hover:bg-blue-600/70 rounded transition-colors"
+                  title="Extract text"
+                >
+                  <FileText size={12} className="text-white" />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
                     handleOpenInFinder(screenshot)
                   }}
                   onMouseDown={(e) => {
@@ -290,6 +353,12 @@ const ScreenshotsViewHover: React.FC = () => {
                 </div>
               </div>
               <div className="flex gap-2">
+                <button
+                  onClick={() => handleOCR(selectedScreenshot)}
+                  className="px-3 py-1 text-sm bg-blue-600 hover:bg-blue-700 rounded transition-colors text-white"
+                >
+                  Extract Text
+                </button>
                 <button
                   onClick={() => handleOpenInFinder(selectedScreenshot)}
                   className="px-3 py-1 text-sm bg-zinc-700 hover:bg-zinc-600 rounded transition-colors"

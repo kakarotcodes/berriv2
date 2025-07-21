@@ -206,7 +206,17 @@ const NotesEditor: React.FC = () => {
 
   if (!note) {
     return (
-      <div className="flex-1 flex items-center justify-center text-zinc-400">No note selected</div>
+      <div className="flex-1 flex flex-col items-center justify-center text-zinc-400 p-8">
+        <div className="text-lg font-medium mb-4">No note selected</div>
+        <div className="text-center max-w-md">
+          <div className="text-sm mb-2">Create a new note or select an existing one to start editing</div>
+          <div className="flex items-center justify-center gap-2 text-xs bg-zinc-800/50 px-3 py-2 rounded-lg border border-zinc-700">
+            <span>Pro tip: Press</span>
+            <kbd className="px-2 py-1 bg-zinc-700 text-zinc-200 rounded text-xs font-mono">⌘+Shift+G</kbd>
+            <span>for AI notes generation</span>
+          </div>
+        </div>
+      </div>
     )
   }
 

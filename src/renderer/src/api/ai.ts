@@ -24,6 +24,18 @@ export interface AIHealthResponse {
   error?: string
 }
 
+export interface AINotesGenerationResponse {
+  success: boolean
+  notes?: string
+  error?: string
+}
+
+export interface AIOCRResponse {
+  success: boolean
+  text?: string
+  error?: string
+}
+
 class AIApi {
   async summarizeNote(
     noteId: string,
@@ -54,6 +66,30 @@ class AIApi {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to batch summarize'
+      }
+    }
+  }
+
+  async generateNotes(prompt: string): Promise<AINotesGenerationResponse> {
+    try {
+      const response = await window.electronAPI.aiAPI.generateNotes(prompt)
+      return response
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to generate notes'
+      }
+    }
+  }
+
+  async extractText(imageData: string): Promise<AIOCRResponse> {
+    try {
+      const response = await window.electronAPI.aiAPI.extractText(imageData)
+      return response
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to extract text'
       }
     }
   }

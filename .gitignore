@@ -5,3 +5,4 @@ out
 .eslintcache
 *.log*
 src/main/features/screenCapture/scripts-compiled
+.env
