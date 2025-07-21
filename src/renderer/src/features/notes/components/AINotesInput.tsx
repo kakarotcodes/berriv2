@@ -17,6 +17,7 @@ const AINotesInput: React.FC<AINotesInputProps> = ({ isVisible, onClose }) => {
 
   useEffect(() => {
     if (isVisible && inputRef.current) {
+      
       inputRef.current.focus()
     }
   }, [isVisible])
