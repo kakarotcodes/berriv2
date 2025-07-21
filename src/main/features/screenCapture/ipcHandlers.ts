@@ -1,10 +1,11 @@
-import { ipcMain, clipboard, nativeImage } from 'electron'
+import { ipcMain, clipboard, nativeImage, BrowserWindow } from 'electron'
 import { exec } from 'child_process'
 import { promisify } from 'util'
 import path from 'path'
 import os from 'os'
 import { handleSnippetCompletion, renameCurrentScreenshot } from './scripts/screenshotProcessor'
 import { getPreviewWindow } from './scripts/previewWindowManager'
+import { setWindowOpacity } from '../../utils/windowOpacity'
 
 const execAsync = promisify(exec)
 
@@ -151,10 +152,14 @@ async function openWithNativeShare(imagePath: string) {
   }
 }
 
-export function registerScreenCaptureHandlers() {
+export function registerScreenCaptureHandlers(mainWindow: BrowserWindow) {
   // Register IPC handler for opening macOS screen capture toolbar (Cmd+Shift+5)
   ipcMain.handle('screen-capture:open-toolbar', async () => {
     try {
+      // Set window opacity to 0 before opening screen capture
+      setWindowOpacity(mainWindow, 0, true)
+      console.log('[SCREEN_CAPTURE] Window opacity set to 0')
+
       // Try AppleScript first, fallback to screencapture command
       const appleScript = `
         tell application "System Events"
@@ -165,6 +170,13 @@ export function registerScreenCaptureHandlers() {
       try {
         await execAsync(`osascript -e '${appleScript}'`)
         console.log('[SCREEN_CAPTURE] Successfully opened screen capture toolbar via AppleScript')
+        
+        // Restore window opacity after a short delay
+        setTimeout(() => {
+          setWindowOpacity(mainWindow, 1, true)
+          console.log('[SCREEN_CAPTURE] Window opacity restored to 1')
+        }, 2000)
+        
         return { success: true }
       } catch {
         console.log('[SCREEN_CAPTURE] AppleScript failed, trying alternative method')
@@ -175,10 +187,19 @@ export function registerScreenCaptureHandlers() {
         console.log(
           '[SCREEN_CAPTURE] Successfully opened screen capture toolbar via screencapture command'
         )
+        
+        // Restore window opacity after a short delay
+        setTimeout(() => {
+          setWindowOpacity(mainWindow, 1, true)
+          console.log('[SCREEN_CAPTURE] Window opacity restored to 1')
+        }, 2000)
+        
         return { success: true }
       }
     } catch (error) {
       console.error('Failed to open screen capture toolbar:', error)
+      // Restore opacity even if there was an error
+      setWindowOpacity(mainWindow, 1, true)
       return {
         success: false,
         error:
@@ -191,6 +212,10 @@ export function registerScreenCaptureHandlers() {
   ipcMain.handle('screen-capture:open-snipping-tool', async () => {
     try {
       console.log('[SNIPPING_TOOL] Starting snipping tool with event-driven approach')
+
+      // Set window opacity to 0 before opening snipping tool
+      setWindowOpacity(mainWindow, 0, true)
+      console.log('[SNIPPING_TOOL] Window opacity set to 0')
 
       // Create temporary file for capture detection
       const tempDir = os.tmpdir()
@@ -207,9 +232,15 @@ export function registerScreenCaptureHandlers() {
       // Handle the snippet completion event
       await handleSnippetCompletion(tempScreenshotPath)
 
+      // Restore window opacity after completion
+      setWindowOpacity(mainWindow, 1, true)
+      console.log('[SNIPPING_TOOL] Window opacity restored to 1')
+
       return { success: true }
     } catch (error) {
       console.error('Failed to run snipping tool:', error)
+      // Restore opacity even if there was an error
+      setWindowOpacity(mainWindow, 1, true)
       return {
         success: false,
         error:
@@ -222,9 +253,26 @@ export function registerScreenCaptureHandlers() {
   ipcMain.on('preview-close', () => {
     console.log('[PREVIEW] IPC preview-close received')
     const previewWindow = getPreviewWindow()
+    console.log('[PREVIEW] Preview window status:', {
+      exists: !!previewWindow,
+      isDestroyed: previewWindow ? previewWindow.isDestroyed() : 'N/A'
+    })
+    
     if (previewWindow && !previewWindow.isDestroyed()) {
-      console.log('[PREVIEW] Closing preview window')
-      previewWindow.close()
+      console.log('[PREVIEW] Attempting to close preview window...')
+      try {
+        previewWindow.close()
+        console.log('[PREVIEW] Window close() method called successfully')
+      } catch (error) {
+        console.error('[PREVIEW] Error calling close() method:', error)
+        // Try force destroy as fallback
+        try {
+          previewWindow.destroy()
+          console.log('[PREVIEW] Window destroyed as fallback')
+        } catch (destroyError) {
+          console.error('[PREVIEW] Error destroying window:', destroyError)
+        }
+      }
     } else {
       console.log('[PREVIEW] Preview window not found or already destroyed')
     }
@@ -282,7 +330,7 @@ export function registerScreenCaptureHandlers() {
     }
   })
 
-  ipcMain.on('preview-share', async (event, appName) => {
+  ipcMain.on('preview-share', async (_event, appName) => {
     console.log('[PREVIEW] Share action triggered for app:', appName)
 
     try {

@@ -20,7 +20,7 @@ export function registerAllHandlers(mainWindow: BrowserWindow) {
   registerAuthHandlers()
   registerCalendarHandlers()
   registerGmailHandlers()
-  registerScreenCaptureHandlers()
+  registerScreenCaptureHandlers(mainWindow)
   registerScreenshotsHandlers()
   registerThemeHandlers(mainWindow)
   registerAIHandlers()
