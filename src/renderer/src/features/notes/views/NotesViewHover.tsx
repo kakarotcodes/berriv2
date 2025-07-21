@@ -1,13 +1,15 @@
 // dependencies
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 
 // components
 import NotesSplitView from '../components/NotesSplitView'
 import NotesEditorToolbar from '../components/NotesEditorToolbar'
+import AINotesInput from '../components/AINotesInput'
 
 // store
 import { useViewStore } from '../../../globalStore/viewStore'
 import { NewNoteButton, NotesSearchbar } from '../components'
+import { useNotesStore } from '../store/notesStore'
 
 // Constants for timing
 const RESIZE_END_DELAY = 100 // Reduced delay for better responsiveness
@@ -16,6 +18,8 @@ const NotesViewHover: React.FC = () => {
   const resizeTimeoutRef = useRef<number | null>(null)
   const lastKnownSize = useRef<{ width: number; height: number } | null>(null)
   const syncVersionRef = useRef(0) // Prevent race conditions
+  const { selectedNoteId } = useNotesStore()
+  const [showAIInput, setShowAIInput] = useState(false)
 
   // Race-condition safe sync function
   const syncWithVersion = async (source: string = 'unknown', isLightweight: boolean = false) => {
@@ -108,6 +112,7 @@ const NotesViewHover: React.FC = () => {
     }
   }, [])
 
+
   // On component mount, initialize with saved dimensions and get current size
   useEffect(() => {
     const initializeSize = async () => {
@@ -134,6 +139,19 @@ const NotesViewHover: React.FC = () => {
     }
   }, [])
 
+  // Listen for AI notes shortcut
+  useEffect(() => {
+    const handleAIShortcut = () => {
+      setShowAIInput(true)
+    }
+
+    window.addEventListener('ai-notes-shortcut-triggered', handleAIShortcut)
+    
+    return () => {
+      window.removeEventListener('ai-notes-shortcut-triggered', handleAIShortcut)
+    }
+  }, [])
+
   // Notes loading is now handled by the store in NotesSidebar
 
   return (
@@ -151,7 +169,12 @@ const NotesViewHover: React.FC = () => {
 
       {/* Split view layout */}
       <div className="flex-1 min-h-0">
-        <NotesSplitView />
+        <NotesSplitView aiInputComponent={
+          <AINotesInput 
+            isVisible={showAIInput} 
+            onClose={() => setShowAIInput(false)} 
+          />
+        } />
       </div>
     </div>
   )

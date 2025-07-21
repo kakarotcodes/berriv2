@@ -1,5 +1,5 @@
 export const AI_CONFIG = {
-  GEMINI_API_KEY: 'AIzaSyBlaoMpktMzPyvYMqgKss4iR0U02PIciLQ',
+  GEMINI_API_KEY: process.env.GEMINI_API_KEY || 'AIzaSyBrWgn-PV0vTs_VbVbsQXQBbzUJby4QOAQ',
   MODEL: 'gemini-2.0-flash-exp',
   SUMMARIZATION: {
     MAX_INPUT_LENGTH: 10000,

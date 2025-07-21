@@ -6,7 +6,11 @@ import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
 import NotesEditor from './NotesEditor'
 import NotesList from './NotesList'
 
-const NotesSplitView: React.FC = () => {
+interface NotesSplitViewProps {
+  aiInputComponent?: React.ReactNode
+}
+
+const NotesSplitView: React.FC<NotesSplitViewProps> = ({ aiInputComponent }) => {
   const [leftWidth, setLeftWidth] = useState(33.33) // Start at maximum allowed size (1/3rd)
   const isDraggingRef = useRef(false)
   const flexContainerRef = useRef<HTMLDivElement>(null)
@@ -142,8 +146,11 @@ const NotesSplitView: React.FC = () => {
         </button>
       </div>
 
-      {/* Div B */}
-      <NotesEditor />
+      {/* Div B - Notes Editor with AI Input */}
+      <div className="flex-1 flex flex-col min-h-0">
+        {aiInputComponent}
+        <NotesEditor />
+      </div>
     </div>
   )
 }

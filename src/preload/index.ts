@@ -1,9 +1,26 @@
 // preload/index.js
 import { contextBridge, ipcRenderer } from 'electron'
 
+console.log('[PRELOAD] Preload script is loading...')
+console.log('[PRELOAD] Context isolation:', process.contextIsolated)
+console.log('[PRELOAD] Sandbox:', process.sandboxed)
+
 // CSS opacity fallback handler
 ipcRenderer.on('pill:set-css-opacity', (_event, alpha) => {
   document.documentElement.style.opacity = alpha.toString()
+})
+
+// Test message handler
+ipcRenderer.on('test-message', (_event, message) => {
+  console.log('[PRELOAD] Received test message:', message)
+})
+
+// Direct AI notes shortcut handler - dispatch custom event
+ipcRenderer.on('trigger-ai-notes-shortcut', () => {
+  console.log('[PRELOAD] AI notes shortcut triggered!')
+  
+  // Dispatch custom event to React app
+  window.dispatchEvent(new CustomEvent('ai-notes-shortcut-triggered'))
 })
 
 // Increase the max listeners limit for the 'request-current-view' event
@@ -182,7 +199,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     permanentlyDeleteNote: (id) => ipcRenderer.invoke('notes:deleteForever', id),
     removeDuplicates: () => ipcRenderer.invoke('notes:removeDuplicates'),
     saveImage: (filename, arrayBuffer) =>
-      ipcRenderer.invoke('notes:saveImage', { filename, file: arrayBuffer })
+      ipcRenderer.invoke('notes:saveImage', { filename, file: arrayBuffer }),
+    exportPDF: (noteIds) => ipcRenderer.invoke('notes:export-pdf', noteIds),
+    exportDOCX: (noteIds) => ipcRenderer.invoke('notes:export-docx', noteIds)
   },
 
   // ------------------------------------------------------------
@@ -193,7 +212,23 @@ contextBridge.exposeInMainWorld('electronAPI', {
     summarizeNote: (content, title, options) =>
       ipcRenderer.invoke('ai:summarize-note', content, title, options),
     batchSummarize: (notes, options) => ipcRenderer.invoke('ai:batch-summarize', notes, options),
+    generateNotes: (prompt) => ipcRenderer.invoke('ai:generate-notes', prompt),
+    extractText: (imageData) => ipcRenderer.invoke('ai:extract-text', imageData),
     checkHealth: () => ipcRenderer.invoke('ai:check-health')
+  },
+
+  // Listen for AI notes shortcut
+  onAINotesShortcut: (callback) => {
+    console.log('[PRELOAD] Setting up AI notes shortcut listener')
+    ipcRenderer.removeAllListeners('trigger-ai-notes-shortcut')
+    ipcRenderer.on('trigger-ai-notes-shortcut', () => {
+      console.log('[PRELOAD] Received trigger-ai-notes-shortcut')
+      callback()
+    })
+    return () => {
+      console.log('[PRELOAD] Cleaning up AI notes shortcut listener')
+      ipcRenderer.removeAllListeners('trigger-ai-notes-shortcut')
+    }
   },
 
   // Fix hover dimensions

@@ -182,6 +182,8 @@ interface ElectronAPI {
     permanentlyDeleteNote: (id: string) => Promise<void>
     removeDuplicates: () => Promise<number>
     saveImage: (filename: string, arrayBuffer: ArrayBuffer) => Promise<string>
+    exportPDF: (noteIds: string[]) => Promise<{ success: boolean; filePath?: string; error?: string }>
+    exportDOCX: (noteIds: string[]) => Promise<{ success: boolean; filePath?: string; error?: string }>
   }
 
   // AI API
@@ -208,12 +210,25 @@ interface ElectronAPI {
       }>
       error?: string
     }>
+    generateNotes: (prompt: string) => Promise<{
+      success: boolean
+      notes?: string
+      error?: string
+    }>
+    extractText: (imageData: string) => Promise<{
+      success: boolean
+      text?: string
+      error?: string
+    }>
     checkHealth: () => Promise<{
       success: boolean
       status?: string
       error?: string
     }>
   }
+
+  // Listen for AI notes shortcut
+  onAINotesShortcut: (callback: () => void) => () => void
 
   // Hover management
   fixHoverDimensions: () => void

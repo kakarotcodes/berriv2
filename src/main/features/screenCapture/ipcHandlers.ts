@@ -5,8 +5,14 @@ import path from 'path'
 import os from 'os'
 import { handleSnippetCompletion, renameCurrentScreenshot } from './scripts/screenshotProcessor'
 import { getPreviewWindow } from './scripts/previewWindowManager'
+import { GoogleGenAI } from '@google/genai'
+import { AI_CONFIG } from '../../../config/ai'
 
 const execAsync = promisify(exec)
+
+const genAI = new GoogleGenAI({
+  apiKey: AI_CONFIG.GEMINI_API_KEY
+})
 
 // Function to share screenshot with specific apps
 async function shareWithApp(imagePath: string, appName: string) {
@@ -408,6 +414,43 @@ export function registerScreenCaptureHandlers() {
       console.log('[PREVIEW] Native drag operation started successfully for:', screenshotPath)
     } catch (error) {
       console.error('[PREVIEW] Error starting native drag operation:', error)
+    }
+  })
+
+  // OCR handler for preview window
+  ipcMain.handle('preview-ocr', async (event, imageData: string) => {
+    console.log('[PREVIEW] OCR operation triggered')
+
+    try {
+      const response = await genAI.models.generateContent({
+        model: AI_CONFIG.MODEL,
+        contents: [
+          {
+            text: 'Extract all text from this image. Return only the extracted text, maintaining the original formatting and structure as much as possible. If no text is found, return "No text found".'
+          },
+          {
+            inlineData: {
+              mimeType: 'image/png',
+              data: imageData.replace(/^data:image\/[a-z]+;base64,/, '')
+            }
+          }
+        ]
+      })
+
+      const extractedText = response.text
+
+      if (!extractedText || extractedText.trim().length === 0) {
+        return { success: false, error: 'No text found in image' }
+      }
+
+      console.log('[PREVIEW] OCR extraction successful, text length:', extractedText.length)
+      return { success: true, text: extractedText.trim() }
+    } catch (error) {
+      console.error('[PREVIEW] OCR extraction failed:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to extract text'
+      }
     }
   })
 }

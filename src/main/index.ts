@@ -1,5 +1,6 @@
-import { app, BrowserWindow, screen, nativeTheme } from 'electron'
+import { app, BrowserWindow, screen, globalShortcut, dialog } from 'electron'
 import path from 'path'
+import fs from 'fs'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 
 // utilities
@@ -47,9 +48,11 @@ function createWindow(): void {
     skipTaskbar: true,
     webPreferences: {
       contextIsolation: true,
-      sandbox: true,
+      sandbox: false,
       preload: path.join(__dirname, '../preload/index.js'),
-      backgroundThrottling: false
+      backgroundThrottling: false,
+      devTools: true,
+      nodeIntegration: false
     }
   })
 
@@ -76,6 +79,42 @@ function createWindow(): void {
 
   // Setup protocol handling
   setupProtocolHandling(mainWindow)
+
+  // Log when preload script finishes loading
+  mainWindow.webContents.on('preload-error', (_event, preloadPath, error) => {
+    console.error('[MAIN] Preload script error:', preloadPath, error)
+  })
+
+  mainWindow.webContents.once('did-finish-load', () => {
+    console.log('[MAIN] WebContents did finish load')
+  })
+
+  mainWindow.webContents.once('dom-ready', () => {
+    console.log('[MAIN] DOM ready - sending test message to verify preload')
+    mainWindow!.webContents.send('test-message', 'Initial test from main process')
+  })
+
+  // Debug preload path
+  const preloadPath = path.join(__dirname, '../preload/index.js')
+  console.log('[MAIN] Preload path:', preloadPath)
+  console.log('[MAIN] Preload file exists:', fs.existsSync(preloadPath))
+
+  // Register global keyboard shortcut for AI notes generation
+  const shortcutRegistered = globalShortcut.register('CommandOrControl+Shift+G', () => {
+    console.log('[MAIN] Global shortcut triggered: CommandOrControl+Shift+G')
+    if (mainWindow) {
+      console.log('[MAIN] Triggering AI notes generation in renderer')
+      mainWindow.webContents.send('trigger-ai-notes-shortcut')
+    } else {
+      console.log('[MAIN] No main window available')
+    }
+  })
+
+  if (shortcutRegistered) {
+    console.log('[MAIN] Successfully registered global shortcut: CommandOrControl+Shift+G')
+  } else {
+    console.error('[MAIN] Failed to register global shortcut: CommandOrControl+Shift+G')
+  }
 }
 
 // Register as default protocol client
@@ -138,6 +177,7 @@ app.on('window-all-closed', () => {
 // clear window resize before app quit
 app.on('before-quit', () => {
   if (mainWindow) cancelWindowResize(mainWindow)
+  globalShortcut.unregisterAll()
 })
 
 // main.ts - Add GPU constraints

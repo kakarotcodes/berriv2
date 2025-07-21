@@ -127,6 +127,64 @@ export function registerAIHandlers(): void {
     }
   )
 
+  ipcMain.handle('ai:generate-notes', async (_, prompt: string) => {
+    try {
+      const response = await genAI.models.generateContent({
+        model: AI_CONFIG.MODEL,
+        contents: `Create comprehensive notes about the following topic. Format the response in markdown with proper headings, bullet points, and structure. Make the notes informative and well-organized:
+
+${prompt}`
+      })
+
+      const notes = response.text
+
+      if (!notes || notes.trim().length === 0) {
+        throw new Error('Empty response from AI service')
+      }
+
+      return { success: true, notes: notes.trim() }
+    } catch (error) {
+      console.error('AI Notes Generation Error:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to generate notes'
+      }
+    }
+  })
+
+  ipcMain.handle('ai:extract-text', async (_, imageData: string) => {
+    try {
+      const response = await genAI.models.generateContent({
+        model: AI_CONFIG.MODEL,
+        contents: [
+          {
+            text: 'Extract all text from this image. Return only the extracted text, maintaining the original formatting and structure as much as possible.'
+          },
+          {
+            inlineData: {
+              mimeType: 'image/png',
+              data: imageData.replace(/^data:image\/[a-z]+;base64,/, '')
+            }
+          }
+        ]
+      })
+
+      const extractedText = response.text
+
+      if (!extractedText || extractedText.trim().length === 0) {
+        throw new Error('No text found in image')
+      }
+
+      return { success: true, text: extractedText.trim() }
+    } catch (error) {
+      console.error('AI OCR Error:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to extract text'
+      }
+    }
+  })
+
   ipcMain.handle('ai:check-health', async () => {
     try {
       await genAI.models.generateContent({
