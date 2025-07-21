@@ -423,12 +423,17 @@ export function registerScreenCaptureHandlers(mainWindow: BrowserWindow) {
     }
   })
 
-  ipcMain.on('preview-start-native-drag', async (event) => {
-    console.log('[PREVIEW] Native drag operation triggered via send')
+  ipcMain.on('preview-start-native-drag', async (event, filePath) => {
+    console.log('[PREVIEW] Native drag operation triggered via send with path:', filePath)
 
     try {
-      const { getCurrentScreenshotPath } = await import('./scripts/screenshotProcessor')
-      const screenshotPath = getCurrentScreenshotPath()
+      // Use provided file path or fallback to current screenshot path
+      let screenshotPath = filePath
+      if (!screenshotPath) {
+        console.log('[PREVIEW] No file path provided, falling back to current screenshot path')
+        const { getCurrentScreenshotPath } = await import('./scripts/screenshotProcessor')
+        screenshotPath = getCurrentScreenshotPath()
+      }
 
       if (!screenshotPath) {
         console.error('[PREVIEW] No screenshot path available for native drag')

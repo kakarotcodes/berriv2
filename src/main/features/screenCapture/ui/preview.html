@@ -46,6 +46,7 @@
         id="previewImage"
         alt="Screenshot preview"
         draggable="true"
+        style="-webkit-app-region: no-drag;"
         onload="console.log('[PREVIEW] Image loaded successfully', this.naturalWidth, 'x', this.naturalHeight); document.body.style.borderColor='green';"
         onerror="console.error('[PREVIEW] Image failed to load'); document.body.style.borderColor='red'; this.style.display='none';"
       />
@@ -199,7 +200,6 @@
         // Add drag and drop functionality to the preview image
         const previewImage = document.getElementById('previewImage')
         if (previewImage) {
-          let dragTimeout = null
           let currentFilePath = null
 
           // Get file path once and cache it
@@ -213,69 +213,30 @@
               console.error('[PREVIEW] Failed to get file path:', error)
             })
 
-          // Mouse down - start drag timeout (similar to screenshots gallery)
-          previewImage.addEventListener('mousedown', (e) => {
-            if (e.button === 0) {
-              // Left mouse button
-              previewImage.style.cursor = 'grabbing'
-
-              // Stop timer during interaction
-              stopTimer()
-
-              // Set a timeout to start drag only if mouse is held down
-              dragTimeout = setTimeout(() => {
-                console.log('[PREVIEW] Starting native drag operation')
-                // Use IPC to start native drag from main process
-                ipcRenderer.send('preview-start-native-drag')
-              }, 150) // 150ms delay to allow for clicks
-            }
-          })
-
-          // Mouse up - clear drag timeout
-          previewImage.addEventListener('mouseup', () => {
-            previewImage.style.cursor = 'grab'
-
-            // Clear drag timeout on mouse up (this was a click, not a drag)
-            if (dragTimeout) {
-              clearTimeout(dragTimeout)
-              dragTimeout = null
-            }
-
-            // Restart timer if not hovering
-            if (!isHovering) {
-              startTimer()
-            }
-          })
-
-          // Standard HTML5 drag events for fallback
+          // Battle-tested dragstart approach - works with acceptFirstMouse
           previewImage.addEventListener('dragstart', (e) => {
-            console.log('[PREVIEW] HTML5 dragstart event')
+            console.log('[PREVIEW] dragstart event - starting native drag')
+            
+            // Prevent Chromium's default drag behavior
+            e.preventDefault()
+            
+            // Stop auto-close timer during drag
+            stopTimer()
 
             // Add visual feedback
             previewImage.classList.add('dragging')
-
-            // Clear timeout since drag has started
-            if (dragTimeout) {
-              clearTimeout(dragTimeout)
-              dragTimeout = null
-            }
+            previewImage.style.cursor = 'grabbing'
 
             if (currentFilePath) {
-              console.log('[PREVIEW] Using cached file path for drag:', currentFilePath)
-              e.dataTransfer.effectAllowed = 'copy'
-              e.dataTransfer.setData('text/uri-list', `file://${currentFilePath}`)
-              e.dataTransfer.setData('text/plain', currentFilePath)
-
-              // Get filename from path
-              const filename = currentFilePath.split('/').pop() || 'screenshot.png'
-              e.dataTransfer.setData('application/x-moz-file-promise', filename)
+              console.log('[PREVIEW] Starting native drag with file:', currentFilePath)
+              // Use IPC to trigger native drag from main process
+              ipcRenderer.send('preview-start-native-drag', currentFilePath)
             } else {
-              console.error('[PREVIEW] No file path available for drag')
-              e.preventDefault()
+              console.error('[PREVIEW] No file path available for native drag')
             }
           })
 
-          // Remove visual feedback when drag ends
+          // Handle drag end
           previewImage.addEventListener('dragend', () => {
             console.log('[PREVIEW] Drag operation ended')
             previewImage.classList.remove('dragging')
@@ -285,6 +246,15 @@
             if (!isHovering) {
               startTimer()
             }
+          })
+
+          // Handle mouse enter/leave for cursor feedback
+          previewImage.addEventListener('mouseenter', () => {
+            previewImage.style.cursor = 'grab'
+          })
+
+          previewImage.addEventListener('mouseleave', () => {
+            previewImage.style.cursor = 'grab'
           })
 
           // Initial cursor style
