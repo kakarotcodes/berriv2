@@ -4,6 +4,8 @@ import React, { memo, useEffect } from 'react'
 // store
 import { useViewStore } from '@/globalStore'
 import { setupAuthListener, useAuthStore } from '@/globalStore/useAuthStore'
+import { useNotesStore } from './features/notes/store/notesStore'
+import { aiApi } from './api/ai'
 
 // views
 import { DefaultView, PillView, HoverView } from '@/views'
@@ -22,6 +24,20 @@ import 'react-toastify/dist/ReactToastify.css'
 const App = memo(() => {
   const { currentView, isTransitioning, setView } = useViewStore()
   const { initializeAuth } = useAuthStore()
+  const { addNote } = useNotesStore()
+
+  // AI Notes Generation Function - now handles inline input
+  const handleAINotesGeneration = React.useCallback(async () => {
+    // Switch to notes view if not already there
+    if (currentView !== 'hover') {
+      setView('hover')
+      // Wait a bit for view transition
+      await new Promise(resolve => setTimeout(resolve, 500))
+    }
+    
+    // Trigger AI input mode in notes editor
+    window.dispatchEvent(new CustomEvent('ai-notes-shortcut-triggered'))
+  }, [currentView, setView])
 
   // Initialize auth store and setup listener once
   useEffect(() => {
@@ -29,6 +45,32 @@ const App = memo(() => {
     const cleanup = setupAuthListener()
     return cleanup
   }, [initializeAuth])
+
+  // Set up global AI notes shortcut
+  useEffect(() => {
+    console.log('[APP] Setting up AI notes shortcut listener...')
+    const cleanup = window.electronAPI.onAINotesShortcut(() => {
+      console.log('[APP] AI notes shortcut triggered!')
+      handleAINotesGeneration()
+    })
+    return cleanup
+  }, [handleAINotesGeneration])
+
+  // Set up local keyboard shortcut as backup
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.shiftKey && event.code === 'KeyG') {
+        event.preventDefault()
+        console.log('[APP] Local shortcut triggered: Cmd+Shift+G')
+        handleAINotesGeneration()
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [handleAINotesGeneration])
 
   // Memoized view component mapping
   const viewComponents = React.useMemo(
