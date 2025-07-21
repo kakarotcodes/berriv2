@@ -45,6 +45,7 @@ function createWindow(): void {
     alwaysOnTop: true,
     resizable: false,
     skipTaskbar: true,
+    acceptFirstMouse: true, // This is what was missing!
     webPreferences: {
       contextIsolation: true,
       sandbox: true,

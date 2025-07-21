@@ -15,7 +15,6 @@ const ScreenshotsViewHover: React.FC = () => {
   const [loading, setLoading] = useState(true)
   const [selectedScreenshot, setSelectedScreenshot] = useState<Screenshot | null>(null)
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest')
-  const [dragTimeout, setDragTimeout] = useState<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     loadScreenshots()
@@ -38,14 +37,6 @@ const ScreenshotsViewHover: React.FC = () => {
     }
   }, [])
 
-  useEffect(() => {
-    // Cleanup timeout on unmount
-    return () => {
-      if (dragTimeout) {
-        clearTimeout(dragTimeout)
-      }
-    }
-  }, [dragTimeout])
 
   const loadScreenshots = async () => {
     setLoading(true)
@@ -179,32 +170,13 @@ const ScreenshotsViewHover: React.FC = () => {
                     alt={screenshot.name}
                     className="w-full h-full object-cover"
                     draggable="true"
-                    onMouseDown={(e) => {
-                      if (e.button === 0) { // Left mouse button
-                        // Set a timeout to start drag only if mouse is held down
-                        const timeout = setTimeout(() => {
-                          window.electronAPI.screenshots.startDrag(screenshot.path)
-                        }, 150) // 150ms delay to allow for clicks
-                        setDragTimeout(timeout)
-                      }
-                    }}
-                    onMouseUp={() => {
-                      // Clear drag timeout on mouse up (this was a click, not a drag)
-                      if (dragTimeout) {
-                        clearTimeout(dragTimeout)
-                        setDragTimeout(null)
-                      }
-                    }}
+                    style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
                     onDragStart={(e) => {
-                      // Clear timeout since drag has started
-                      if (dragTimeout) {
-                        clearTimeout(dragTimeout)
-                        setDragTimeout(null)
-                      }
-                      // Still provide fallback drag data
-                      e.dataTransfer.effectAllowed = 'copy'
-                      e.dataTransfer.setData('text/uri-list', `file://${screenshot.path}`)
-                      e.dataTransfer.setData('text/plain', screenshot.path)
+                      console.log('[SCREENSHOTS] dragstart event - starting native drag')
+                      // Prevent Chromium's default drag behavior  
+                      e.preventDefault()
+                      // Start native drag operation through IPC
+                      window.electronAPI.screenshots.startDrag(screenshot.path)
                     }}
                   />
                 ) : (
@@ -293,32 +265,13 @@ const ScreenshotsViewHover: React.FC = () => {
                   alt={selectedScreenshot.name}
                   className="max-w-full max-h-96 object-contain mx-auto cursor-grab active:cursor-grabbing"
                   draggable="true"
-                  onMouseDown={(e) => {
-                    if (e.button === 0) { // Left mouse button
-                      // Set a timeout to start drag only if mouse is held down
-                      const timeout = setTimeout(() => {
-                        window.electronAPI.screenshots.startDrag(selectedScreenshot.path)
-                      }, 150) // 150ms delay to allow for clicks
-                      setDragTimeout(timeout)
-                    }
-                  }}
-                  onMouseUp={() => {
-                    // Clear drag timeout on mouse up
-                    if (dragTimeout) {
-                      clearTimeout(dragTimeout)
-                      setDragTimeout(null)
-                    }
-                  }}
+                  style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
                   onDragStart={(e) => {
-                    // Clear timeout since drag has started
-                    if (dragTimeout) {
-                      clearTimeout(dragTimeout)
-                      setDragTimeout(null)
-                    }
-                    // Still provide fallback drag data
-                    e.dataTransfer.effectAllowed = 'copy'
-                    e.dataTransfer.setData('text/uri-list', `file://${selectedScreenshot.path}`)
-                    e.dataTransfer.setData('text/plain', selectedScreenshot.path)
+                    console.log('[SCREENSHOTS] Modal dragstart event - starting native drag')
+                    // Prevent Chromium's default drag behavior
+                    e.preventDefault()
+                    // Start native drag operation through IPC
+                    window.electronAPI.screenshots.startDrag(selectedScreenshot.path)
                   }}
                 />
               ) : (
