@@ -15,10 +15,21 @@ const ScreenshotsViewHover: React.FC = () => {
   const [loading, setLoading] = useState(true)
   const [selectedScreenshot, setSelectedScreenshot] = useState<Screenshot | null>(null)
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest')
+  const [dragTimeout, setDragTimeout] = useState<NodeJS.Timeout | null>(null)
+  const [isDragging, setIsDragging] = useState(false)
 
   useEffect(() => {
     loadScreenshots()
   }, [])
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (dragTimeout) {
+        clearTimeout(dragTimeout)
+      }
+    }
+  }, [dragTimeout])
 
   // Refresh screenshots when component becomes visible
   useEffect(() => {
@@ -29,14 +40,11 @@ const ScreenshotsViewHover: React.FC = () => {
     }
 
     document.addEventListener('visibilitychange', handleVisibilityChange)
-    window.addEventListener('focus', loadScreenshots)
 
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange)
-      window.removeEventListener('focus', loadScreenshots)
     }
   }, [])
-
 
   const loadScreenshots = async () => {
     setLoading(true)
@@ -62,7 +70,7 @@ const ScreenshotsViewHover: React.FC = () => {
       try {
         const result = await window.electronAPI.screenshots.deleteScreenshot(screenshot.path)
         if (result.success) {
-          setScreenshots(prev => prev.filter(s => s.id !== screenshot.id))
+          setScreenshots((prev) => prev.filter((s) => s.id !== screenshot.id))
           if (selectedScreenshot?.id === screenshot.id) {
             setSelectedScreenshot(null)
           }
@@ -160,7 +168,48 @@ const ScreenshotsViewHover: React.FC = () => {
             <div
               key={screenshot.id}
               className="group relative bg-zinc-800 rounded-lg overflow-hidden border border-zinc-700 hover:border-zinc-600 transition-colors cursor-pointer"
+              draggable="true"
+              style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
               onClick={() => setSelectedScreenshot(screenshot)}
+              onMouseDown={(e) => {
+                if (e.button === 0 && !e.target.closest('button')) {
+                  // Left button, not on action buttons
+                  // Prevent default to stop focus-related scroll behavior
+                  e.preventDefault()
+                  setIsDragging(true)
+                  // Set a timeout to start drag only if mouse is held down
+                  const timeout = setTimeout(() => {
+                    console.log('[SCREENSHOTS] Starting reliable drag operation')
+                    window.electronAPI.screenshots.startDrag(screenshot.path)
+                  }, 150) // 150ms delay to allow for clicks
+                  setDragTimeout(timeout)
+                }
+              }}
+              onMouseUp={() => {
+                // Clear drag timeout on mouse up (this was a click, not a drag)
+                if (dragTimeout) {
+                  clearTimeout(dragTimeout)
+                  setDragTimeout(null)
+                }
+                setIsDragging(false)
+              }}
+              onDragStart={(e) => {
+                console.log('[SCREENSHOTS] dragstart event - starting native drag for entire card')
+                setIsDragging(true)
+                // Clear timeout since drag has started
+                if (dragTimeout) {
+                  clearTimeout(dragTimeout)
+                  setDragTimeout(null)
+                }
+                // Prevent Chromium's default drag behavior
+                e.preventDefault()
+                // Start native drag operation through IPC
+                window.electronAPI.screenshots.startDrag(screenshot.path)
+              }}
+              onDragEnd={() => {
+                console.log('[SCREENSHOTS] Drag ended')
+                setIsDragging(false)
+              }}
             >
               {/* Thumbnail */}
               <div className="aspect-video bg-zinc-900 flex items-center justify-center">
@@ -169,15 +218,7 @@ const ScreenshotsViewHover: React.FC = () => {
                     src={screenshot.thumbnail}
                     alt={screenshot.name}
                     className="w-full h-full object-cover"
-                    draggable="true"
-                    style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
-                    onDragStart={(e) => {
-                      console.log('[SCREENSHOTS] dragstart event - starting native drag')
-                      // Prevent Chromium's default drag behavior  
-                      e.preventDefault()
-                      // Start native drag operation through IPC
-                      window.electronAPI.screenshots.startDrag(screenshot.path)
-                    }}
+                    draggable="false"
                   />
                 ) : (
                   <Image size={24} className="text-zinc-600" />
@@ -202,6 +243,9 @@ const ScreenshotsViewHover: React.FC = () => {
                     e.stopPropagation()
                     handleOpenInFinder(screenshot)
                   }}
+                  onMouseDown={(e) => {
+                    e.stopPropagation() // Prevent drag from starting
+                  }}
                   className="p-1 bg-black/50 hover:bg-black/70 rounded transition-colors"
                   title="Open in Finder"
                 >
@@ -211,6 +255,9 @@ const ScreenshotsViewHover: React.FC = () => {
                   onClick={(e) => {
                     e.stopPropagation()
                     handleDelete(screenshot)
+                  }}
+                  onMouseDown={(e) => {
+                    e.stopPropagation() // Prevent drag from starting
                   }}
                   className="p-1 bg-black/50 hover:bg-red-600/70 rounded transition-colors"
                   title="Delete"
@@ -238,7 +285,8 @@ const ScreenshotsViewHover: React.FC = () => {
               <div>
                 <div className="font-medium text-zinc-200">{selectedScreenshot.name}</div>
                 <div className="text-sm text-zinc-400">
-                  {formatDate(new Date(selectedScreenshot.dateAdded))} • {formatFileSize(selectedScreenshot.size)}
+                  {formatDate(new Date(selectedScreenshot.dateAdded))} •{' '}
+                  {formatFileSize(selectedScreenshot.size)}
                 </div>
               </div>
               <div className="flex gap-2">
@@ -288,4 +336,4 @@ const ScreenshotsViewHover: React.FC = () => {
   )
 }
 
-export default ScreenshotsViewHover 
+export default ScreenshotsViewHover
