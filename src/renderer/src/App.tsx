@@ -56,13 +56,21 @@ const App = memo(() => {
     return cleanup
   }, [handleAINotesGeneration])
 
-  // Set up local keyboard shortcut as backup
+  // Set up local keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      // Cmd+Shift+G for AI notes
       if ((event.metaKey || event.ctrlKey) && event.shiftKey && event.code === 'KeyG') {
         event.preventDefault()
         console.log('[APP] Local shortcut triggered: Cmd+Shift+G')
         handleAINotesGeneration()
+      }
+      
+      // Escape key to switch to pill view (only from hover view)
+      if (event.code === 'Escape' && currentView === 'hover') {
+        event.preventDefault()
+        console.log('[APP] Escape key pressed, switching to pill view')
+        setView('pill')
       }
     }
 
@@ -70,7 +78,7 @@ const App = memo(() => {
     return () => {
       document.removeEventListener('keydown', handleKeyDown)
     }
-  }, [handleAINotesGeneration])
+  }, [handleAINotesGeneration, currentView, setView])
 
   // Memoized view component mapping
   const viewComponents = React.useMemo(
