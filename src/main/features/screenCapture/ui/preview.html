@@ -207,10 +207,39 @@
       document.addEventListener('DOMContentLoaded', () => {
         const titleInput = document.querySelector('.preview-title-input')
         if (titleInput) {
+          // Add debugging for input focus and interaction
+          titleInput.addEventListener('focus', () => {
+            console.log('[PREVIEW] Input field focused')
+            titleInput.style.backgroundColor = 'rgba(0, 123, 255, 0.1)' // Light blue highlight
+          })
+          
+          titleInput.addEventListener('blur', () => {
+            console.log('[PREVIEW] Input field blurred')
+            titleInput.style.backgroundColor = 'transparent'
+          })
+          
           titleInput.addEventListener('input', (e) => {
+            console.log('[PREVIEW] Input changed:', e.target.value)
             const filename = e.target.value.trim() || 'Screenshot'
             debouncedRename(filename)
+            
+            // Update cached file path after rename
+            setTimeout(() => {
+              ipcRenderer
+                .invoke('preview-get-file-path')
+                .then((filePath) => {
+                  currentFilePath = filePath
+                  console.log('[PREVIEW] Updated cached file path after rename:', filePath)
+                })
+                .catch((error) => {
+                  console.error('[PREVIEW] Failed to update file path after rename:', error)
+                })
+            }, 600) // Wait for debounced rename to complete
           })
+          
+          // Make sure the input is not readonly
+          titleInput.removeAttribute('readonly')
+          titleInput.removeAttribute('disabled')
         }
 
         // Add drag and drop functionality to the preview image
@@ -230,7 +259,7 @@
             })
 
           // Battle-tested dragstart approach - works with acceptFirstMouse
-          previewImage.addEventListener('dragstart', (e) => {
+          previewImage.addEventListener('dragstart', async (e) => {
             console.log('[PREVIEW] dragstart event - starting native drag')
             
             // Prevent Chromium's default drag behavior
@@ -243,12 +272,25 @@
             previewImage.classList.add('dragging')
             previewImage.style.cursor = 'grabbing'
 
-            if (currentFilePath) {
-              console.log('[PREVIEW] Starting native drag with file:', currentFilePath)
-              // Use IPC to trigger native drag from main process
-              ipcRenderer.send('preview-start-native-drag', currentFilePath)
-            } else {
-              console.error('[PREVIEW] No file path available for native drag')
+            // Always get fresh file path to handle renames
+            try {
+              const freshFilePath = await ipcRenderer.invoke('preview-get-file-path')
+              if (freshFilePath) {
+                console.log('[PREVIEW] Starting native drag with fresh file path:', freshFilePath)
+                // Update cached path
+                currentFilePath = freshFilePath
+                // Use IPC to trigger native drag from main process
+                ipcRenderer.send('preview-start-native-drag', freshFilePath)
+              } else {
+                console.error('[PREVIEW] No file path available for native drag')
+              }
+            } catch (error) {
+              console.error('[PREVIEW] Failed to get fresh file path for drag:', error)
+              // Fallback to cached path
+              if (currentFilePath) {
+                console.log('[PREVIEW] Falling back to cached file path:', currentFilePath)
+                ipcRenderer.send('preview-start-native-drag', currentFilePath)
+              }
             }
           })
 
@@ -281,6 +323,7 @@
         if (editIcon && titleInput) {
           editIcon.addEventListener('click', () => {
             titleInput.focus()
+            titleInput.select() // Select all text when clicking edit icon
           })
         }
 

@@ -82,7 +82,7 @@ function createPreviewWindowInternalOnDisplay(imageDataUrl: string, display: Ele
     visualEffectState: 'active',
     roundedCorners: true,
     acceptFirstMouse: true, // macOS: deliver *and* focus on first click
-    focusable: false, // keep keyboard focus on Berri main app
+    focusable: true, // allow input field editing
     type: 'panel', // macOS utility-style window
     webPreferences: {
       contextIsolation: false,

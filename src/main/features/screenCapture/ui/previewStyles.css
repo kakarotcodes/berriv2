@@ -99,11 +99,15 @@ body {
   padding: 4px 8px;
   border-radius: 4px;
   transition: background-color 0.15s ease;
+  cursor: text;
+  pointer-events: auto;
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 .preview-title-input:focus {
+  background: rgb(var(--color-surface-primary) / 0.3);
   outline: 1px solid rgb(var(--color-accent-blue) / 0.5);
-  border-color: rgb(--var(--color-border-primary) / 0.5);
 }
 
 .edit-icon {
@@ -118,10 +122,6 @@ body {
   opacity: 1;
 }
 
-.preview-title-input:focus {
-  background: rgb(var(--color-surface-primary) / 0.3);
-  outline: 1px solid rgb(var(--color-border-subtle) / 0.5);
-}
 
 .window-controls {
   display: flex;
