@@ -46,6 +46,7 @@
         id="previewImage"
         alt="Screenshot preview"
         draggable="true"
+        style="-webkit-app-region: no-drag;"
         onload="console.log('[PREVIEW] Image loaded successfully', this.naturalWidth, 'x', this.naturalHeight); document.body.style.borderColor='green';"
         onerror="console.error('[PREVIEW] Image failed to load'); document.body.style.borderColor='red'; this.style.display='none';"
       />
@@ -206,16 +207,44 @@
       document.addEventListener('DOMContentLoaded', () => {
         const titleInput = document.querySelector('.preview-title-input')
         if (titleInput) {
+          // Add debugging for input focus and interaction
+          titleInput.addEventListener('focus', () => {
+            console.log('[PREVIEW] Input field focused')
+            titleInput.style.backgroundColor = 'rgba(0, 123, 255, 0.1)' // Light blue highlight
+          })
+          
+          titleInput.addEventListener('blur', () => {
+            console.log('[PREVIEW] Input field blurred')
+            titleInput.style.backgroundColor = 'transparent'
+          })
+          
           titleInput.addEventListener('input', (e) => {
+            console.log('[PREVIEW] Input changed:', e.target.value)
             const filename = e.target.value.trim() || 'Screenshot'
             debouncedRename(filename)
+            
+            // Update cached file path after rename
+            setTimeout(() => {
+              ipcRenderer
+                .invoke('preview-get-file-path')
+                .then((filePath) => {
+                  currentFilePath = filePath
+                  console.log('[PREVIEW] Updated cached file path after rename:', filePath)
+                })
+                .catch((error) => {
+                  console.error('[PREVIEW] Failed to update file path after rename:', error)
+                })
+            }, 600) // Wait for debounced rename to complete
           })
+          
+          // Make sure the input is not readonly
+          titleInput.removeAttribute('readonly')
+          titleInput.removeAttribute('disabled')
         }
 
         // Add drag and drop functionality to the preview image
         const previewImage = document.getElementById('previewImage')
         if (previewImage) {
-          let dragTimeout = null
           let currentFilePath = null
 
           // Get file path once and cache it
@@ -229,69 +258,43 @@
               console.error('[PREVIEW] Failed to get file path:', error)
             })
 
-          // Mouse down - start drag timeout (similar to screenshots gallery)
-          previewImage.addEventListener('mousedown', (e) => {
-            if (e.button === 0) {
-              // Left mouse button
-              previewImage.style.cursor = 'grabbing'
-
-              // Stop timer during interaction
-              stopTimer()
-
-              // Set a timeout to start drag only if mouse is held down
-              dragTimeout = setTimeout(() => {
-                console.log('[PREVIEW] Starting native drag operation')
-                // Use IPC to start native drag from main process
-                ipcRenderer.send('preview-start-native-drag')
-              }, 150) // 150ms delay to allow for clicks
-            }
-          })
-
-          // Mouse up - clear drag timeout
-          previewImage.addEventListener('mouseup', () => {
-            previewImage.style.cursor = 'grab'
-
-            // Clear drag timeout on mouse up (this was a click, not a drag)
-            if (dragTimeout) {
-              clearTimeout(dragTimeout)
-              dragTimeout = null
-            }
-
-            // Restart timer if not hovering
-            if (!isHovering) {
-              startTimer()
-            }
-          })
-
-          // Standard HTML5 drag events for fallback
-          previewImage.addEventListener('dragstart', (e) => {
-            console.log('[PREVIEW] HTML5 dragstart event')
+          // Battle-tested dragstart approach - works with acceptFirstMouse
+          previewImage.addEventListener('dragstart', async (e) => {
+            console.log('[PREVIEW] dragstart event - starting native drag')
+            
+            // Prevent Chromium's default drag behavior
+            e.preventDefault()
+            
+            // Stop auto-close timer during drag
+            stopTimer()
 
             // Add visual feedback
             previewImage.classList.add('dragging')
+            previewImage.style.cursor = 'grabbing'
 
-            // Clear timeout since drag has started
-            if (dragTimeout) {
-              clearTimeout(dragTimeout)
-              dragTimeout = null
-            }
-
-            if (currentFilePath) {
-              console.log('[PREVIEW] Using cached file path for drag:', currentFilePath)
-              e.dataTransfer.effectAllowed = 'copy'
-              e.dataTransfer.setData('text/uri-list', `file://${currentFilePath}`)
-              e.dataTransfer.setData('text/plain', currentFilePath)
-
-              // Get filename from path
-              const filename = currentFilePath.split('/').pop() || 'screenshot.png'
-              e.dataTransfer.setData('application/x-moz-file-promise', filename)
-            } else {
-              console.error('[PREVIEW] No file path available for drag')
-              e.preventDefault()
+            // Always get fresh file path to handle renames
+            try {
+              const freshFilePath = await ipcRenderer.invoke('preview-get-file-path')
+              if (freshFilePath) {
+                console.log('[PREVIEW] Starting native drag with fresh file path:', freshFilePath)
+                // Update cached path
+                currentFilePath = freshFilePath
+                // Use IPC to trigger native drag from main process
+                ipcRenderer.send('preview-start-native-drag', freshFilePath)
+              } else {
+                console.error('[PREVIEW] No file path available for native drag')
+              }
+            } catch (error) {
+              console.error('[PREVIEW] Failed to get fresh file path for drag:', error)
+              // Fallback to cached path
+              if (currentFilePath) {
+                console.log('[PREVIEW] Falling back to cached file path:', currentFilePath)
+                ipcRenderer.send('preview-start-native-drag', currentFilePath)
+              }
             }
           })
 
-          // Remove visual feedback when drag ends
+          // Handle drag end
           previewImage.addEventListener('dragend', () => {
             console.log('[PREVIEW] Drag operation ended')
             previewImage.classList.remove('dragging')
@@ -303,6 +306,15 @@
             }
           })
 
+          // Handle mouse enter/leave for cursor feedback
+          previewImage.addEventListener('mouseenter', () => {
+            previewImage.style.cursor = 'grab'
+          })
+
+          previewImage.addEventListener('mouseleave', () => {
+            previewImage.style.cursor = 'grab'
+          })
+
           // Initial cursor style
           previewImage.style.cursor = 'grab'
         }
@@ -311,6 +323,7 @@
         if (editIcon && titleInput) {
           editIcon.addEventListener('click', () => {
             titleInput.focus()
+            titleInput.select() // Select all text when clicking edit icon
           })
         }
 

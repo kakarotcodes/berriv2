@@ -81,6 +81,9 @@ function createPreviewWindowInternalOnDisplay(imageDataUrl: string, display: Ele
     vibrancy: 'under-window',
     visualEffectState: 'active',
     roundedCorners: true,
+    acceptFirstMouse: true, // macOS: deliver *and* focus on first click
+    focusable: true, // allow input field editing
+    type: 'panel', // macOS utility-style window
     webPreferences: {
       contextIsolation: false,
       nodeIntegration: true,
