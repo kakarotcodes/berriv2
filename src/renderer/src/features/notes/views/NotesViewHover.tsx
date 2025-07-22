@@ -112,7 +112,6 @@ const NotesViewHover: React.FC = () => {
     }
   }, [])
 
-
   // On component mount, initialize with saved dimensions and get current size
   useEffect(() => {
     const initializeSize = async () => {
@@ -146,7 +145,7 @@ const NotesViewHover: React.FC = () => {
     }
 
     window.addEventListener('ai-notes-shortcut-triggered', handleAIShortcut)
-    
+
     return () => {
       window.removeEventListener('ai-notes-shortcut-triggered', handleAIShortcut)
     }
@@ -169,12 +168,11 @@ const NotesViewHover: React.FC = () => {
 
       {/* Split view layout */}
       <div className="flex-1 min-h-0">
-        <NotesSplitView aiInputComponent={
-          <AINotesInput 
-            isVisible={showAIInput} 
-            onClose={() => setShowAIInput(false)} 
-          />
-        } />
+        <NotesSplitView
+          aiInputComponent={
+            <AINotesInput isVisible={showAIInput} onClose={() => setShowAIInput(false)} />
+          }
+        />
       </div>
     </div>
   )

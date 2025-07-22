@@ -1,96 +1,97 @@
-// dependencies
 import React from 'react'
 import { StarIcon, PaperClipIcon } from '@heroicons/react/24/outline'
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid'
-
-// types
 import { MailItem as MailItemType } from '../types'
-
-// store
 import { useMailStore } from '../store'
 
 interface MailItemProps {
   mail: MailItemType
 }
 
+const stripEmail = (input?: string) => {
+  if (!input) return ''
+  const m = input.match(/^(.*?)(?:\s*<)/)
+  const nameOnly = m ? m[1] : input.replace(/\s*<[^>]+>\s*/g, '')
+  return nameOnly.replace(/^"(.*)"$/, '$1').trim()
+}
+
 const MailItem: React.FC<MailItemProps> = ({ mail }) => {
-  const { updateMail } = useMailStore()
+  const { updateMail, selectedEmailIds, toggleEmailSelection } = useMailStore()
+  const isSelected = selectedEmailIds.includes(mail.id)
 
-  const handleToggleRead = () => {
-    updateMail(mail.id, { isRead: !mail.isRead })
-  }
-
-  const handleToggleStar = () => {
-    updateMail(mail.id, { isStarred: !mail.isStarred })
-  }
+  const handleToggleRead = () => updateMail(mail.id, { isRead: !mail.isRead })
+  const handleToggleStar = () => updateMail(mail.id, { isStarred: !mail.isStarred })
+  const handleCheckboxChange = () => toggleEmailSelection(mail.id)
 
   const formatTime = (timestamp: Date) => {
     const now = new Date()
     const diff = now.getTime() - timestamp.getTime()
-    const minutes = Math.floor(diff / 60000)
-    const hours = Math.floor(diff / 3600000)
-    const days = Math.floor(diff / 86400000)
-
-    if (minutes < 60) {
-      return `${minutes}m ago`
-    } else if (hours < 24) {
-      return `${hours}h ago`
-    } else {
-      return `${days}d ago`
-    }
+    const m = Math.floor(diff / 60000)
+    const h = Math.floor(diff / 3600000)
+    const d = Math.floor(diff / 86400000)
+    if (m < 60) return `${m}m`
+    if (h < 24) return `${h}h`
+    return `${d}d`
   }
+
+  const senderRaw = mail.fromName ?? mail.sender ?? 'Unknown'
+  const sender = stripEmail(senderRaw)
 
   return (
     <div
-      className={`p-3 rounded-lg border-[0.5px] border-white/20 cursor-pointer transition-colors ${
-        mail.isRead ? 'bg-black' : ''
-      }`}
+      className={`
+        px-3 py-5 cursor-pointer transition-colors
+        ${isSelected ? 'bg-blue-900' : 'hover:bg-gray-500/20'}
+      `}
+      onClick={handleToggleRead}
     >
-      <div className="flex items-start space-x-3">
-        {/* Mail content */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between mb-1">
-            <div className="flex items-center space-x-2">
-              <span
-                className={`text-sm ${mail.isRead ? 'text-gray-300' : 'text-white font-medium'}`}
-              >
-                {mail.sender}
-              </span>
-              {mail.labels.includes('important') && (
-                <span className="bg-red-500 text-white px-1.5 py-0.5 rounded text-xs">
-                  Important
-                </span>
-              )}
-            </div>
-            <div className="flex items-center space-x-2">
-              <span className="text-xs text-gray-400">{formatTime(mail.timestamp)}</span>
-              <div className="flex flex-col items-center space-y-1">
-                <button
-                  onClick={handleToggleStar}
-                  className="text-gray-400 hover:text-yellow-400 transition-colors"
-                >
-                  {mail.isStarred ? (
-                    <StarIconSolid className="size-4 text-yellow-400" />
-                  ) : (
-                    <StarIcon className="size-4" />
-                  )}
-                </button>
-                {mail.hasAttachments && (
-                  <PaperClipIcon className="size-3 text-gray-400 rotate-45" />
-                )}
-              </div>
-            </div>
-          </div>
+      <div className="grid grid-cols-[auto_auto_12rem_minmax(0,1fr)_auto] items-center gap-2">
+        <input
+          type="checkbox"
+          checked={isSelected}
+          onChange={handleCheckboxChange}
+          onClick={(e) => e.stopPropagation()}
+          className="
+            w-3 h-3 appearance-none rounded border border-gray-600
+            bg-zinc-900 checked:bg-zinc-100
+            focus:ring-0 focus:outline-none relative
+            checked:after:content-[''] checked:after:block checked:after:absolute
+            checked:after:w-1.5 checked:after:h-3 checked:after:border-b-2 checked:after:border-r-2
+            checked:after:border-black checked:after:rotate-45
+            checked:after:left-[3px] checked:after:top-[-1px]
+          "
+        />
 
-          <div
-            className={`text-sm mb-1 ${mail.isRead ? 'text-gray-300' : 'text-white font-medium'}`}
-          >
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            handleToggleStar()
+          }}
+          className="text-gray-400 hover:text-yellow-400 transition-colors"
+        >
+          {mail.isStarred ? (
+            <StarIconSolid className="size-4 text-yellow-400" />
+          ) : (
+            <StarIcon className="size-4" />
+          )}
+        </button>
+
+        <span
+          className={`truncate text-sm ${mail.isRead ? 'text-gray-300' : 'text-white font-medium'}`}
+          title={senderRaw}
+        >
+          {sender}
+        </span>
+
+        <div className="min-w-0 truncate text-sm">
+          <span className={`${mail.isRead ? 'text-gray-300' : 'text-white font-medium'}`}>
             {mail.subject}
-          </div>
+          </span>
+        </div>
 
-          <div className="text-xs text-gray-400 truncate">
-            {mail.body.length > 100 ? `${mail.body.substring(0, 100)}...` : mail.body}
-          </div>
+        <div className="flex items-center gap-1 justify-end text-xs text-gray-400">
+          {mail.hasAttachments && <PaperClipIcon className="size-3 rotate-45" />}
+          <span>{formatTime(mail.timestamp)}</span>
         </div>
       </div>
     </div>
