@@ -54,7 +54,7 @@ const Navigation: React.FC = () => {
 
       <div
         id="action-buttons-mobile"
-        className="fixed bottom-5 left-1/2 -translate-x-1/2 frosted-glass-navbar flex items-center justify-center gap-x-4 px-3 py-2 rounded-[100px] hidden max-[555px]:flex z-[9999]"
+        className="fixed bottom-5 left-1/2 -translate-x-1/2 bg-gray-900 hidden items-center justify-center gap-x-4 px-3 py-2 rounded-[100px] max-[555px]:flex z-[9999]"
       >
         <HoverNavigationButton
           featureKey="screen-capture"
@@ -103,6 +103,29 @@ const Navigation: React.FC = () => {
           onClick={() => handleFeatureClick('screenshots')}
           icon={<CameraFolder className="w-6.5 h-6.5" />}
         />
+
+        {/* <div
+          id="action-buttons"
+          className="absolute left-3 frosted-glass-navbar flex items-center gap-x-6 py-2 px-4 rounded-[100px] max-[555px]:hidden"
+        > 
+        <div className="h-8 w-[0.5px] bg-white" />
+
+        <HoverNavigationButton
+          featureKey="screen-capture"
+          onClick={openScreenCapture}
+          icon={<Record className="w-6 h-6" />}
+        />
+        <HoverNavigationButton
+          featureKey="snipping"
+          onClick={openSnippingTool}
+          icon={<Snipping className="w-6 h-6 flex-shrink-0" />}
+        />
+        <HoverNavigationButton
+          featureKey="meet"
+          onClick={startGoogleMeet}
+          icon={<GoogleMeet className="w-6 h-6" />}
+        />
+        </div> */}
       </nav>
     </div>
   )
