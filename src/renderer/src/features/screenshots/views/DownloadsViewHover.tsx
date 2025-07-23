@@ -1,5 +1,17 @@
 import React, { useState, useEffect } from 'react'
-import { Trash2, ExternalLink, Calendar, Image, FileText, Download, Archive, Video, Music, Code, File } from 'lucide-react'
+import {
+  Trash2,
+  ExternalLink,
+  Calendar,
+  Image,
+  FileText,
+  Download,
+  Archive,
+  Video,
+  Music,
+  Code,
+  File
+} from 'lucide-react'
 
 interface DownloadFile {
   id: string
@@ -49,7 +61,7 @@ const DownloadsViewHover: React.FC = () => {
     try {
       setLoading(true)
       const result = await window.electronAPI.screenshots.getScreenshots()
-      
+
       if (result.success) {
         setFiles(result.files || result.screenshots || [])
         setCategories(result.categories || [])
@@ -108,24 +120,34 @@ const DownloadsViewHover: React.FC = () => {
 
   const getFileIcon = (type: string) => {
     switch (type) {
-      case 'Images': return <Image className="w-4 h-4" />
-      case 'PDFs': return <FileText className="w-4 h-4" />
-      case 'Documents': return <FileText className="w-4 h-4" />
-      case 'Spreadsheets': return <FileText className="w-4 h-4" />
-      case 'Presentations': return <FileText className="w-4 h-4" />
-      case 'Text Files': return <FileText className="w-4 h-4" />
-      case 'Archives': return <Archive className="w-4 h-4" />
-      case 'Videos': return <Video className="w-4 h-4" />
-      case 'Audio': return <Music className="w-4 h-4" />
-      case 'Applications': return <Download className="w-4 h-4" />
-      case 'Code Files': return <Code className="w-4 h-4" />
-      default: return <File className="w-4 h-4" />
+      case 'Images':
+        return <Image className="w-4 h-4" />
+      case 'PDFs':
+        return <FileText className="w-4 h-4" />
+      case 'Documents':
+        return <FileText className="w-4 h-4" />
+      case 'Spreadsheets':
+        return <FileText className="w-4 h-4" />
+      case 'Presentations':
+        return <FileText className="w-4 h-4" />
+      case 'Text Files':
+        return <FileText className="w-4 h-4" />
+      case 'Archives':
+        return <Archive className="w-4 h-4" />
+      case 'Videos':
+        return <Video className="w-4 h-4" />
+      case 'Audio':
+        return <Music className="w-4 h-4" />
+      case 'Applications':
+        return <Download className="w-4 h-4" />
+      case 'Code Files':
+        return <Code className="w-4 h-4" />
+      default:
+        return <File className="w-4 h-4" />
     }
   }
 
-  const filteredFiles = files.filter(file => 
-    activeFilter === 'All' || file.type === activeFilter
-  )
+  const filteredFiles = files.filter((file) => activeFilter === 'All' || file.type === activeFilter)
 
   const sortedFiles = [...filteredFiles].sort((a, b) => {
     if (sortOrder === 'newest') {
@@ -136,10 +158,7 @@ const DownloadsViewHover: React.FC = () => {
   })
 
   // Create filter categories with "All" option
-  const filterCategories = [
-    { name: 'All', count: files.length },
-    ...categories
-  ]
+  const filterCategories = [{ name: 'All', count: files.length }, ...categories]
 
   if (loading) {
     return (
@@ -220,11 +239,9 @@ const DownloadsViewHover: React.FC = () => {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-12 h-12 text-gray-400">
-                      {getFileIcon(file.type)}
-                    </div>
+                    <div className="w-12 h-12 text-gray-400">{getFileIcon(file.type)}</div>
                   )}
-                  
+
                   {/* Actions overlay */}
                   <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
                     <button
@@ -270,8 +287,14 @@ const DownloadsViewHover: React.FC = () => {
 
       {/* File Detail Modal */}
       {selectedFile && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setSelectedFile(null)}>
-          <div className="bg-gray-800 rounded-lg p-6 max-w-lg w-full mx-4" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+          onClick={() => setSelectedFile(null)}
+        >
+          <div
+            className="bg-gray-800 rounded-lg p-6 max-w-lg w-full mx-4"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold truncate">{selectedFile.name}</h3>
               <button
@@ -281,7 +304,7 @@ const DownloadsViewHover: React.FC = () => {
                 ×
               </button>
             </div>
-            
+
             <div className="space-y-3 text-sm">
               <div className="flex justify-between">
                 <span className="text-gray-400">Type:</span>

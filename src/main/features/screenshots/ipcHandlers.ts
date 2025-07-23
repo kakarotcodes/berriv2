@@ -33,7 +33,7 @@ export function registerScreenshotsHandlers() {
   // Get file type category based on extension
   const getFileTypeCategory = (extension: string): string => {
     const ext = extension.toLowerCase()
-    
+
     if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg', 'ico', 'tiff', 'tif'].includes(ext)) {
       return 'Images'
     }
@@ -64,10 +64,12 @@ export function registerScreenshotsHandlers() {
     if (['dmg', 'pkg', 'app', 'exe', 'msi', 'deb', 'rpm'].includes(ext)) {
       return 'Applications'
     }
-    if (['js', 'ts', 'py', 'java', 'cpp', 'c', 'php', 'rb', 'go', 'rs', 'swift', 'kt'].includes(ext)) {
+    if (
+      ['js', 'ts', 'py', 'java', 'cpp', 'c', 'php', 'rb', 'go', 'rs', 'swift', 'kt'].includes(ext)
+    ) {
       return 'Code Files'
     }
-    
+
     return 'Other'
   }
 
@@ -105,7 +107,7 @@ export function registerScreenshotsHandlers() {
     try {
       const downloadsDir = getDownloadsDirectory()
       const desktopDir = getDesktopDirectory()
-      
+
       // Read files from both directories
       const [downloadsFiles, desktopFiles] = await Promise.all([
         fs.readdir(downloadsDir, { withFileTypes: true }).catch(() => []),
@@ -114,8 +116,12 @@ export function registerScreenshotsHandlers() {
 
       // Filter for files only (no folders) and combine
       const allDirFiles = [
-        ...downloadsFiles.filter((file) => file.isFile()).map(file => ({ ...file, directory: downloadsDir, source: 'Downloads' })),
-        ...desktopFiles.filter((file) => file.isFile()).map(file => ({ ...file, directory: desktopDir, source: 'Desktop' }))
+        ...downloadsFiles
+          .filter((file) => file.isFile())
+          .map((file) => ({ ...file, directory: downloadsDir, source: 'Downloads' })),
+        ...desktopFiles
+          .filter((file) => file.isFile())
+          .map((file) => ({ ...file, directory: desktopDir, source: 'Desktop' }))
       ]
 
       const allFiles: DownloadFile[] = []
@@ -127,7 +133,7 @@ export function registerScreenshotsHandlers() {
           const stats = await fs.stat(filePath)
 
           // Get file extension
-          const extension = file.name.includes('.') 
+          const extension = file.name.includes('.')
             ? file.name.split('.').pop()?.toLowerCase() || ''
             : ''
 
@@ -162,13 +168,17 @@ export function registerScreenshotsHandlers() {
       allFiles.sort((a, b) => new Date(b.dateAdded).getTime() - new Date(a.dateAdded).getTime())
 
       // Create categories array
-      const categories: FileTypeCategory[] = Array.from(categoryMap.entries()).map(([name, count]) => ({
-        name,
-        extensions: [], // We'll populate this if needed
-        count
-      })).sort((a, b) => b.count - a.count) // Sort by count, most files first
+      const categories: FileTypeCategory[] = Array.from(categoryMap.entries())
+        .map(([name, count]) => ({
+          name,
+          extensions: [], // We'll populate this if needed
+          count
+        }))
+        .sort((a, b) => b.count - a.count) // Sort by count, most files first
 
-      console.log(`[FILES] Found ${allFiles.length} files in ${categories.length} categories from Downloads and Desktop`)
+      console.log(
+        `[FILES] Found ${allFiles.length} files in ${categories.length} categories from Downloads and Desktop`
+      )
       return { success: true, files: allFiles, categories }
     } catch (error) {
       console.error('[FILES] Error getting files:', error)
@@ -222,12 +232,15 @@ export function registerScreenshotsHandlers() {
 
       // 2) Fallback: tiny valid PNG (rarely needed if getFileIcon works)
       if (icon.isEmpty()) {
-        icon = nativeImage.createFromBuffer(Buffer.from(
-          // a real 1x1 transparent PNG
-          '89504e470d0a1a0a0000000d4948445200000001000000010806000000' +
-          '1f15c4890000000a49444154789c6360000002000154a24f5d00000000' +
-          '49454e44ae426082', 'hex'
-        ))
+        icon = nativeImage.createFromBuffer(
+          Buffer.from(
+            // a real 1x1 transparent PNG
+            '89504e470d0a1a0a0000000d4948445200000001000000010806000000' +
+              '1f15c4890000000a49444154789c6360000002000154a24f5d00000000' +
+              '49454e44ae426082',
+            'hex'
+          )
+        )
       }
 
       event.sender.startDrag({ file: filePath, icon })

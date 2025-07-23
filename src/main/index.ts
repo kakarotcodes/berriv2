@@ -308,9 +308,9 @@ function registerGlobalShortcuts() {
     console.error('Failed to register CommandOrControl+Escape')
   }
 
-  // Register Control+R for visibility toggle
-  if (!globalShortcut.register('Control+R', toggleAppVisibility)) {
-    console.error('Failed to register Control+R')
+  // Register Control+E for visibility toggle
+  if (!globalShortcut.register('Control+E', toggleAppVisibility)) {
+    console.error('Failed to register Control+E')
   }
 
   // Register module shortcuts
