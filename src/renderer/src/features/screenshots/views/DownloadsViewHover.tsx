@@ -169,7 +169,7 @@ const DownloadsViewHover: React.FC = () => {
   }
 
   return (
-    <div className="h-full flex flex-col bg-gray-900 text-white">
+    <div className="h-full flex flex-col bg-gray-900 text-white min-h-0">
       {/* Header */}
       <div className="flex-shrink-0 p-4 border-b border-gray-700">
         <div className="flex items-center justify-between mb-4">
