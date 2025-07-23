@@ -40,7 +40,7 @@ const MailItem: React.FC<MailItemProps> = ({ mail }) => {
     <div
       className={`
         px-3 py-5 transition-colors cursor-pointer hover:bg-[#393939]
-        ${isSelected ? 'bg-blue-900' : mail.isRead ? 'bg-black/50 ' : 'bg-transparent'}
+        ${isSelected ? 'bg-blue-900 hover:bg-blue-900' : mail.isRead ? 'bg-black/50 ' : 'bg-transparent'}
       `}
     >
       <div className="grid grid-cols-[auto_auto_12rem_minmax(0,1fr)_auto] items-center gap-2">
@@ -54,9 +54,9 @@ const MailItem: React.FC<MailItemProps> = ({ mail }) => {
             bg-zinc-900 checked:bg-zinc-100
             focus:ring-0 focus:outline-none relative
             checked:after:content-[''] checked:after:block checked:after:absolute
-            checked:after:w-1.5 checked:after:h-3 checked:after:border-b-2 checked:after:border-r-2
+            checked:after:w-1.5 checked:after:h-2.5 checked:after:border-b-2 checked:after:border-r-2
             checked:after:border-black checked:after:rotate-45
-            checked:after:left-[3px] checked:after:top-[-1px]
+            checked:after:left-[3px] checked:after:top-[0px]
           "
         />
 

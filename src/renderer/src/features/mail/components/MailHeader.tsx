@@ -45,7 +45,15 @@ const MailHeader: React.FC = () => {
               type="checkbox"
               checked={isAllSelected}
               onChange={handleSelectAll}
-              className="w-3 h-3 text-blue-600 bg-gray-800 border-gray-600 rounded focus:ring-0 focus:outline-none"
+              className="
+            w-3.5 h-3.5 appearance-none rounded-xs border border-gray-600
+            bg-zinc-900 checked:bg-zinc-100
+            focus:ring-0 focus:outline-none relative
+            checked:after:content-[''] checked:after:block checked:after:absolute
+            checked:after:w-1.5 checked:after:h-2.5 checked:after:border-b-2 checked:after:border-r-2
+            checked:after:border-black checked:after:rotate-45
+            checked:after:left-[3px] checked:after:top-[0px]
+          "
             />
             <span className="text-sm text-gray-300">{selectedEmailIds.length} selected</span>
           </div>
@@ -69,7 +77,15 @@ const MailHeader: React.FC = () => {
               type="checkbox"
               checked={false}
               readOnly
-              className="w-3 h-3 text-blue-600 bg-gray-800 border-gray-600 rounded focus:ring-0 focus:outline-none"
+              className="
+            w-3.5 h-3.5 appearance-none rounded-xs border border-gray-600
+            bg-zinc-900 checked:bg-zinc-100
+            focus:ring-0 focus:outline-none relative
+            checked:after:content-[''] checked:after:block checked:after:absolute
+            checked:after:w-1.5 checked:after:h-2.5 checked:after:border-b-2 checked:after:border-r-2
+            checked:after:border-black checked:after:rotate-45
+            checked:after:left-[3px] checked:after:top-[0px]
+          "
             />
           </button>
 
