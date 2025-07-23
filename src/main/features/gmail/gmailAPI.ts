@@ -272,6 +272,120 @@ export class GmailAPI {
       }
     }
   }
+
+  async getFullEmail(accessToken: string, refreshToken: string | undefined, messageId: string): Promise<{ success: boolean; email?: any; error?: string }> {
+    try {
+      this.setCredentials(accessToken, refreshToken)
+      const gmail = google.gmail({ version: 'v1', auth: this.oauth2Client })
+
+      const response = await gmail.users.messages.get({
+        userId: 'me',
+        id: messageId,
+        format: 'full'
+      })
+
+      const message = response.data
+      if (!message.payload) throw new Error('No email payload received')
+
+      const headers = message.payload.headers || []
+      const getHeader = (name: string) =>
+        headers.find(h => h.name?.toLowerCase() === name.toLowerCase())?.value || ''
+
+      let body = ''
+      type InlineImg = { attachmentId: string; mime: string }
+      const inlineImages = new Map<string, InlineImg>() // cid -> {id,mime}
+
+      const extractContent = (part: any) => {
+        if (!part) return
+
+        // capture inline images
+        if (part.body?.attachmentId && part.headers) {
+          const cid = part.headers.find((h: any) => h.name?.toLowerCase() === 'content-id')?.value
+          if (cid) {
+            inlineImages.set(cid.replace(/[<>]/g, ''), {
+              attachmentId: part.body.attachmentId,
+              mime: part.mimeType || 'image/png'
+            })
+          }
+        }
+
+        // text/html or text/plain
+        if (part.body?.data) {
+          const decoded = Buffer.from(part.body.data, 'base64').toString('utf-8')
+          if (part.mimeType === 'text/html') body = decoded
+          else if (!body && part.mimeType === 'text/plain') body = decoded
+        }
+
+        // recurse
+        if (part.parts) part.parts.forEach(extractContent)
+      }
+
+      extractContent(message.payload)
+
+      // Replace cid: with real data URIs
+      console.log(`[GMAIL_API] Found ${inlineImages.size} inline images`)
+      if (body && inlineImages.size) {
+        for (const [cid, { attachmentId, mime }] of inlineImages) {
+          console.log(`[GMAIL_API] Processing inline image: cid=${cid}, attachmentId=${attachmentId}, mime=${mime}`)
+          try {
+            const att = await gmail.users.messages.attachments.get({
+              userId: 'me',
+              messageId,
+              id: attachmentId
+            })
+            const raw = att.data.data || ''
+            const b64 = raw.replace(/-/g, '+').replace(/_/g, '/')
+            const dataUrl = `data:${mime};base64,${b64}`
+            console.log(`[GMAIL_API] Created data URL for ${cid}: ${dataUrl.substring(0, 50)}...`)
+            
+            const beforeReplace = body.includes(`cid:${cid}`)
+            body = body.replace(new RegExp(`cid:${cid}`, 'g'), dataUrl)
+            const afterReplace = body.includes(`cid:${cid}`)
+            console.log(`[GMAIL_API] Replaced cid:${cid} - found before: ${beforeReplace}, found after: ${afterReplace}`)
+          } catch (error) {
+            console.error(`[GMAIL_API] Failed to fetch inline image ${cid}:`, error)
+            // Leave the cid: reference as is if we can't fetch the attachment
+          }
+        }
+      }
+
+      // Log if body contains any remaining cid: or external image references
+      const cidMatches = body.match(/cid:[^"'\s>]+/g)
+      const protocolMatches = body.match(/src=["']\/\/[^"']+["']/g)
+      const httpMatches = body.match(/src=["']https?:\/\/[^"']+["']/g)
+      console.log(`[GMAIL_API] After processing - remaining cid: ${cidMatches?.length || 0}, protocol-relative: ${protocolMatches?.length || 0}, external http: ${httpMatches?.length || 0}`)
+      
+      if (body.includes('<img')) {
+        console.log('[GMAIL_API] Body contains img tags')
+      } else {
+        console.log('[GMAIL_API] Body does not contain img tags')
+      }
+
+      // normalize protocol-relative URLs
+      body = body.replace(/src=["']\/\/([^"']+)["']/g, 'src="https://$1"')
+                 .replace(/href=["']\/\/([^"']+)["']/g, 'href="https://$1"')
+
+      const parseRecipients = (s: string) => (s ? s.split(',').map(r => r.trim()) : [])
+
+      const fullHeaders: Record<string, string> = {}
+      headers.forEach(h => { if (h.name && h.value) fullHeaders[h.name] = h.value })
+
+      return {
+        success: true,
+        email: {
+          body,
+          fullHeaders,
+          date: getHeader('Date'),
+          to: parseRecipients(getHeader('To')),
+          cc: parseRecipients(getHeader('Cc')),
+          bcc: parseRecipients(getHeader('Bcc'))
+        }
+      }
+    } catch (error) {
+      console.error('[GMAIL_API] Error getting full email:', error)
+      return { success: false, error: error instanceof Error ? error.message : 'Failed to get full email' }
+    }
+  }
 }
 
 export const gmailAPI = new GmailAPI()

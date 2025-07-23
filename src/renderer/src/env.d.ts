@@ -128,6 +128,18 @@ interface ElectronAPI {
       filePath?: string
       error?: string
     }>
+    getFullEmail: (messageId: string) => Promise<{
+      success: boolean
+      email?: {
+        body: string
+        fullHeaders: Record<string, string>
+        date: string
+        to: string[]
+        cc: string[]
+        bcc: string[]
+      }
+      error?: string
+    }>
   }
 
   // Vertical Drag

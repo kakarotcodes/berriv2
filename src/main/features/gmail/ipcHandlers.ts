@@ -124,5 +124,44 @@ export function registerGmailHandlers(): void {
     }
   })
 
+  // Handle getting full Gmail email
+  ipcMain.handle('gmail:get-full-email', async (_event, { messageId }): Promise<{ success: boolean; email?: any; error?: string }> => {
+    console.log('[IPC] gmail:get-full-email handler called with:', { messageId })
+
+    try {
+      // Get the current auth tokens from global state
+      const authTokens = (global as { authTokens?: { access: string; refresh?: string } })
+        .authTokens
+
+      if (!authTokens?.access) {
+        return {
+          success: false,
+          error: 'No authentication tokens available. Please authenticate first.'
+        }
+      }
+
+      console.log('[IPC] Fetching full Gmail email')
+      console.log('[IPC] About to call gmailAPI.getFullEmail with:', { messageId, hasAccess: !!authTokens.access })
+      const result = await gmailAPI.getFullEmail(authTokens.access, authTokens.refresh, messageId)
+      console.log('[IPC] gmailAPI.getFullEmail returned:', { success: result.success, bodyLength: result.email?.body?.length })
+
+      if (result.success && result.email) {
+        console.log('[IPC] Full Gmail email fetched successfully')
+        return result
+      } else {
+        return {
+          success: false,
+          error: result.error || 'Failed to get full email'
+        }
+      }
+    } catch (error) {
+      console.error('[IPC] Failed to get full Gmail email:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to fetch full Gmail email'
+      }
+    }
+  })
+
   console.log('[IPC] Gmail handlers registered')
 } 

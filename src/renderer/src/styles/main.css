@@ -6,7 +6,7 @@
 @import './utilities.css';
 @import './base.css';
 @import './draggable.css';
-@import "../features/calendar/styles/calendar.css";
+@import '../features/calendar/styles/calendar.css';
 
 /* -------------------------------------------------------------------------- */
 /*  Base body                                                                 */
@@ -140,4 +140,72 @@ body {
 
   --color-shadow-card: 0 0 0; /* use with 6 % alpha */
   --color-shadow-modal: 0 0 0; /* use with 15 % alpha */
+}
+
+/* Container width & padding */
+.email-card {
+  max-width: 420px;
+  width: 100%;
+  background: #fff;
+}
+
+/* Slight global downscale (cleaner than fighting inline font-sizes) */
+.email-scale {
+  transform: scale(.88);
+  transform-origin: top center;
+}
+
+/* Reset & base styles inside email */
+.email-html {
+  all: revert;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #333;
+  word-wrap: break-word;
+}
+
+/* Images & tables sane */
+.email-html img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 6px 0;
+}
+.email-html table { border-collapse: collapse; width: 100% !important; max-width: 100%; }
+.email-html td, .email-html th { padding: 6px; word-break: break-word; }
+
+/* Headings smaller */
+.email-html h1 { font-size: 1.35em !important; margin: .6em 0 .4em; }
+.email-html h2 { font-size: 1.2em !important;  margin: .6em 0 .4em; }
+.email-html h3 { font-size: 1.1em !important;  margin: .5em 0 .3em; }
+
+/* Links */
+.email-html a { color: #1a73e8; text-decoration: none; }
+.email-html a:hover { text-decoration: underline; }
+
+/* Blockquotes */
+.email-html blockquote {
+  border-left: 3px solid #ddd;
+  margin: 12px 0;
+  padding-left: 12px;
+  color: #666;
+}
+
+/* Cap absurd inlined font-sizes */
+.email-html *[style*="font-size"] {
+  font-size: clamp(11px, 1vw + 9px, 28px) !important;
+}
+
+/* Trim giant margins some newsletters inject */
+.email-html * {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+.email-html p,
+.email-html ul,
+.email-html ol,
+.email-html blockquote,
+.email-html table {
+  margin: .6em 0;
 }
