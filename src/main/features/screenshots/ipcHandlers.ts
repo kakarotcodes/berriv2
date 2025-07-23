@@ -1,4 +1,4 @@
-import { ipcMain, shell, nativeImage } from 'electron'
+import { ipcMain, shell, nativeImage, app } from 'electron'
 import { promises as fs } from 'fs'
 import { join } from 'path'
 import { homedir } from 'os'
@@ -215,15 +215,25 @@ export function registerScreenshotsHandlers() {
   // Start drag operation for file
   ipcMain.on('screenshots:start-drag', async (event, filePath: string) => {
     try {
-      // Verify file exists
       await fs.access(filePath)
-      
-      const icon = nativeImage.createFromPath(filePath).resize({ width: 64, height: 64 })
+
+      // 1) Try to get OS icon (works for any type)
+      let icon = await app.getFileIcon(filePath, { size: 'normal' })
+
+      // 2) Fallback: tiny valid PNG (rarely needed if getFileIcon works)
+      if (icon.isEmpty()) {
+        icon = nativeImage.createFromBuffer(Buffer.from(
+          // a real 1x1 transparent PNG
+          '89504e470d0a1a0a0000000d4948445200000001000000010806000000' +
+          '1f15c4890000000a49444154789c6360000002000154a24f5d00000000' +
+          '49454e44ae426082', 'hex'
+        ))
+      }
+
       event.sender.startDrag({ file: filePath, icon })
-      
-      console.log(`[FILES] Drag operation started for: ${filePath}`)
-    } catch (error) {
-      console.error('[FILES] Error starting drag operation:', error)
+      console.log(`[FILES] Drag started for: ${filePath}`)
+    } catch (err) {
+      console.error('[FILES] startDrag failed:', err)
     }
   })
 }

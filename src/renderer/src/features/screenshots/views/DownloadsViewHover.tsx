@@ -84,7 +84,7 @@ const DownloadsViewHover: React.FC = () => {
     }
   }
 
-  const startFileDrag = (e: React.MouseEvent, filePath: string) => {
+  const startFileDrag = (e: React.DragEvent, filePath: string) => {
     e.preventDefault() // prevent Chromium's own HTML5 drag
     window.electronAPI.screenshots.startDrag(filePath)
   }
@@ -207,7 +207,8 @@ const DownloadsViewHover: React.FC = () => {
               <div
                 key={file.id}
                 className="bg-gray-800 rounded-lg overflow-hidden hover:bg-gray-700 transition-colors group cursor-pointer"
-                onMouseDown={(e) => startFileDrag(e, file.path)}
+                draggable
+                onDragStart={(e) => startFileDrag(e, file.path)}
                 onClick={() => setSelectedFile(file)}
               >
                 {/* File Thumbnail/Icon */}
