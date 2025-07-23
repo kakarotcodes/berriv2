@@ -148,6 +148,8 @@ const App = memo(() => {
             padding: '8px 12px',
             minHeight: 'auto'
           }}
+          pauseOnFocusLoss={false}
+          pauseOnHover={false}
           icon={({ type }) => {
             if (type === 'success') {
               return (
@@ -182,6 +184,8 @@ const App = memo(() => {
           padding: '8px 12px',
           minHeight: 'auto'
         }}
+        pauseOnFocusLoss={false}
+        pauseOnHover={false}
         icon={({ type }) => {
           if (type === 'success') {
             return (

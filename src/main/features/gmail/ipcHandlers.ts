@@ -90,12 +90,24 @@ export function registerGmailHandlers(): void {
         
         // Save to Downloads folder
         const downloadsPath = path.join(os.homedir(), 'Downloads')
-        const filePath = path.join(downloadsPath, filename)
+        let filePath = path.join(downloadsPath, filename)
+        
+        // Handle filename conflicts by adding a number suffix
+        let counter = 1
+        const originalName = filename
+        const fileExtension = path.extname(originalName)
+        const baseName = path.basename(originalName, fileExtension)
+        
+        while (fs.existsSync(filePath)) {
+          const newFilename = `${baseName} (${counter})${fileExtension}`
+          filePath = path.join(downloadsPath, newFilename)
+          counter++
+        }
         
         // Write buffer to file
         fs.writeFileSync(filePath, buffer)
         
-        console.log('[IPC] Gmail attachment downloaded successfully:', filename)
+        console.log('[IPC] Gmail attachment downloaded successfully to:', filePath)
         return { success: true, filePath }
       } else {
         return {

@@ -117,8 +117,19 @@ const MailItem: React.FC<MailItemProps> = ({ mail }) => {
       )
       
       if (result.success) {
-        toast.success(`Attachment downloaded: ${attachment.filename}`)
-        console.log('[ATTACHMENT] Successfully downloaded:', attachment.filename)
+        const fileName = result.filePath ? result.filePath.split('/').pop() || attachment.filename : attachment.filename
+        toast.success(
+          <div>
+            <div>Downloaded: {fileName}</div>
+            <button 
+              onClick={() => result.filePath && window.electronAPI.openExternal(`file://${result.filePath.split('/').slice(0, -1).join('/')}`)}
+              className="text-blue-300 underline text-xs mt-1"
+            >
+              Open Downloads folder
+            </button>
+          </div>
+        )
+        console.log('[ATTACHMENT] Successfully downloaded to:', result.filePath)
       } else {
         toast.error(`Failed to download attachment: ${result.error}`)
         console.error('[ATTACHMENT] Failed to download attachment:', result.error)
