@@ -50,7 +50,7 @@ const MailItem: React.FC<MailItemProps> = ({ mail }) => {
           onChange={handleCheckboxChange}
           onClick={(e) => e.stopPropagation()}
           className="
-            w-3 h-3 appearance-none rounded border border-gray-600
+            w-3.5 h-3.5 appearance-none rounded-xs border border-gray-600
             bg-zinc-900 checked:bg-zinc-100
             focus:ring-0 focus:outline-none relative
             checked:after:content-[''] checked:after:block checked:after:absolute
