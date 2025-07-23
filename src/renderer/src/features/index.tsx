@@ -13,7 +13,7 @@ export interface FeatureModule {
 import ClipboardViewHover from './clipboard/views/ClipboardViewHover'
 import NotesViewHover from './notes/views/NotesViewHover'
 import CalendarViewHover from './calendar/views/CalendarViewHover'
-import ScreenshotsViewHover from './screenshots/views/ScreenshotsViewHover'
+import DownloadsViewHover from './screenshots/views/DownloadsViewHover'
 import MailViewHover from './mail/views/MailViewHover'
 
 // Feature definitions
@@ -40,15 +40,15 @@ export const calendarFeature: FeatureModule = {
 
 export const screenshotsFeature: FeatureModule = {
   id: 'screenshots',
-  name: 'Screenshots',
+  name: 'Files',
   icon: null, // Will be set by the consuming component
-  component: ScreenshotsViewHover,
+  component: DownloadsViewHover,
   initialize: async () => {
-    // Refresh screenshots when feature is accessed
+    // Refresh files when feature is accessed
     try {
       await window.electronAPI.screenshots.getScreenshots()
     } catch (error) {
-      console.error('[SCREENSHOTS] Failed to refresh on initialize:', error)
+      console.error('[FILES] Failed to refresh on initialize:', error)
     }
   }
 }

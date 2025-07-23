@@ -12,6 +12,25 @@ body.dragging {
   cursor: grabbing !important;
 }
 
+/* Drag handle uses JavaScript */
+#drag-handle {
+  cursor: grab !important;
+}
+
+#drag-handle.dragging {
+  cursor: grabbing !important;
+}
+
+/* All elements default to no-drag except specific header */
+* {
+  -webkit-app-region: no-drag;
+}
+
+/* Only the header drag handle should enable window dragging */
+#hover-header > .h-1.w-4\/12.bg-white\/40.rounded-full {
+  -webkit-app-region: drag;
+}
+
 /* Add visual feedback during dragging */
 #hover-header.dragging .bg-white\/40 {
   background-color: rgba(255, 255, 255, 0.6);
