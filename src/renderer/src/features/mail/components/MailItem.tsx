@@ -1,11 +1,5 @@
 import React from 'react'
-import {
-  StarIcon,
-  DocumentIcon,
-  PhotoIcon,
-  DocumentArrowDownIcon,
-  ArchiveBoxIcon
-} from '@heroicons/react/24/outline'
+import { StarIcon } from '@heroicons/react/24/outline'
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid'
 import { MailItem as MailItemType } from '../types'
 import { useMailStore } from '../store'
@@ -13,6 +7,8 @@ import { useMailStore } from '../store'
 // assets
 import Pdf from '@/assets/mail/mail-pdf.png'
 import Image from '@/assets/mail/mail-img.png'
+import Doc from '@/assets/mail/mail-doc.png'
+import Sheet from '@/assets/mail/mail-sheet.png'
 
 interface MailItemProps {
   mail: MailItemType
@@ -42,6 +38,34 @@ const getFileTypeInfo = (filename: string, mimeType: string) => {
     }
   }
 
+  // Spreadsheet files (Excel, CSV)
+  if (
+    mimeType.includes('excel') ||
+    mimeType.includes('sheet') ||
+    ['csv', 'xlsx', 'xls'].includes(extension || '')
+  ) {
+    return {
+      icon: Sheet,
+      isPng: true,
+      label: 'Spreadsheet'
+    }
+  }
+
+  // Document files (Word, PowerPoint, etc.)
+  if (
+    mimeType.includes('document') ||
+    mimeType.includes('word') ||
+    mimeType.includes('powerpoint') ||
+    mimeType.includes('presentation') ||
+    ['doc', 'docx', 'ppt', 'pptx', 'txt', 'rtf'].includes(extension || '')
+  ) {
+    return {
+      icon: Doc,
+      isPng: true,
+      label: 'Document'
+    }
+  }
+
   // Archive files
   if (
     mimeType.includes('zip') ||
@@ -49,7 +73,7 @@ const getFileTypeInfo = (filename: string, mimeType: string) => {
     ['zip', 'rar', '7z', 'tar', 'gz'].includes(extension || '')
   ) {
     return {
-      icon: Pdf, // Using PDF icon as fallback for archives
+      icon: Doc, // Using Doc icon as fallback for archives
       isPng: true,
       label: 'Archive'
     }
@@ -57,7 +81,7 @@ const getFileTypeInfo = (filename: string, mimeType: string) => {
 
   // Default for other files
   return {
-    icon: Pdf, // Using PDF icon as fallback for other files
+    icon: Doc, // Using Doc icon as fallback for other files
     isPng: true,
     label: 'File'
   }
