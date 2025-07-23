@@ -130,7 +130,8 @@ const App = memo(() => {
         'emails': 'mail',
         'calendar': 'calendar', 
         'notes': 'notes',
-        'clipboard': 'clipboard'
+        'clipboard': 'clipboard',
+        'screenshots': 'screenshots'
       }
       
       const feature = moduleToFeature[module]

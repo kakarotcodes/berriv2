@@ -318,7 +318,8 @@ function registerGlobalShortcuts() {
     'Control+1': 'emails',
     'Control+2': 'calendar',
     'Control+3': 'notes',
-    'Control+4': 'clipboard'
+    'Control+4': 'clipboard',
+    'Control+5': 'screenshots'
   }
 
   Object.entries(map).forEach(([acc, moduleName]) => {
