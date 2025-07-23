@@ -109,20 +109,27 @@ const MailItem: React.FC<MailItemProps> = ({ mail }) => {
   const handleAttachmentClick = async (attachment: any) => {
     try {
       console.log('[ATTACHMENT] Downloading attachment:', attachment.filename)
-      
+
       const result = await window.electronAPI.gmail.downloadAttachment(
         mail.id,
         attachment.attachmentId,
         attachment.filename
       )
-      
+
       if (result.success) {
-        const fileName = result.filePath ? result.filePath.split('/').pop() || attachment.filename : attachment.filename
+        const fileName = result.filePath
+          ? result.filePath.split('/').pop() || attachment.filename
+          : attachment.filename
         toast.success(
           <div>
             <div>Downloaded: {fileName}</div>
-            <button 
-              onClick={() => result.filePath && window.electronAPI.openExternal(`file://${result.filePath.split('/').slice(0, -1).join('/')}`)}
+            <button
+              onClick={() =>
+                result.filePath &&
+                window.electronAPI.openExternal(
+                  `file://${result.filePath.split('/').slice(0, -1).join('/')}`
+                )
+              }
               className="text-blue-300 underline text-xs mt-1"
             >
               Open Downloads folder
