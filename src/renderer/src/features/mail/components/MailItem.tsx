@@ -10,6 +10,10 @@ import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid'
 import { MailItem as MailItemType } from '../types'
 import { useMailStore } from '../store'
 
+// assets
+import Pdf from '@/assets/mail/mail-pdf.png'
+import Image from '@/assets/mail/mail-img.png'
+
 interface MailItemProps {
   mail: MailItemType
 }
@@ -20,9 +24,8 @@ const getFileTypeInfo = (filename: string, mimeType: string) => {
   // PDF files
   if (mimeType.includes('pdf') || extension === 'pdf') {
     return {
-      icon: DocumentIcon,
-      color: 'text-red-500',
-      bgColor: 'bg-red-50',
+      icon: Pdf,
+      isPng: true,
       label: 'PDF'
     }
   }
@@ -33,9 +36,8 @@ const getFileTypeInfo = (filename: string, mimeType: string) => {
     ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(extension || '')
   ) {
     return {
-      icon: PhotoIcon,
-      color: 'text-green-500',
-      bgColor: 'bg-green-50',
+      icon: Image,
+      isPng: true,
       label: 'Image'
     }
   }
@@ -47,18 +49,16 @@ const getFileTypeInfo = (filename: string, mimeType: string) => {
     ['zip', 'rar', '7z', 'tar', 'gz'].includes(extension || '')
   ) {
     return {
-      icon: ArchiveBoxIcon,
-      color: 'text-yellow-600',
-      bgColor: 'bg-yellow-50',
+      icon: Pdf, // Using PDF icon as fallback for archives
+      isPng: true,
       label: 'Archive'
     }
   }
 
   // Default for other files
   return {
-    icon: DocumentArrowDownIcon,
-    color: 'text-blue-500',
-    bgColor: 'bg-blue-50',
+    icon: Pdf, // Using PDF icon as fallback for other files
+    isPng: true,
     label: 'File'
   }
 }
@@ -150,14 +150,17 @@ const MailItem: React.FC<MailItemProps> = ({ mail }) => {
             <div className="flex flex-wrap gap-1 mt-2">
               {mail.attachments.map((attachment, index) => {
                 const fileInfo = getFileTypeInfo(attachment.filename, attachment.mimeType)
-                const IconComponent = fileInfo.icon
 
                 return (
                   <div
                     key={`${attachment.attachmentId}-${index}`}
-                    className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium border ${fileInfo.bgColor} ${fileInfo.color} border-gray-200 hover:bg-opacity-80 cursor-pointer transition-colors`}
+                    className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium border-[1px] border-white/50 bg-transparent hover:bg-opacity-80 cursor-pointer transition-colors`}
                   >
-                    <IconComponent className="size-3" />
+                    {fileInfo.isPng ? (
+                      <img src={fileInfo.icon} alt={fileInfo.label} className="size-3" />
+                    ) : (
+                      <fileInfo.icon className={`size-3 ${fileInfo.color || ''}`} />
+                    )}
                     <span className="truncate max-w-24">{attachment.filename}</span>
                   </div>
                 )
