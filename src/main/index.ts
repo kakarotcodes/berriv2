@@ -53,7 +53,8 @@ function createWindow(): void {
       preload: path.join(__dirname, '../preload/index.js'),
       backgroundThrottling: false,
       devTools: true,
-      nodeIntegration: false
+      nodeIntegration: false,
+      webSecurity: false
     }
   })
 
@@ -115,6 +116,23 @@ function createWindow(): void {
     console.log('[MAIN] Successfully registered global shortcut: CommandOrControl+Shift+G')
   } else {
     console.error('[MAIN] Failed to register global shortcut: CommandOrControl+Shift+G')
+  }
+
+  // Register global keyboard shortcut for collapsing to pill view
+  const escapeShortcutRegistered = globalShortcut.register('CommandOrControl+Escape', () => {
+    console.log('[MAIN] Global shortcut triggered: CommandOrControl+Escape')
+    if (mainWindow) {
+      console.log('[MAIN] Triggering collapse to pill view in renderer')
+      mainWindow.webContents.send('trigger-collapse-to-pill')
+    } else {
+      console.log('[MAIN] No main window available')
+    }
+  })
+
+  if (escapeShortcutRegistered) {
+    console.log('[MAIN] Successfully registered global shortcut: CommandOrControl+Escape')
+  } else {
+    console.error('[MAIN] Failed to register global shortcut: CommandOrControl+Escape')
   }
 }
 

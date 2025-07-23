@@ -56,13 +56,33 @@ const App = memo(() => {
     return cleanup
   }, [handleAINotesGeneration])
 
-  // Set up local keyboard shortcut as backup
+  // Set up global collapse to pill shortcut
+  useEffect(() => {
+    console.log('[APP] Setting up collapse to pill shortcut listener...')
+    const cleanup = window.electronAPI.onCollapseToPill(() => {
+      console.log('[APP] Global Cmd+Escape triggered, collapsing to pill view')
+      if (currentView !== 'pill') {
+        setView('pill')
+      }
+    })
+    return cleanup
+  }, [currentView, setView])
+
+  // Set up local keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      // Cmd+Shift+G for AI notes
       if ((event.metaKey || event.ctrlKey) && event.shiftKey && event.code === 'KeyG') {
         event.preventDefault()
         console.log('[APP] Local shortcut triggered: Cmd+Shift+G')
         handleAINotesGeneration()
+      }
+      
+      // Escape key to switch to pill view (only from hover view)
+      if (event.code === 'Escape' && currentView === 'hover') {
+        event.preventDefault()
+        console.log('[APP] Escape key pressed, switching to pill view')
+        setView('pill')
       }
     }
 
@@ -70,7 +90,7 @@ const App = memo(() => {
     return () => {
       document.removeEventListener('keydown', handleKeyDown)
     }
-  }, [handleAINotesGeneration])
+  }, [handleAINotesGeneration, currentView, setView])
 
   // Memoized view component mapping
   const viewComponents = React.useMemo(
@@ -128,6 +148,8 @@ const App = memo(() => {
             padding: '8px 12px',
             minHeight: 'auto'
           }}
+          pauseOnFocusLoss={false}
+          pauseOnHover={false}
           icon={({ type }) => {
             if (type === 'success') {
               return (
@@ -162,6 +184,8 @@ const App = memo(() => {
           padding: '8px 12px',
           minHeight: 'auto'
         }}
+        pauseOnFocusLoss={false}
+        pauseOnHover={false}
         icon={({ type }) => {
           if (type === 'success') {
             return (

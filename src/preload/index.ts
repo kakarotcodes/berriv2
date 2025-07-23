@@ -79,7 +79,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // ------------------------------------------------------------
 
   gmail: {
-    getEmails: (options) => ipcRenderer.invoke('gmail:get-emails', options)
+    getEmails: (options) => ipcRenderer.invoke('gmail:get-emails', options),
+    downloadAttachment: (messageId: string, attachmentId: string, filename: string) =>
+      ipcRenderer.invoke('gmail:download-attachment', { messageId, attachmentId, filename }),
+    getFullEmail: (messageId: string) =>
+      ipcRenderer.invoke('gmail:get-full-email', { messageId })
   },
 
   // ------------------------------------------------------------
@@ -228,6 +232,20 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return () => {
       console.log('[PRELOAD] Cleaning up AI notes shortcut listener')
       ipcRenderer.removeAllListeners('trigger-ai-notes-shortcut')
+    }
+  },
+
+  // Listen for collapse to pill shortcut
+  onCollapseToPill: (callback) => {
+    console.log('[PRELOAD] Setting up collapse to pill shortcut listener')
+    ipcRenderer.removeAllListeners('trigger-collapse-to-pill')
+    ipcRenderer.on('trigger-collapse-to-pill', () => {
+      console.log('[PRELOAD] Received trigger-collapse-to-pill')
+      callback()
+    })
+    return () => {
+      console.log('[PRELOAD] Cleaning up collapse to pill shortcut listener')
+      ipcRenderer.removeAllListeners('trigger-collapse-to-pill')
     }
   },
 

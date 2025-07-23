@@ -14,6 +14,7 @@ interface MailStore {
   settings: MailSettings
   isLoading: boolean
   error: string | null
+  selectedEmailIds: string[]
 
   // Actions
   setMails: (mails: MailItem[]) => void
@@ -32,6 +33,9 @@ interface MailStore {
   setSettings: (settings: MailSettings) => void
   setLoading: (loading: boolean) => void
   setError: (error: string | null) => void
+  toggleEmailSelection: (id: string) => void
+  selectAllEmails: () => void
+  clearSelection: () => void
 
   // Computed getters
   getFilteredMails: () => MailItem[]
@@ -76,6 +80,7 @@ export const useMailStore = create<MailStore>((set, get) => ({
   },
   isLoading: false,
   error: null,
+  selectedEmailIds: [],
 
   // Actions
   setMails: (mails) => set({ mails }),
@@ -183,6 +188,20 @@ export const useMailStore = create<MailStore>((set, get) => ({
   setSettings: (settings) => set({ settings }),
   setLoading: (loading) => set({ isLoading: loading }),
   setError: (error) => set({ error }),
+  
+  toggleEmailSelection: (id) =>
+    set((state) => ({
+      selectedEmailIds: state.selectedEmailIds.includes(id)
+        ? state.selectedEmailIds.filter((emailId) => emailId !== id)
+        : [...state.selectedEmailIds, id]
+    })),
+  
+  selectAllEmails: () =>
+    set((state) => ({
+      selectedEmailIds: state.mails.map((mail) => mail.id)
+    })),
+  
+  clearSelection: () => set({ selectedEmailIds: [] }),
 
   // Computed getters
   getFilteredMails: () => {
