@@ -249,6 +249,40 @@ contextBridge.exposeInMainWorld('electronAPI', {
     }
   },
 
+  // Listen for current view request (for visibility toggle)
+  onCurrentViewRequest: (callback) => {
+    console.log('[PRELOAD] Setting up current view request listener')
+    ipcRenderer.removeAllListeners('request-current-view-for-hide')
+    ipcRenderer.on('request-current-view-for-hide', () => {
+      console.log('[PRELOAD] Received request-current-view-for-hide')
+      callback()
+    })
+    return () => {
+      console.log('[PRELOAD] Cleaning up current view request listener')
+      ipcRenderer.removeAllListeners('request-current-view-for-hide')
+    }
+  },
+
+  // Send current view for hide
+  sendCurrentViewForHide: (view) => {
+    console.log('[PRELOAD] Sending current view for hide:', view)
+    ipcRenderer.send('current-view-for-hide', view)
+  },
+
+  // Listen for view restoration after show
+  onViewRestore: (callback) => {
+    console.log('[PRELOAD] Setting up view restore listener')
+    ipcRenderer.removeAllListeners('restore-view-after-show')
+    ipcRenderer.on('restore-view-after-show', (_event, view) => {
+      console.log('[PRELOAD] Received restore-view-after-show:', view)
+      callback(view)
+    })
+    return () => {
+      console.log('[PRELOAD] Cleaning up view restore listener')
+      ipcRenderer.removeAllListeners('restore-view-after-show')
+    }
+  },
+
   // Fix hover dimensions
   fixHoverDimensions: () => ipcRenderer.send('fix-hover-dimensions'),
 

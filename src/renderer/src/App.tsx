@@ -68,6 +68,30 @@ const App = memo(() => {
     return cleanup
   }, [currentView, setView])
 
+  // Set up visibility toggle handlers
+  useEffect(() => {
+    console.log('[APP] Setting up visibility toggle handlers...')
+    
+    // Handle request for current view before hiding
+    const cleanupViewRequest = window.electronAPI.onCurrentViewRequest(() => {
+      console.log(`[APP] Current view requested for hide: ${currentView}`)
+      window.electronAPI.sendCurrentViewForHide(currentView)
+    })
+
+    // Handle view restoration after showing
+    const cleanupViewRestore = window.electronAPI.onViewRestore((view) => {
+      console.log(`[APP] Restoring to view: ${view}`)
+      if (view !== currentView) {
+        setView(view as 'default' | 'pill' | 'hover')
+      }
+    })
+
+    return () => {
+      cleanupViewRequest()
+      cleanupViewRestore()
+    }
+  }, [currentView, setView])
+
   // Set up local keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {

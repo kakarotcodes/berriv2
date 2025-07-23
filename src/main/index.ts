@@ -134,6 +134,70 @@ function createWindow(): void {
   } else {
     console.error('[MAIN] Failed to register global shortcut: CommandOrControl+Escape')
   }
+
+  // Register global keyboard shortcut for Control+R to toggle app visibility
+  const controlRShortcutRegistered = globalShortcut.register('Control+R', () => {
+    console.log('[MAIN] Control+R shortcut triggered - toggling app visibility')
+    toggleAppVisibility()
+  })
+
+  if (controlRShortcutRegistered) {
+    console.log('[MAIN] Successfully registered global shortcut: Control+R')
+  } else {
+    console.error('[MAIN] Failed to register global shortcut: Control+R')
+  }
+
+  // Store the last view before hiding
+  let lastViewBeforeHide: string | null = null
+
+  // Toggle app visibility function
+  function toggleAppVisibility() {
+    if (!mainWindow || mainWindow.isDestroyed()) {
+      console.log('[VISIBILITY] No main window available')
+      return
+    }
+
+    const isVisible = mainWindow.isVisible()
+    console.log(`[VISIBILITY] Current visibility: ${isVisible}`)
+
+    if (isVisible) {
+      // Before hiding, request the current view from renderer
+      console.log('[VISIBILITY] Hiding app - requesting current view first')
+      mainWindow.webContents.send('request-current-view-for-hide')
+      
+      // Hide after a short delay to allow view to be captured
+      setTimeout(() => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.hide()
+        }
+      }, 50)
+    } else {
+      // Show the app and restore to last view
+      console.log('[VISIBILITY] Showing app')
+      mainWindow.show()
+      mainWindow.focus()
+      
+      // Restore to the last view, defaulting to default if none was stored
+      const viewToRestore = lastViewBeforeHide || 'default'
+      console.log(`[VISIBILITY] Restoring to view: ${viewToRestore}`)
+      
+      // Only trigger view change if it's different from default view
+      if (viewToRestore !== 'default') {
+        setTimeout(() => {
+          if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('restore-view-after-show', viewToRestore)
+          }
+        }, 100)
+      }
+      // If restoring to default view, don't send any message - let it stay as is
+    }
+  }
+
+  // Handle the current view response when hiding
+  ipcMain.on('current-view-for-hide', (_event, view) => {
+    console.log(`[VISIBILITY] Storing current view before hide: ${view}`)
+    lastViewBeforeHide = view
+  })
 }
 
 // Register as default protocol client
