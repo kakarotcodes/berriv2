@@ -1,4 +1,4 @@
-import { app, BrowserWindow, screen, globalShortcut, dialog } from 'electron'
+import { app, BrowserWindow, screen, globalShortcut, ipcMain } from 'electron'
 import path from 'path'
 import fs from 'fs'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
@@ -14,6 +14,7 @@ import { handleProtocolUrl, setupProtocolHandling } from './features/auth/protoc
 import { WIDTH, HEIGHT, PROTOCOL } from '../constants/constants'
 
 let mainWindow: BrowserWindow | null = null
+let lastViewBeforeHide: string | null = null
 
 function createWindow(): void {
   // Get the display nearest to the cursor instead of primary display
@@ -101,51 +102,6 @@ function createWindow(): void {
   console.log('[MAIN] Preload path:', preloadPath)
   console.log('[MAIN] Preload file exists:', fs.existsSync(preloadPath))
 
-  // Register global keyboard shortcut for AI notes generation
-  const shortcutRegistered = globalShortcut.register('CommandOrControl+Shift+G', () => {
-    console.log('[MAIN] Global shortcut triggered: CommandOrControl+Shift+G')
-    if (mainWindow) {
-      console.log('[MAIN] Triggering AI notes generation in renderer')
-      mainWindow.webContents.send('trigger-ai-notes-shortcut')
-    } else {
-      console.log('[MAIN] No main window available')
-    }
-  })
-
-  if (shortcutRegistered) {
-    console.log('[MAIN] Successfully registered global shortcut: CommandOrControl+Shift+G')
-  } else {
-    console.error('[MAIN] Failed to register global shortcut: CommandOrControl+Shift+G')
-  }
-
-  // Register global keyboard shortcut for collapsing to pill view
-  const escapeShortcutRegistered = globalShortcut.register('CommandOrControl+Escape', () => {
-    console.log('[MAIN] Global shortcut triggered: CommandOrControl+Escape')
-    if (mainWindow) {
-      console.log('[MAIN] Triggering collapse to pill view in renderer')
-      mainWindow.webContents.send('trigger-collapse-to-pill')
-    } else {
-      console.log('[MAIN] No main window available')
-    }
-  })
-
-  if (escapeShortcutRegistered) {
-    console.log('[MAIN] Successfully registered global shortcut: CommandOrControl+Escape')
-  } else {
-    console.error('[MAIN] Failed to register global shortcut: CommandOrControl+Escape')
-  }
-
-  // Register global keyboard shortcut for Control+R to toggle app visibility
-  const controlRShortcutRegistered = globalShortcut.register('Control+R', () => {
-    console.log('[MAIN] Control+R shortcut triggered - toggling app visibility')
-    toggleAppVisibility()
-  })
-
-  if (controlRShortcutRegistered) {
-    console.log('[MAIN] Successfully registered global shortcut: Control+R')
-  } else {
-    console.error('[MAIN] Failed to register global shortcut: Control+R')
-  }
 
   // Store the last view before hiding
   let lastViewBeforeHide: string | null = null
@@ -239,6 +195,9 @@ if (!gotTheLock) {
 
     createWindow()
 
+    // Register global shortcuts after window is created
+    registerGlobalShortcuts()
+
     // Handle any pending protocol URL from app launch
     if (process.env.PENDING_PROTOCOL_URL) {
       handleProtocolUrl(process.env.PENDING_PROTOCOL_URL, mainWindow)
@@ -297,5 +256,76 @@ app.on('open-url', (event, url) => {
 
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.
+
+// Toggle app visibility function
+function toggleAppVisibility() {
+  if (!mainWindow || mainWindow.isDestroyed()) return
+  const visible = mainWindow.isVisible()
+  if (visible) {
+    mainWindow.webContents.send('request-current-view-for-hide')
+    setTimeout(() => mainWindow?.hide(), 50)
+  } else {
+    mainWindow.show()
+    mainWindow.focus()
+    mainWindow.setOpacity(1)
+    mainWindow.webContents.send('pill:set-css-opacity', 1)
+    const view = lastViewBeforeHide || 'default'
+    if (view !== 'default') {
+      setTimeout(() => mainWindow?.webContents.send('restore-view-after-show', view), 100)
+    }
+  }
+}
+
+// Show module in hover view function
+function showModuleInHoverView(module: string) {
+  if (!mainWindow || mainWindow.isDestroyed()) return
+  if (!mainWindow.isVisible()) mainWindow.show()
+  mainWindow.focus()
+  mainWindow.setOpacity(1)
+  mainWindow.webContents.send('pill:set-css-opacity', 1)
+  setTimeout(() => mainWindow?.webContents.send('open-module-in-hover', module), 100)
+}
+
+// Handle the current view response when hiding
+ipcMain.on('current-view-for-hide', (_e, view) => {
+  lastViewBeforeHide = view
+})
+
+// Register global shortcuts function
+function registerGlobalShortcuts() {
+  console.log('[MAIN] Registering global shortcuts...')
+
+  // Register existing shortcuts
+  if (!globalShortcut.register('CommandOrControl+Shift+G', () => {
+    mainWindow?.webContents.send('trigger-ai-notes-shortcut')
+  })) {
+    console.error('Failed to register CommandOrControl+Shift+G')
+  }
+
+  if (!globalShortcut.register('CommandOrControl+Escape', () => {
+    mainWindow?.webContents.send('trigger-collapse-to-pill')
+  })) {
+    console.error('Failed to register CommandOrControl+Escape')
+  }
+
+  // Register Control+R for visibility toggle
+  if (!globalShortcut.register('Control+R', toggleAppVisibility)) {
+    console.error('Failed to register Control+R')
+  }
+
+  // Register module shortcuts
+  const map: Record<string, string> = {
+    'Control+1': 'emails',
+    'Control+2': 'calendar',
+    'Control+3': 'notes',
+    'Control+4': 'clipboard'
+  }
+
+  Object.entries(map).forEach(([acc, moduleName]) => {
+    const ok = globalShortcut.register(acc, () => showModuleInHoverView(moduleName))
+    console.log(`[MAIN] ${acc} registered?`, ok, globalShortcut.isRegistered(acc))
+    if (!ok) console.error(`Failed to register ${acc}`)
+  })
+}
 
 export { createWindow }

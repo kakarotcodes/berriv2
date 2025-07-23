@@ -6,6 +6,7 @@ import { useViewStore } from '@/globalStore'
 import { setupAuthListener, useAuthStore } from '@/globalStore/useAuthStore'
 import { useNotesStore } from './features/notes/store/notesStore'
 import { aiApi } from './api/ai'
+import { useViewController, Feature } from '@/controller'
 
 // views
 import { DefaultView, PillView, HoverView } from '@/views'
@@ -25,6 +26,7 @@ const App = memo(() => {
   const { currentView, isTransitioning, setView } = useViewStore()
   const { initializeAuth } = useAuthStore()
   const { addNote } = useNotesStore()
+  const { setActiveFeature } = useViewController()
 
   // AI Notes Generation Function - now handles inline input
   const handleAINotesGeneration = React.useCallback(async () => {
@@ -91,6 +93,58 @@ const App = memo(() => {
       cleanupViewRestore()
     }
   }, [currentView, setView])
+
+  // Set up visibility toggle handlers
+  useEffect(() => {
+    console.log('[APP] Setting up visibility toggle handlers...')
+    
+    // Handle request for current view before hiding
+    const cleanupViewRequest = window.electronAPI.onCurrentViewRequest(() => {
+      console.log(`[APP] Current view requested for hide: ${currentView}`)
+      window.electronAPI.sendCurrentViewForHide(currentView)
+    })
+
+    // Handle view restoration after showing
+    const cleanupViewRestore = window.electronAPI.onViewRestore((view) => {
+      console.log(`[APP] Restoring to view: ${view}`)
+      if (view !== currentView) {
+        setView(view as 'default' | 'pill' | 'hover')
+      }
+    })
+
+    return () => {
+      cleanupViewRequest()
+      cleanupViewRestore()
+    }
+  }, [currentView, setView])
+
+  // Set up module shortcut handlers
+  useEffect(() => {
+    console.log('[APP] Setting up module shortcut handlers...')
+    
+    const cleanup = window.electronAPI.onModuleShortcut((module: string) => {
+      console.log(`[APP] Module shortcut triggered: ${module}`)
+      
+      // Map module names to features
+      const moduleToFeature: Record<string, Feature> = {
+        'emails': 'mail',
+        'calendar': 'calendar', 
+        'notes': 'notes',
+        'clipboard': 'clipboard'
+      }
+      
+      const feature = moduleToFeature[module]
+      if (feature) {
+        // Only switch to hover view if not already there
+        if (currentView !== 'hover') {
+          setView('hover')
+        }
+        setActiveFeature(feature)
+      }
+    })
+
+    return cleanup
+  }, [currentView, setView, setActiveFeature])
 
   // Set up local keyboard shortcuts
   useEffect(() => {

@@ -283,6 +283,20 @@ contextBridge.exposeInMainWorld('electronAPI', {
     }
   },
 
+  // Listen for module shortcuts (Control+1,2,3,4)
+  onModuleShortcut: (callback) => {
+    console.log('[PRELOAD] Setting up module shortcut listener')
+    ipcRenderer.removeAllListeners('open-module-in-hover')
+    ipcRenderer.on('open-module-in-hover', (_event, module) => {
+      console.log('[PRELOAD] Received open-module-in-hover:', module)
+      callback(module)
+    })
+    return () => {
+      console.log('[PRELOAD] Cleaning up module shortcut listener')
+      ipcRenderer.removeAllListeners('open-module-in-hover')
+    }
+  },
+
   // Fix hover dimensions
   fixHoverDimensions: () => ipcRenderer.send('fix-hover-dimensions'),
 
