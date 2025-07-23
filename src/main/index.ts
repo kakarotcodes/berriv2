@@ -177,6 +177,13 @@ function createWindow(): void {
       mainWindow.show()
       mainWindow.focus()
       
+      // Reset opacity to 100% when showing via shortcut
+      console.log('[VISIBILITY] Resetting opacity to 100%')
+      mainWindow.setOpacity(1.0)
+      
+      // Also reset CSS opacity in renderer
+      mainWindow.webContents.send('pill:set-css-opacity', 1.0)
+      
       // Restore to the last view, defaulting to default if none was stored
       const viewToRestore = lastViewBeforeHide || 'default'
       console.log(`[VISIBILITY] Restoring to view: ${viewToRestore}`)
