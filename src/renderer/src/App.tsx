@@ -56,6 +56,18 @@ const App = memo(() => {
     return cleanup
   }, [handleAINotesGeneration])
 
+  // Set up global collapse to pill shortcut
+  useEffect(() => {
+    console.log('[APP] Setting up collapse to pill shortcut listener...')
+    const cleanup = window.electronAPI.onCollapseToPill(() => {
+      console.log('[APP] Global Cmd+Escape triggered, collapsing to pill view')
+      if (currentView !== 'pill') {
+        setView('pill')
+      }
+    })
+    return cleanup
+  }, [currentView, setView])
+
   // Set up local keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {

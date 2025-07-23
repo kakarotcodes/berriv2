@@ -231,6 +231,20 @@ contextBridge.exposeInMainWorld('electronAPI', {
     }
   },
 
+  // Listen for collapse to pill shortcut
+  onCollapseToPill: (callback) => {
+    console.log('[PRELOAD] Setting up collapse to pill shortcut listener')
+    ipcRenderer.removeAllListeners('trigger-collapse-to-pill')
+    ipcRenderer.on('trigger-collapse-to-pill', () => {
+      console.log('[PRELOAD] Received trigger-collapse-to-pill')
+      callback()
+    })
+    return () => {
+      console.log('[PRELOAD] Cleaning up collapse to pill shortcut listener')
+      ipcRenderer.removeAllListeners('trigger-collapse-to-pill')
+    }
+  },
+
   // Fix hover dimensions
   fixHoverDimensions: () => ipcRenderer.send('fix-hover-dimensions'),
 
