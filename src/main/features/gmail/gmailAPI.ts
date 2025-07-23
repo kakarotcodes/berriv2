@@ -244,6 +244,34 @@ export class GmailAPI {
       }
     }
   }
+
+  async getAttachment(accessToken: string, refreshToken: string | undefined, messageId: string, attachmentId: string): Promise<{ success: boolean; data?: string; error?: string }> {
+    try {
+      this.setCredentials(accessToken, refreshToken)
+      const gmail = google.gmail({ version: 'v1', auth: this.oauth2Client })
+
+      const attachment = await gmail.users.messages.attachments.get({
+        userId: 'me',
+        messageId,
+        id: attachmentId
+      })
+
+      if (!attachment.data?.data) {
+        throw new Error('No attachment data received')
+      }
+
+      return {
+        success: true,
+        data: attachment.data.data
+      }
+    } catch (error) {
+      console.error('[GMAIL_API] Error getting attachment:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to get attachment'
+      }
+    }
+  }
 }
 
 export const gmailAPI = new GmailAPI()

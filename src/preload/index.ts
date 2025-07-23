@@ -79,7 +79,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // ------------------------------------------------------------
 
   gmail: {
-    getEmails: (options) => ipcRenderer.invoke('gmail:get-emails', options)
+    getEmails: (options) => ipcRenderer.invoke('gmail:get-emails', options),
+    downloadAttachment: (messageId: string, attachmentId: string, filename: string) =>
+      ipcRenderer.invoke('gmail:download-attachment', { messageId, attachmentId, filename })
   },
 
   // ------------------------------------------------------------

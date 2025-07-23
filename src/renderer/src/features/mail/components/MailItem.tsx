@@ -3,6 +3,7 @@ import { StarIcon } from '@heroicons/react/24/outline'
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid'
 import { MailItem as MailItemType } from '../types'
 import { useMailStore } from '../store'
+import { toast } from 'react-toastify'
 
 // assets
 import Pdf from '@/assets/mail/mail-pdf.png'
@@ -105,6 +106,29 @@ const MailItem: React.FC<MailItemProps> = ({ mail }) => {
   const handleToggleStar = () => updateMail(mail.id, { isStarred: !mail.isStarred })
   const handleCheckboxChange = () => toggleEmailSelection(mail.id)
 
+  const handleAttachmentClick = async (attachment: any) => {
+    try {
+      console.log('[ATTACHMENT] Downloading attachment:', attachment.filename)
+      
+      const result = await window.electronAPI.gmail.downloadAttachment(
+        mail.id,
+        attachment.attachmentId,
+        attachment.filename
+      )
+      
+      if (result.success) {
+        toast.success(`Attachment downloaded: ${attachment.filename}`)
+        console.log('[ATTACHMENT] Successfully downloaded:', attachment.filename)
+      } else {
+        toast.error(`Failed to download attachment: ${result.error}`)
+        console.error('[ATTACHMENT] Failed to download attachment:', result.error)
+      }
+    } catch (error) {
+      toast.error('Error downloading attachment')
+      console.error('[ATTACHMENT] Error downloading attachment:', error)
+    }
+  }
+
   const formatTime = (timestamp: Date) => {
     const now = new Date()
     const diff = now.getTime() - timestamp.getTime()
@@ -178,13 +202,13 @@ const MailItem: React.FC<MailItemProps> = ({ mail }) => {
                 return (
                   <div
                     key={`${attachment.attachmentId}-${index}`}
-                    className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium border-[1px] border-white/50 bg-transparent hover:bg-opacity-80 cursor-pointer transition-colors`}
+                    className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium border-[1px] border-white/50 bg-transparent hover:bg-white/10 cursor-pointer transition-colors`}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleAttachmentClick(attachment)
+                    }}
                   >
-                    {fileInfo.isPng ? (
-                      <img src={fileInfo.icon} alt={fileInfo.label} className="size-3" />
-                    ) : (
-                      <fileInfo.icon className={`size-3 ${fileInfo.color || ''}`} />
-                    )}
+                    <img src={fileInfo.icon} alt={fileInfo.label} className="size-3" />
                     <span className="truncate max-w-24">{attachment.filename}</span>
                   </div>
                 )

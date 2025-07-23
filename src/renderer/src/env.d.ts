@@ -123,6 +123,11 @@ interface ElectronAPI {
       }>
       error?: string
     }>
+    downloadAttachment: (messageId: string, attachmentId: string, filename: string) => Promise<{
+      success: boolean
+      filePath?: string
+      error?: string
+    }>
   }
 
   // Vertical Drag
