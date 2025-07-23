@@ -19,7 +19,6 @@ const MailItem: React.FC<MailItemProps> = ({ mail }) => {
   const { updateMail, selectedEmailIds, toggleEmailSelection } = useMailStore()
   const isSelected = selectedEmailIds.includes(mail.id)
 
-  const handleToggleRead = () => updateMail(mail.id, { isRead: !mail.isRead })
   const handleToggleStar = () => updateMail(mail.id, { isStarred: !mail.isStarred })
   const handleCheckboxChange = () => toggleEmailSelection(mail.id)
 
@@ -40,10 +39,9 @@ const MailItem: React.FC<MailItemProps> = ({ mail }) => {
   return (
     <div
       className={`
-        px-3 py-5 cursor-pointer transition-colors
-        ${isSelected ? 'bg-blue-900' : 'hover:bg-gray-500/20'}
+        px-3 py-5 transition-colors cursor-pointer hover:bg-[#393939]
+        ${isSelected ? 'bg-blue-900' : mail.isRead ? 'bg-black/50 ' : 'bg-transparent'}
       `}
-      onClick={handleToggleRead}
     >
       <div className="grid grid-cols-[auto_auto_12rem_minmax(0,1fr)_auto] items-center gap-2">
         <input
@@ -77,14 +75,14 @@ const MailItem: React.FC<MailItemProps> = ({ mail }) => {
         </button>
 
         <span
-          className={`truncate text-sm ${mail.isRead ? 'text-gray-300' : 'text-white font-medium'}`}
+          className={`truncate text-sm ${mail.isRead ? 'text-gray-400' : 'text-white font-bold'}`}
           title={senderRaw}
         >
           {sender}
         </span>
 
         <div className="min-w-0 truncate text-sm">
-          <span className={`${mail.isRead ? 'text-gray-300' : 'text-white font-medium'}`}>
+          <span className={`${mail.isRead ? 'text-gray-400' : 'text-white font-bold'}`}>
             {mail.subject}
           </span>
         </div>
