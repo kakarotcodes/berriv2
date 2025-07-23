@@ -1,11 +1,53 @@
 import React from 'react'
-import { StarIcon, PaperClipIcon } from '@heroicons/react/24/outline'
+import { StarIcon, DocumentIcon, PhotoIcon, DocumentArrowDownIcon, ArchiveBoxIcon } from '@heroicons/react/24/outline'
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid'
 import { MailItem as MailItemType } from '../types'
 import { useMailStore } from '../store'
 
 interface MailItemProps {
   mail: MailItemType
+}
+
+const getFileTypeInfo = (filename: string, mimeType: string) => {
+  const extension = filename.split('.').pop()?.toLowerCase()
+  
+  // PDF files
+  if (mimeType.includes('pdf') || extension === 'pdf') {
+    return {
+      icon: DocumentIcon,
+      color: 'text-red-500',
+      bgColor: 'bg-red-50',
+      label: 'PDF'
+    }
+  }
+  
+  // Image files
+  if (mimeType.startsWith('image/') || ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(extension || '')) {
+    return {
+      icon: PhotoIcon,
+      color: 'text-green-500',
+      bgColor: 'bg-green-50',
+      label: 'Image'
+    }
+  }
+  
+  // Archive files
+  if (mimeType.includes('zip') || mimeType.includes('rar') || ['zip', 'rar', '7z', 'tar', 'gz'].includes(extension || '')) {
+    return {
+      icon: ArchiveBoxIcon,
+      color: 'text-yellow-600',
+      bgColor: 'bg-yellow-50',
+      label: 'Archive'
+    }
+  }
+  
+  // Default for other files
+  return {
+    icon: DocumentArrowDownIcon,
+    color: 'text-blue-500',
+    bgColor: 'bg-blue-50',
+    label: 'File'
+  }
 }
 
 const MailItem: React.FC<MailItemProps> = ({ mail }) => {
@@ -94,22 +136,26 @@ const MailItem: React.FC<MailItemProps> = ({ mail }) => {
             </div>
           )}
           {mail.hasAttachments && mail.attachments.length > 0 && (
-            <div className="text-xs text-gray-400 mt-1 flex items-center gap-1">
-              <PaperClipIcon className="size-3" />
-              <span className="truncate">
-                {mail.attachments.map(att => att.filename).join(', ')}
-              </span>
+            <div className="flex flex-wrap gap-1 mt-2">
+              {mail.attachments.map((attachment, index) => {
+                const fileInfo = getFileTypeInfo(attachment.filename, attachment.mimeType)
+                const IconComponent = fileInfo.icon
+                
+                return (
+                  <div
+                    key={`${attachment.attachmentId}-${index}`}
+                    className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium border ${fileInfo.bgColor} ${fileInfo.color} border-gray-200 hover:bg-opacity-80 cursor-pointer transition-colors`}
+                  >
+                    <IconComponent className="size-3" />
+                    <span className="truncate max-w-24">{attachment.filename}</span>
+                  </div>
+                )
+              })}
             </div>
           )}
         </div>
 
         <div className="flex items-center gap-1 justify-end text-xs text-gray-400">
-          {mail.hasAttachments && (
-            <div className="flex items-center gap-1">
-              <PaperClipIcon className="size-3 rotate-45" />
-              <span className="text-xs">{mail.attachments.length}</span>
-            </div>
-          )}
           <span>{formatTime(mail.timestamp)}</span>
         </div>
       </div>
