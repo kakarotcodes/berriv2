@@ -3,19 +3,72 @@ import { promises as fs } from 'fs'
 import { join } from 'path'
 import { homedir } from 'os'
 
-interface Screenshot {
+interface DownloadFile {
   id: string
   name: string
   path: string
   dateAdded: Date
   size: number
+  extension: string
+  type: string
   thumbnail?: string
 }
 
+interface FileTypeCategory {
+  name: string
+  extensions: string[]
+  count: number
+}
+
 export function registerScreenshotsHandlers() {
-  // Get default macOS screenshots directory
-  const getScreenshotsDirectory = () => {
+  // Get downloads and desktop directories
+  const getDownloadsDirectory = () => {
+    return join(homedir(), 'Downloads')
+  }
+
+  const getDesktopDirectory = () => {
     return join(homedir(), 'Desktop')
+  }
+
+  // Get file type category based on extension
+  const getFileTypeCategory = (extension: string): string => {
+    const ext = extension.toLowerCase()
+    
+    if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg', 'ico', 'tiff', 'tif'].includes(ext)) {
+      return 'Images'
+    }
+    if (['pdf'].includes(ext)) {
+      return 'PDFs'
+    }
+    if (['doc', 'docx', 'odt', 'rtf'].includes(ext)) {
+      return 'Documents'
+    }
+    if (['xls', 'xlsx', 'csv', 'ods'].includes(ext)) {
+      return 'Spreadsheets'
+    }
+    if (['ppt', 'pptx', 'odp'].includes(ext)) {
+      return 'Presentations'
+    }
+    if (['txt', 'md', 'log', 'json', 'xml', 'yaml', 'yml'].includes(ext)) {
+      return 'Text Files'
+    }
+    if (['zip', 'rar', '7z', 'tar', 'gz', 'bz2', 'xz'].includes(ext)) {
+      return 'Archives'
+    }
+    if (['mp4', 'mov', 'avi', 'mkv', 'webm', 'flv', 'wmv', 'm4v'].includes(ext)) {
+      return 'Videos'
+    }
+    if (['mp3', 'wav', 'flac', 'aac', 'm4a', 'ogg', 'wma'].includes(ext)) {
+      return 'Audio'
+    }
+    if (['dmg', 'pkg', 'app', 'exe', 'msi', 'deb', 'rpm'].includes(ext)) {
+      return 'Applications'
+    }
+    if (['js', 'ts', 'py', 'java', 'cpp', 'c', 'php', 'rb', 'go', 'rs', 'swift', 'kt'].includes(ext)) {
+      return 'Code Files'
+    }
+    
+    return 'Other'
   }
 
   // Helper function to create base64 data URL from image file
@@ -47,75 +100,102 @@ export function registerScreenshotsHandlers() {
     }
   }
 
-  // Get all screenshots from the desktop (default macOS location)
+  // Get all files from downloads and desktop folders
   ipcMain.handle('screenshots:get-screenshots', async () => {
     try {
-      const screenshotsDir = getScreenshotsDirectory()
-      const files = await fs.readdir(screenshotsDir, { withFileTypes: true })
+      const downloadsDir = getDownloadsDirectory()
+      const desktopDir = getDesktopDirectory()
+      
+      // Read files from both directories
+      const [downloadsFiles, desktopFiles] = await Promise.all([
+        fs.readdir(downloadsDir, { withFileTypes: true }).catch(() => []),
+        fs.readdir(desktopDir, { withFileTypes: true }).catch(() => [])
+      ])
 
-      // Filter for screenshot files (common patterns: Screen Shot, Screenshot, CleanShot, etc.)
-      const screenshotFiles = files.filter((file) => {
-        if (!file.isFile()) return false
-        const name = file.name.toLowerCase()
-        const isImageFile = /\.(png|jpg|jpeg|gif|webp)$/i.test(name)
-        const isScreenshot = /(screen shot|screenshot|capture|snap|cleanshot|lightshot|monosnap|skitch)/i.test(name)
-        return isImageFile && isScreenshot
-      })
+      // Filter for files only (no folders) and combine
+      const allDirFiles = [
+        ...downloadsFiles.filter((file) => file.isFile()).map(file => ({ ...file, directory: downloadsDir, source: 'Downloads' })),
+        ...desktopFiles.filter((file) => file.isFile()).map(file => ({ ...file, directory: desktopDir, source: 'Desktop' }))
+      ]
 
-      const screenshots: Screenshot[] = []
+      const allFiles: DownloadFile[] = []
+      const categoryMap = new Map<string, number>()
 
-      for (const file of screenshotFiles) {
+      for (const file of allDirFiles) {
         try {
-          const filePath = join(screenshotsDir, file.name)
+          const filePath = join(file.directory, file.name)
           const stats = await fs.stat(filePath)
 
-          // Create base64 thumbnail for display in renderer
-          const thumbnail = await createThumbnail(filePath)
+          // Get file extension
+          const extension = file.name.includes('.') 
+            ? file.name.split('.').pop()?.toLowerCase() || ''
+            : ''
 
-          screenshots.push({
-            id: `${file.name}_${stats.mtime.getTime()}`,
+          // Get file type category
+          const type = getFileTypeCategory(extension)
+
+          // Update category count
+          categoryMap.set(type, (categoryMap.get(type) || 0) + 1)
+
+          // Create thumbnail only for images
+          let thumbnail: string | undefined
+          if (type === 'Images') {
+            thumbnail = await createThumbnail(filePath)
+          }
+
+          allFiles.push({
+            id: `${file.source}_${file.name}_${stats.mtime.getTime()}`,
             name: file.name,
             path: filePath,
-            dateAdded: stats.mtime, // Use modification time as creation time
+            dateAdded: stats.mtime,
             size: stats.size,
+            extension,
+            type,
             thumbnail
           })
         } catch (error) {
-          console.error(`Error processing screenshot file ${file.name}:`, error)
+          console.error(`Error processing file ${file.name} from ${file.source}:`, error)
         }
       }
 
       // Sort by date (newest first)
-      screenshots.sort((a, b) => new Date(b.dateAdded).getTime() - new Date(a.dateAdded).getTime())
+      allFiles.sort((a, b) => new Date(b.dateAdded).getTime() - new Date(a.dateAdded).getTime())
 
-      console.log(`[SCREENSHOTS] Found ${screenshots.length} screenshots`)
-      return { success: true, screenshots }
+      // Create categories array
+      const categories: FileTypeCategory[] = Array.from(categoryMap.entries()).map(([name, count]) => ({
+        name,
+        extensions: [], // We'll populate this if needed
+        count
+      })).sort((a, b) => b.count - a.count) // Sort by count, most files first
+
+      console.log(`[FILES] Found ${allFiles.length} files in ${categories.length} categories from Downloads and Desktop`)
+      return { success: true, files: allFiles, categories }
     } catch (error) {
-      console.error('[SCREENSHOTS] Error getting screenshots:', error)
+      console.error('[FILES] Error getting files:', error)
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
     }
   })
 
-  // Delete a screenshot
+  // Delete a file
   ipcMain.handle('screenshots:delete-screenshot', async (_event, filePath: string) => {
     try {
       await fs.unlink(filePath)
-      console.log(`[SCREENSHOTS] Deleted screenshot: ${filePath}`)
+      console.log(`[FILES] Deleted file: ${filePath}`)
       return { success: true }
     } catch (error) {
-      console.error('[SCREENSHOTS] Error deleting screenshot:', error)
+      console.error('[FILES] Error deleting file:', error)
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
     }
   })
 
-  // Open screenshot in Finder
+  // Open file in Finder
   ipcMain.handle('screenshots:open-in-finder', async (_event, filePath: string) => {
     try {
       shell.showItemInFolder(filePath)
-      console.log(`[SCREENSHOTS] Opened in Finder: ${filePath}`)
+      console.log(`[FILES] Opened in Finder: ${filePath}`)
       return { success: true }
     } catch (error) {
-      console.error('[SCREENSHOTS] Error opening in Finder:', error)
+      console.error('[FILES] Error opening in Finder:', error)
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
     }
   })
@@ -135,23 +215,15 @@ export function registerScreenshotsHandlers() {
   // Start drag operation for file
   ipcMain.on('screenshots:start-drag', async (event, filePath: string) => {
     try {
-      console.log(`[SCREENSHOTS] Starting drag operation for: ${filePath}`)
-      
       // Verify file exists
       await fs.access(filePath)
       
-      // Create native image for drag
-      const image = nativeImage.createFromPath(filePath)
+      const icon = nativeImage.createFromPath(filePath).resize({ width: 64, height: 64 })
+      event.sender.startDrag({ file: filePath, icon })
       
-      // Start the drag operation using the event sender
-      event.sender.startDrag({
-        file: filePath,
-        icon: image.resize({ width: 64, height: 64 })
-      })
-      
-      console.log(`[SCREENSHOTS] Drag operation started successfully`)
+      console.log(`[FILES] Drag operation started for: ${filePath}`)
     } catch (error) {
-      console.error('[SCREENSHOTS] Error starting drag operation:', error)
+      console.error('[FILES] Error starting drag operation:', error)
     }
   })
 }
