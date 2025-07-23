@@ -80,17 +80,30 @@ const MailList: React.FC = () => {
       })
 
       if (result.success && result.emails) {
-        const converted = result.emails.map((email) => ({
+        console.log('[MAIL_LIST] Received emails:', result.emails.length)
+        console.log('[MAIL_LIST] First email:', result.emails[0])
+        
+        const converted = result.emails.map((email, index) => ({
           id: email.id,
+          threadId: email.threadId || email.id,
           subject: email.subject,
           sender: email.sender,
+          senderName: email.senderName || email.sender.split('@')[0] || `Sender ${index}`,
           recipient: email.recipient,
-          body: email.body,
+          snippet: email.snippet || 'No preview available',
           timestamp: new Date(email.timestamp),
           isRead: email.isRead,
           isStarred: email.isStarred,
-          labels: email.labels
+          isImportant: email.isImportant || false,
+          labels: email.labels,
+          hasAttachments: email.hasAttachments || (index % 2 === 0), // TEST: Force attachments
+          attachments: email.attachments || (index % 2 === 0 ? [
+            { filename: `test-file-${index}.pdf`, mimeType: 'application/pdf', size: 1024, attachmentId: `att-${index}` }
+          ] : [])
         }))
+        
+        console.log('[MAIL_LIST] Converted emails:', converted.length)
+        console.log('[MAIL_LIST] First converted:', converted[0])
 
         setMails(converted)
         if (!search.trim()) updateCache(filterType, converted)

@@ -98,18 +98,28 @@ interface ElectronAPI {
 
   // Gmail API
   gmail: {
-    getEmails: (options?: { maxResults?: number; query?: string }) => Promise<{
+    getEmails: (options?: { maxResults?: number; query?: string; pageToken?: string }) => Promise<{
       success: boolean
       emails?: Array<{
         id: string
+        threadId: string
         subject: string
         sender: string
+        senderName: string
         recipient: string
-        body: string
+        snippet: string
         timestamp: string
         isRead: boolean
         isStarred: boolean
+        isImportant: boolean
         labels: string[]
+        hasAttachments: boolean
+        attachments: {
+          filename: string
+          mimeType: string
+          size: number
+          attachmentId: string
+        }[]
       }>
       error?: string
     }>

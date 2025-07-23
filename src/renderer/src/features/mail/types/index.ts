@@ -1,15 +1,26 @@
-// Mail types
+// Mail types - Clean interface matching Gmail UI
 export interface MailItem {
   id: string
+  threadId: string
   subject: string
   sender: string
+  senderName: string
   recipient: string
-  body: string
+  snippet: string
   timestamp: Date
   isRead: boolean
   isStarred: boolean
+  isImportant: boolean
   labels: string[]
-  hasAttachments?: boolean
+  hasAttachments: boolean
+  attachments: MailAttachment[]
+}
+
+export interface MailAttachment {
+  filename: string
+  mimeType: string
+  size: number
+  attachmentId: string
 }
 
 export interface MailFilter {

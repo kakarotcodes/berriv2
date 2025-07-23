@@ -8,16 +8,20 @@ interface MailItemProps {
   mail: MailItemType
 }
 
-const stripEmail = (input?: string) => {
-  if (!input) return ''
-  const m = input.match(/^(.*?)(?:\s*<)/)
-  const nameOnly = m ? m[1] : input.replace(/\s*<[^>]+>\s*/g, '')
-  return nameOnly.replace(/^"(.*)"$/, '$1').trim()
-}
-
 const MailItem: React.FC<MailItemProps> = ({ mail }) => {
   const { updateMail, selectedEmailIds, toggleEmailSelection } = useMailStore()
   const isSelected = selectedEmailIds.includes(mail.id)
+
+  // Debug logging to see what data we're receiving
+  React.useEffect(() => {
+    console.log(`[DEBUG] MailItem ${mail.subject}:`, {
+      senderName: mail.senderName,
+      sender: mail.sender,
+      hasAttachments: mail.hasAttachments,
+      attachments: mail.attachments,
+      snippet: mail.snippet
+    })
+  }, [mail])
 
   const handleToggleStar = () => updateMail(mail.id, { isStarred: !mail.isStarred })
   const handleCheckboxChange = () => toggleEmailSelection(mail.id)
@@ -32,9 +36,6 @@ const MailItem: React.FC<MailItemProps> = ({ mail }) => {
     if (h < 24) return `${h}h`
     return `${d}d`
   }
-
-  const senderRaw = mail.fromName ?? mail.sender ?? 'Unknown'
-  const sender = stripEmail(senderRaw)
 
   return (
     <div
@@ -76,19 +77,39 @@ const MailItem: React.FC<MailItemProps> = ({ mail }) => {
 
         <span
           className={`truncate text-sm ${mail.isRead ? 'text-gray-400' : 'text-white font-bold'}`}
-          title={senderRaw}
+          title={`${mail.senderName} <${mail.sender}>`}
         >
-          {sender}
+          {mail.senderName}
         </span>
 
-        <div className="min-w-0 truncate text-sm">
-          <span className={`${mail.isRead ? 'text-gray-400' : 'text-white font-bold'}`}>
-            {mail.subject}
-          </span>
+        <div className="min-w-0 text-sm">
+          <div className="truncate">
+            <span className={`${mail.isRead ? 'text-gray-400' : 'text-white font-bold'}`}>
+              {mail.subject}
+            </span>
+          </div>
+          {mail.snippet && (
+            <div className="text-xs text-gray-500 truncate mt-0.5">
+              {mail.snippet}
+            </div>
+          )}
+          {mail.hasAttachments && mail.attachments.length > 0 && (
+            <div className="text-xs text-gray-400 mt-1 flex items-center gap-1">
+              <PaperClipIcon className="size-3" />
+              <span className="truncate">
+                {mail.attachments.map(att => att.filename).join(', ')}
+              </span>
+            </div>
+          )}
         </div>
 
         <div className="flex items-center gap-1 justify-end text-xs text-gray-400">
-          {mail.hasAttachments && <PaperClipIcon className="size-3 rotate-45" />}
+          {mail.hasAttachments && (
+            <div className="flex items-center gap-1">
+              <PaperClipIcon className="size-3 rotate-45" />
+              <span className="text-xs">{mail.attachments.length}</span>
+            </div>
+          )}
           <span>{formatTime(mail.timestamp)}</span>
         </div>
       </div>
