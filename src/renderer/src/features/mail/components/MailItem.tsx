@@ -1,5 +1,11 @@
 import React from 'react'
-import { StarIcon, DocumentIcon, PhotoIcon, DocumentArrowDownIcon, ArchiveBoxIcon } from '@heroicons/react/24/outline'
+import {
+  StarIcon,
+  DocumentIcon,
+  PhotoIcon,
+  DocumentArrowDownIcon,
+  ArchiveBoxIcon
+} from '@heroicons/react/24/outline'
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid'
 import { MailItem as MailItemType } from '../types'
 import { useMailStore } from '../store'
@@ -10,7 +16,7 @@ interface MailItemProps {
 
 const getFileTypeInfo = (filename: string, mimeType: string) => {
   const extension = filename.split('.').pop()?.toLowerCase()
-  
+
   // PDF files
   if (mimeType.includes('pdf') || extension === 'pdf') {
     return {
@@ -20,9 +26,12 @@ const getFileTypeInfo = (filename: string, mimeType: string) => {
       label: 'PDF'
     }
   }
-  
+
   // Image files
-  if (mimeType.startsWith('image/') || ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(extension || '')) {
+  if (
+    mimeType.startsWith('image/') ||
+    ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(extension || '')
+  ) {
     return {
       icon: PhotoIcon,
       color: 'text-green-500',
@@ -30,9 +39,13 @@ const getFileTypeInfo = (filename: string, mimeType: string) => {
       label: 'Image'
     }
   }
-  
+
   // Archive files
-  if (mimeType.includes('zip') || mimeType.includes('rar') || ['zip', 'rar', '7z', 'tar', 'gz'].includes(extension || '')) {
+  if (
+    mimeType.includes('zip') ||
+    mimeType.includes('rar') ||
+    ['zip', 'rar', '7z', 'tar', 'gz'].includes(extension || '')
+  ) {
     return {
       icon: ArchiveBoxIcon,
       color: 'text-yellow-600',
@@ -40,7 +53,7 @@ const getFileTypeInfo = (filename: string, mimeType: string) => {
       label: 'Archive'
     }
   }
-  
+
   // Default for other files
   return {
     icon: DocumentArrowDownIcon,
@@ -86,7 +99,7 @@ const MailItem: React.FC<MailItemProps> = ({ mail }) => {
         ${isSelected ? 'bg-blue-900 hover:bg-blue-900' : mail.isRead ? 'bg-black/50 ' : 'bg-transparent'}
       `}
     >
-      <div className="grid grid-cols-[auto_auto_12rem_minmax(0,1fr)_auto] items-center gap-2">
+      <div className="grid grid-cols-[auto_auto_12rem_minmax(0,1fr)_auto] items-start gap-2">
         <input
           type="checkbox"
           checked={isSelected}
@@ -131,16 +144,14 @@ const MailItem: React.FC<MailItemProps> = ({ mail }) => {
             </span>
           </div>
           {mail.snippet && (
-            <div className="text-xs text-gray-500 truncate mt-0.5">
-              {mail.snippet}
-            </div>
+            <div className="text-xs text-gray-500 truncate mt-0.5">{mail.snippet}</div>
           )}
           {mail.hasAttachments && mail.attachments.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-2">
               {mail.attachments.map((attachment, index) => {
                 const fileInfo = getFileTypeInfo(attachment.filename, attachment.mimeType)
                 const IconComponent = fileInfo.icon
-                
+
                 return (
                   <div
                     key={`${attachment.attachmentId}-${index}`}
