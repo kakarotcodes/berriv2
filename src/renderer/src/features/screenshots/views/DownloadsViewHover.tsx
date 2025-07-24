@@ -147,7 +147,9 @@ const DownloadsViewHover: React.FC = () => {
     }
   }
 
-  const filteredFiles = files.filter((file) => activeFilter === 'All' || file.type === activeFilter)
+  const filteredFiles = files.filter((file) => 
+    file.name !== '.DS_Store' && (activeFilter === 'All' || file.type === activeFilter)
+  )
 
   const sortedFiles = [...filteredFiles].sort((a, b) => {
     if (sortOrder === 'newest') {
