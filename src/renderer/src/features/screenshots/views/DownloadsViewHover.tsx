@@ -2,7 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react'
 import {
   Trash2,
   ExternalLink,
-  Calendar,
+  ArrowUp,
+  ArrowDown,
   Image,
   FileText,
   Download,
@@ -12,6 +13,7 @@ import {
   Code,
   File
 } from 'lucide-react'
+import { Searchbar } from '@/components/shared'
 
 interface DownloadFile {
   id: string
@@ -46,7 +48,7 @@ const DownloadsViewHover: React.FC = () => {
       if (result.success) {
         const newFiles = (result as any).files || result.screenshots || []
         const newCategories = (result as any).categories || []
-        
+
         // Only update if the data actually changed
         setFiles((prevFiles) => {
           if (JSON.stringify(prevFiles) !== JSON.stringify(newFiles)) {
@@ -221,7 +223,6 @@ const DownloadsViewHover: React.FC = () => {
     }
   }
 
-
   const filteredFiles = files.filter(
     (file) => file.name !== '.DS_Store' && (activeFilter === 'All' || file.type === activeFilter)
   )
@@ -246,37 +247,50 @@ const DownloadsViewHover: React.FC = () => {
   }
 
   return (
-    <div className="h-full flex flex-col bg-gray-900 text-white min-h-0">
-      <div className="flex-shrink-0 p-4 border-b border-gray-700">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold">Files</h2>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setSortOrder(sortOrder === 'newest' ? 'oldest' : 'newest')}
-              className="px-3 py-1 text-xs bg-gray-700 hover:bg-gray-600 rounded flex items-center gap-1"
-            >
-              <Calendar className="w-3 h-3" />
-              {sortOrder === 'newest' ? 'Newest' : 'Oldest'}
-            </button>
-          </div>
+    <div className="h-full flex flex-col text-white min-h-0">
+      <div className="h-14 bg-black/40 text-white grid grid-cols-[max-content_max-content_1fr] items-center px-4 gap-4">
+        {/* 1) Searchbar (left, fixed width inside the component) */}
+        <div className="flex-none">
+          <Searchbar placeholder="Search files" />
         </div>
 
-        <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2">
-          {filterCategories.map((category) => (
-            <button
-              key={category.name}
-              onClick={() => setActiveFilter(category.name)}
-              className={`flex-shrink-0 px-3 py-1 text-xs rounded-full flex items-center gap-1 transition-colors ${
-                activeFilter === category.name
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
-              }`}
-            >
-              {getFileIcon(category.name)}
-              <span>{category.name}</span>
-              <span className="text-xs opacity-75">({category.count})</span>
-            </button>
-          ))}
+        {/* 2) Sort button (center column) */}
+        <div className="justify-self-center flex-none">
+          <button
+            onClick={() => setSortOrder(sortOrder === 'newest' ? 'oldest' : 'newest')}
+            className="px-3 h-8 leading-8 text-xs bg-gray-700 hover:bg-gray-600 rounded flex items-center gap-1 whitespace-nowrap"
+          >
+            {sortOrder === 'newest' ? (
+              <ArrowDown className="w-3 h-3" />
+            ) : (
+              <ArrowUp className="w-3 h-3" />
+            )}
+            {sortOrder === 'newest' ? 'Newest' : 'Oldest'}
+          </button>
+        </div>
+
+        {/* 3) Chips (right, scrollable, no wrap) */}
+        <div
+          id="files-categories"
+          className="overflow-x-auto hide-scrollbar min-w-0" // min-w-0 lets the scroll container actually shrink; chips won't.
+        >
+          <div className="flex gap-2 flex-nowrap">
+            {filterCategories.map((category) => (
+              <button
+                key={category.name}
+                onClick={() => setActiveFilter(category.name)}
+                className={`flex-none px-3 h-8 leading-8 text-xs rounded-full flex items-center gap-1 transition-colors whitespace-nowrap ${
+                  activeFilter === category.name
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+                }`}
+              >
+                {getFileIcon(category.name)}
+                <span>{category.name}</span>
+                <span className="text-[10px] opacity-75">({category.count})</span>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 

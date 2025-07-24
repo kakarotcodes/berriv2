@@ -8,7 +8,7 @@ type SearchbarProps = {
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void
 }
 
-const NotesSearchbar: React.FC<SearchbarProps> = ({ value, placeholder, onChange }) => {
+const Searchbar: React.FC<SearchbarProps> = ({ value, placeholder, onChange }) => {
   return (
     <div className="bg-zinc-800 w-40 flex items-center gap-x-2 border-[0.5px] border-zinc-700 rounded-[8px] p-2">
       <MagnifyingGlassIcon className="h-4 w-4 text-white/50" />
@@ -23,4 +23,4 @@ const NotesSearchbar: React.FC<SearchbarProps> = ({ value, placeholder, onChange
   )
 }
 
-export default NotesSearchbar
+export default Searchbar
