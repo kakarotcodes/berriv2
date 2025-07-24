@@ -21,7 +21,7 @@ export function registerAllHandlers(mainWindow: BrowserWindow) {
   registerCalendarHandlers()
   registerGmailHandlers()
   registerScreenCaptureHandlers(mainWindow)
-  registerScreenshotsHandlers()
+  registerScreenshotsHandlers(mainWindow)
   registerThemeHandlers(mainWindow)
   registerAIHandlers()
   console.log('[IPC] All handlers registered successfully')

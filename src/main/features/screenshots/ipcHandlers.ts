@@ -1,7 +1,8 @@
-import { ipcMain, shell, nativeImage, app } from 'electron'
+import { ipcMain, shell, nativeImage, app, BrowserWindow } from 'electron'
 import { promises as fs } from 'fs'
 import { join } from 'path'
 import { homedir } from 'os'
+import { FileWatcher } from '../../utils/fileWatcher'
 
 interface DownloadFile {
   id: string
@@ -20,7 +21,11 @@ interface FileTypeCategory {
   count: number
 }
 
-export function registerScreenshotsHandlers() {
+export function registerScreenshotsHandlers(mainWindow: BrowserWindow) {
+  // Initialize file watcher
+  const fileWatcher = FileWatcher.getInstance()
+  fileWatcher.setMainWindow(mainWindow)
+  
   // Get downloads and desktop directories
   const getDownloadsDirectory = () => {
     return join(homedir(), 'Downloads')
@@ -73,7 +78,7 @@ export function registerScreenshotsHandlers() {
     return 'Other'
   }
 
-  // Helper function to create base64 data URL from image file
+  // Helper function to create base64 data URL from image file (for images only)
   const createThumbnail = async (filePath: string): Promise<string | undefined> => {
     try {
       const imageBuffer = await fs.readFile(filePath)
@@ -211,13 +216,46 @@ export function registerScreenshotsHandlers() {
   })
 
   // Watch for new screenshots (optional enhancement)
+  // File watching handlers
   ipcMain.handle('screenshots:watch-directory', async () => {
     try {
-      // This could be implemented with fs.watch if you want real-time updates
-      // For now, we'll rely on manual refresh
+      await fileWatcher.startWatching()
       return { success: true }
     } catch (error) {
       console.error('[SCREENSHOTS] Error setting up directory watch:', error)
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
+    }
+  })
+
+  ipcMain.handle('screenshots:stop-watching', async () => {
+    try {
+      fileWatcher.stopWatching()
+      return { success: true }
+    } catch (error) {
+      console.error('[SCREENSHOTS] Error stopping directory watch:', error)
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
+    }
+  })
+
+  ipcMain.handle('screenshots:refresh-files', async () => {
+    try {
+      fileWatcher.triggerRefresh()
+      return { success: true }
+    } catch (error) {
+      console.error('[SCREENSHOTS] Error triggering refresh:', error)
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
+    }
+  })
+
+  ipcMain.handle('screenshots:get-watch-status', async () => {
+    try {
+      return { 
+        success: true, 
+        isWatching: fileWatcher.isCurrentlyWatching(),
+        watchedPaths: fileWatcher.getWatchedPaths()
+      }
+    } catch (error) {
+      console.error('[SCREENSHOTS] Error getting watch status:', error)
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
     }
   })

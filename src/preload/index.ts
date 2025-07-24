@@ -132,7 +132,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.invoke('screenshots:delete-screenshot', filePath),
     openInFinder: (filePath: string) => ipcRenderer.invoke('screenshots:open-in-finder', filePath),
     watchDirectory: () => ipcRenderer.invoke('screenshots:watch-directory'),
-    startDrag: (filePath: string) => ipcRenderer.send('screenshots:start-drag', filePath)
+    stopWatching: () => ipcRenderer.invoke('screenshots:stop-watching'),
+    refreshFiles: () => ipcRenderer.invoke('screenshots:refresh-files'),
+    getWatchStatus: () => ipcRenderer.invoke('screenshots:get-watch-status'),
+    startDrag: (filePath: string) => ipcRenderer.send('screenshots:start-drag', filePath),
+    onFilesChanged: (callback: () => void) => {
+      ipcRenderer.on('files-changed', callback)
+      return () => ipcRenderer.removeListener('files-changed', callback)
+    }
   },
 
   // Sleep/wake handlers

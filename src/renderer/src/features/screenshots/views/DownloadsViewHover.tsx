@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import {
   Trash2,
   ExternalLink,
@@ -37,16 +37,52 @@ const DownloadsViewHover: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<DownloadFile | null>(null)
   const [activeFilter, setActiveFilter] = useState<string>('All')
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest')
+  const [isWatching, setIsWatching] = useState(false)
+
+  const loadFilesSilently = useCallback(async () => {
+    try {
+      const result = await window.electronAPI.screenshots.getScreenshots()
+
+      if (result.success) {
+        const newFiles = (result as any).files || result.screenshots || []
+        const newCategories = (result as any).categories || []
+        
+        // Only update if the data actually changed
+        setFiles((prevFiles) => {
+          if (JSON.stringify(prevFiles) !== JSON.stringify(newFiles)) {
+            return newFiles
+          }
+          return prevFiles
+        })
+
+        setCategories((prevCategories) => {
+          if (JSON.stringify(prevCategories) !== JSON.stringify(newCategories)) {
+            return newCategories
+          }
+          return prevCategories
+        })
+      } else {
+        console.error('Failed to load files:', result.error)
+      }
+    } catch (error) {
+      console.error('Error loading files:', error)
+    }
+  }, [])
 
   useEffect(() => {
     loadFiles()
+    startFileWatching()
+
+    return () => {
+      stopFileWatching()
+    }
   }, [])
 
   // Refresh files when component becomes visible
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (!document.hidden) {
-        loadFiles()
+        loadFilesSilently()
       }
     }
 
@@ -55,7 +91,17 @@ const DownloadsViewHover: React.FC = () => {
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
-  }, [])
+  }, [loadFilesSilently])
+
+  // Set up real-time file watching
+  useEffect(() => {
+    const cleanup = window.electronAPI.screenshots.onFilesChanged(() => {
+      console.log('[DOWNLOADS] Files changed, refreshing silently...')
+      loadFilesSilently()
+    })
+
+    return cleanup
+  }, [loadFilesSilently])
 
   const loadFiles = async () => {
     try {
@@ -63,8 +109,8 @@ const DownloadsViewHover: React.FC = () => {
       const result = await window.electronAPI.screenshots.getScreenshots()
 
       if (result.success) {
-        setFiles(result.files || result.screenshots || [])
-        setCategories(result.categories || [])
+        setFiles((result as any).files || result.screenshots || [])
+        setCategories((result as any).categories || [])
       } else {
         console.error('Failed to load files:', result.error)
       }
@@ -72,6 +118,34 @@ const DownloadsViewHover: React.FC = () => {
       console.error('Error loading files:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const startFileWatching = async () => {
+    try {
+      const result = await window.electronAPI.screenshots.watchDirectory()
+      if (result.success) {
+        setIsWatching(true)
+        console.log('[DOWNLOADS] File watching started')
+      } else {
+        console.error('Failed to start file watching:', result.error)
+      }
+    } catch (error) {
+      console.error('Error starting file watching:', error)
+    }
+  }
+
+  const stopFileWatching = async () => {
+    try {
+      const result = await window.electronAPI.screenshots.stopWatching()
+      if (result.success) {
+        setIsWatching(false)
+        console.log('[DOWNLOADS] File watching stopped')
+      } else {
+        console.error('Failed to stop file watching:', result.error)
+      }
+    } catch (error) {
+      console.error('Error stopping file watching:', error)
     }
   }
 
@@ -147,8 +221,9 @@ const DownloadsViewHover: React.FC = () => {
     }
   }
 
-  const filteredFiles = files.filter((file) => 
-    file.name !== '.DS_Store' && (activeFilter === 'All' || file.type === activeFilter)
+
+  const filteredFiles = files.filter(
+    (file) => file.name !== '.DS_Store' && (activeFilter === 'All' || file.type === activeFilter)
   )
 
   const sortedFiles = [...filteredFiles].sort((a, b) => {
@@ -172,7 +247,6 @@ const DownloadsViewHover: React.FC = () => {
 
   return (
     <div className="h-full flex flex-col bg-gray-900 text-white min-h-0">
-      {/* Header */}
       <div className="flex-shrink-0 p-4 border-b border-gray-700">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold">Files</h2>
@@ -187,7 +261,6 @@ const DownloadsViewHover: React.FC = () => {
           </div>
         </div>
 
-        {/* Filter Categories */}
         <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2">
           {filterCategories.map((category) => (
             <button
