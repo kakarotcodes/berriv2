@@ -437,11 +437,10 @@ export function registerViewHandlers(mainWindow: BrowserWindow) {
       const afterBounds = mainWindow.getBounds()
       console.log('[DEBUG] 📏 Window bounds IMMEDIATELY after setBounds:', afterBounds)
       
-      // Restore original resizability state
-      if (!wasResizable) {
-        console.log('[DEBUG] 🔒 Restoring original resizability state')
-        mainWindow.setResizable(false)
-      }
+      // Set resizability based on target view
+      const shouldBeResizable = targetView === 'hover'
+      console.log(`[DEBUG] 🔧 Setting resizability for ${targetView} view:`, shouldBeResizable)
+      mainWindow.setResizable(shouldBeResizable)
 
       // Verify the window actually got positioned correctly
       setTimeout(() => {
