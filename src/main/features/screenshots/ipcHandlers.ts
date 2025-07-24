@@ -96,6 +96,19 @@ export function registerScreenshotsHandlers(mainWindow: BrowserWindow) {
         case 'webp':
           mimeType = 'image/webp'
           break
+        case 'svg':
+          mimeType = 'image/svg+xml'
+          break
+        case 'bmp':
+          mimeType = 'image/bmp'
+          break
+        case 'ico':
+          mimeType = 'image/x-icon'
+          break
+        case 'tiff':
+        case 'tif':
+          mimeType = 'image/tiff'
+          break
         default:
           mimeType = 'image/png'
       }
