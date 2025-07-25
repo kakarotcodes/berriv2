@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import {
   Trash2,
   ExternalLink,
-  Calendar,
+  ArrowUp,
+  ArrowDown,
   Image,
   FileText,
   Download,
@@ -12,6 +13,7 @@ import {
   Code,
   File
 } from 'lucide-react'
+import { Searchbar } from '@/components/shared'
 
 interface DownloadFile {
   id: string
@@ -37,16 +39,52 @@ const DownloadsViewHover: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<DownloadFile | null>(null)
   const [activeFilter, setActiveFilter] = useState<string>('All')
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest')
+  const [isWatching, setIsWatching] = useState(false)
+
+  const loadFilesSilently = useCallback(async () => {
+    try {
+      const result = await window.electronAPI.screenshots.getScreenshots()
+
+      if (result.success) {
+        const newFiles = (result as any).files || result.screenshots || []
+        const newCategories = (result as any).categories || []
+
+        // Only update if the data actually changed
+        setFiles((prevFiles) => {
+          if (JSON.stringify(prevFiles) !== JSON.stringify(newFiles)) {
+            return newFiles
+          }
+          return prevFiles
+        })
+
+        setCategories((prevCategories) => {
+          if (JSON.stringify(prevCategories) !== JSON.stringify(newCategories)) {
+            return newCategories
+          }
+          return prevCategories
+        })
+      } else {
+        console.error('Failed to load files:', result.error)
+      }
+    } catch (error) {
+      console.error('Error loading files:', error)
+    }
+  }, [])
 
   useEffect(() => {
     loadFiles()
+    startFileWatching()
+
+    return () => {
+      stopFileWatching()
+    }
   }, [])
 
   // Refresh files when component becomes visible
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (!document.hidden) {
-        loadFiles()
+        loadFilesSilently()
       }
     }
 
@@ -55,7 +93,17 @@ const DownloadsViewHover: React.FC = () => {
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
-  }, [])
+  }, [loadFilesSilently])
+
+  // Set up real-time file watching
+  useEffect(() => {
+    const cleanup = window.electronAPI.screenshots.onFilesChanged(() => {
+      console.log('[DOWNLOADS] Files changed, refreshing silently...')
+      loadFilesSilently()
+    })
+
+    return cleanup
+  }, [loadFilesSilently])
 
   const loadFiles = async () => {
     try {
@@ -63,8 +111,8 @@ const DownloadsViewHover: React.FC = () => {
       const result = await window.electronAPI.screenshots.getScreenshots()
 
       if (result.success) {
-        setFiles(result.files || result.screenshots || [])
-        setCategories(result.categories || [])
+        setFiles((result as any).files || result.screenshots || [])
+        setCategories((result as any).categories || [])
       } else {
         console.error('Failed to load files:', result.error)
       }
@@ -72,6 +120,34 @@ const DownloadsViewHover: React.FC = () => {
       console.error('Error loading files:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const startFileWatching = async () => {
+    try {
+      const result = await window.electronAPI.screenshots.watchDirectory()
+      if (result.success) {
+        setIsWatching(true)
+        console.log('[DOWNLOADS] File watching started')
+      } else {
+        console.error('Failed to start file watching:', result.error)
+      }
+    } catch (error) {
+      console.error('Error starting file watching:', error)
+    }
+  }
+
+  const stopFileWatching = async () => {
+    try {
+      const result = await window.electronAPI.screenshots.stopWatching()
+      if (result.success) {
+        setIsWatching(false)
+        console.log('[DOWNLOADS] File watching stopped')
+      } else {
+        console.error('Failed to stop file watching:', result.error)
+      }
+    } catch (error) {
+      console.error('Error stopping file watching:', error)
     }
   }
 
@@ -147,7 +223,9 @@ const DownloadsViewHover: React.FC = () => {
     }
   }
 
-  const filteredFiles = files.filter((file) => activeFilter === 'All' || file.type === activeFilter)
+  const filteredFiles = files.filter(
+    (file) => file.name !== '.DS_Store' && (activeFilter === 'All' || file.type === activeFilter)
+  )
 
   const sortedFiles = [...filteredFiles].sort((a, b) => {
     if (sortOrder === 'newest') {
@@ -169,39 +247,50 @@ const DownloadsViewHover: React.FC = () => {
   }
 
   return (
-    <div className="h-full flex flex-col bg-gray-900 text-white min-h-0">
-      {/* Header */}
-      <div className="flex-shrink-0 p-4 border-b border-gray-700">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold">Files</h2>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setSortOrder(sortOrder === 'newest' ? 'oldest' : 'newest')}
-              className="px-3 py-1 text-xs bg-gray-700 hover:bg-gray-600 rounded flex items-center gap-1"
-            >
-              <Calendar className="w-3 h-3" />
-              {sortOrder === 'newest' ? 'Newest' : 'Oldest'}
-            </button>
-          </div>
+    <div className="h-full flex flex-col text-white min-h-0">
+      <div className="h-14 bg-black/40 text-white grid grid-cols-[max-content_max-content_1fr] items-center px-4 gap-4">
+        {/* 1) Searchbar (left, fixed width inside the component) */}
+        <div className="flex-none">
+          <Searchbar placeholder="Search files" />
         </div>
 
-        {/* Filter Categories */}
-        <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2">
-          {filterCategories.map((category) => (
-            <button
-              key={category.name}
-              onClick={() => setActiveFilter(category.name)}
-              className={`flex-shrink-0 px-3 py-1 text-xs rounded-full flex items-center gap-1 transition-colors ${
-                activeFilter === category.name
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
-              }`}
-            >
-              {getFileIcon(category.name)}
-              <span>{category.name}</span>
-              <span className="text-xs opacity-75">({category.count})</span>
-            </button>
-          ))}
+        {/* 2) Sort button (center column) */}
+        <div className="justify-self-center flex-none">
+          <button
+            onClick={() => setSortOrder(sortOrder === 'newest' ? 'oldest' : 'newest')}
+            className="px-3 h-8 leading-8 text-xs bg-gray-700 hover:bg-gray-600 rounded flex items-center gap-1 whitespace-nowrap"
+          >
+            {sortOrder === 'newest' ? (
+              <ArrowDown className="w-3 h-3" />
+            ) : (
+              <ArrowUp className="w-3 h-3" />
+            )}
+            {sortOrder === 'newest' ? 'Newest' : 'Oldest'}
+          </button>
+        </div>
+
+        {/* 3) Chips (right, scrollable, no wrap) */}
+        <div
+          id="files-categories"
+          className="overflow-x-auto hide-scrollbar min-w-0" // min-w-0 lets the scroll container actually shrink; chips won't.
+        >
+          <div className="flex gap-2 flex-nowrap">
+            {filterCategories.map((category) => (
+              <button
+                key={category.name}
+                onClick={() => setActiveFilter(category.name)}
+                className={`flex-none px-3 h-8 leading-8 text-xs rounded-full flex items-center gap-1 transition-colors whitespace-nowrap ${
+                  activeFilter === category.name
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+                }`}
+              >
+                {getFileIcon(category.name)}
+                <span>{category.name}</span>
+                <span className="text-[10px] opacity-75">({category.count})</span>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -221,17 +310,17 @@ const DownloadsViewHover: React.FC = () => {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+          <div className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(160px,1fr))]">
             {sortedFiles.map((file) => (
               <div
                 key={file.id}
-                className="bg-gray-800 rounded-lg overflow-hidden hover:bg-gray-700 transition-colors group cursor-pointer"
+                className="group relative rounded-xl border-[0.5px] border-white/40 bg-white/5 overflow-hidden cursor-pointer hover:border-blue-500/50 transition-all duration-150"
                 draggable
                 onDragStart={(e) => startFileDrag(e, file.path)}
                 onClick={() => setSelectedFile(file)}
               >
-                {/* File Thumbnail/Icon */}
-                <div className="aspect-square bg-gray-700 flex items-center justify-center relative">
+                {/* Thumb */}
+                <div className="aspect-[4/3] bg-gray-700 flex items-center justify-center relative">
                   {file.thumbnail ? (
                     <img
                       src={file.thumbnail}
@@ -239,11 +328,11 @@ const DownloadsViewHover: React.FC = () => {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-12 h-12 text-gray-400">{getFileIcon(file.type)}</div>
+                    <div className="w-10 h-10 text-gray-400">{getFileIcon(file.type)}</div>
                   )}
 
-                  {/* Actions overlay */}
-                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                  {/* Hover actions */}
+                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 z-10">
                     <button
                       onClick={(e) => {
                         e.stopPropagation()
@@ -265,19 +354,23 @@ const DownloadsViewHover: React.FC = () => {
                       <Trash2 className="w-3 h-3" />
                     </button>
                   </div>
-                </div>
 
-                {/* File Info */}
-                <div className="p-2">
-                  <div className="font-medium text-xs text-white truncate mb-1">{file.name}</div>
-                  <div className="text-xs text-gray-400 flex items-center justify-between">
-                    <span className="flex items-center gap-1">
+                  {/* Bottom meta bar on hover */}
+                  <div className="absolute inset-x-0 bottom-0 bg-black/60 px-2 py-1 text-[10px] text-gray-200 opacity-0 group-hover:opacity-100 transition-opacity flex justify-between gap-2">
+                    <span className="flex items-center gap-1 truncate max-w-[60%]">
                       {getFileIcon(file.type)}
                       <span className="truncate">{file.type}</span>
                     </span>
-                    <span>{formatFileSize(file.size)}</span>
+                    <span className="truncate">{formatFileSize(file.size)}</span>
                   </div>
-                  <div className="text-xs text-gray-500 mt-1">{formatDate(file.dateAdded)}</div>
+                </div>
+
+                {/* Filename under thumb */}
+                <div className="px-2 py-2">
+                  <p className="text-xs font-medium truncate">{file.name}</p>
+                  <p className="text-[10px] text-gray-500 truncate mt-1">
+                    {formatDate(file.dateAdded)}
+                  </p>
                 </div>
               </div>
             ))}
