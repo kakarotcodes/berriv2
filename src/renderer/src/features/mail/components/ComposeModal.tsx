@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Underline from '@tiptap/extension-underline'
 import TextAlign from '@tiptap/extension-text-align'
 import { useModalStore } from '../../../globalStore/useModalStore'
+import { useMailStore } from '../store'
+import { toast } from 'react-toastify'
 import {
   XMarkIcon,
   ArrowsPointingOutIcon,
@@ -40,6 +42,7 @@ interface ComposeModalProps {
 
 const ComposeModal: React.FC<ComposeModalProps> = ({ replyTo, forward }) => {
   const { closeModal } = useModalStore()
+  const { addDraft } = useMailStore()
   const [isExpanded, setIsExpanded] = useState(false)
   const [showCc, setShowCc] = useState(false)
   const [showBcc, setShowBcc] = useState(false)
@@ -85,6 +88,51 @@ const ComposeModal: React.FC<ComposeModalProps> = ({ replyTo, forward }) => {
     }
   }, [replyTo, forward, editor])
 
+  const handleSaveDraft = useCallback(() => {
+    // Only save if there's actual content
+    const hasContent = to.trim() || cc.trim() || bcc.trim() || subject.trim() || (editor?.getHTML() && editor.getHTML() !== '<p></p>')
+    
+    if (!hasContent) return
+
+    const draftData = {
+      id: `draft_${Date.now()}`,
+      to: to
+        .split(',')
+        .map((email) => email.trim())
+        .filter(Boolean),
+      cc: cc
+        .split(',')
+        .map((email) => email.trim())
+        .filter(Boolean),
+      bcc: bcc
+        .split(',')
+        .map((email) => email.trim())
+        .filter(Boolean),
+      subject: subject || '(no subject)',
+      body: editor?.getHTML() || '',
+      timestamp: Date.now(),
+      isDraft: true as const
+    }
+
+    console.log('Saving draft:', draftData)
+    addDraft(draftData)
+  }, [to, cc, bcc, subject, editor, addDraft])
+
+  // Handle escape key to minimize and save draft
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        e.stopPropagation()
+        handleSaveDraft()
+        closeModal()
+      }
+    }
+
+    document.addEventListener('keydown', handleEscape, true)
+    return () => document.removeEventListener('keydown', handleEscape, true)
+  }, [to, cc, bcc, subject, editor, closeModal, handleSaveDraft])
+
   const handleSend = async () => {
     if (!to.trim() || !editor) {
       alert('Please enter recipient and message content')
@@ -126,15 +174,64 @@ const ComposeModal: React.FC<ComposeModalProps> = ({ replyTo, forward }) => {
     }
   }
 
-  const handleClose = () => {
-    if (confirm('Discard this message?')) {
+  const handleClose = async () => {
+    // Check if there's content to save
+    const hasContent =
+      to.trim() ||
+      cc.trim() ||
+      bcc.trim() ||
+      subject.trim() ||
+      (editor?.getHTML() && editor.getHTML() !== '<p></p>')
+
+    if (hasContent) {
+      setIsSending(true)
+      try {
+        // Prepare draft data
+        const draftData = {
+          to: to
+            .split(',')
+            .map((email) => email.trim())
+            .filter(Boolean),
+          cc: cc
+            .split(',')
+            .map((email) => email.trim())
+            .filter(Boolean),
+          bcc: bcc
+            .split(',')
+            .map((email) => email.trim())
+            .filter(Boolean),
+          subject: subject || '(no subject)',
+          body: editor?.getHTML() || ''
+        }
+
+        // TODO: Add Gmail draft API call here when implemented
+        // await window.electronAPI.gmail.saveDraft(draftData)
+
+        // For now, save locally
+        const localDraft = {
+          id: `draft_${Date.now()}`,
+          ...draftData,
+          timestamp: Date.now(),
+          isDraft: true as const
+        }
+
+        addDraft(localDraft)
+        toast.success('Saved to drafts')
+        closeModal()
+      } catch (error) {
+        console.error('Failed to save draft:', error)
+        toast.error('Failed to save draft')
+      } finally {
+        setIsSending(false)
+      }
+    } else {
       closeModal()
     }
   }
 
   return (
     <div
-      className={`${isExpanded ? 'w-[95vw] h-[95vh]' : 'w-[85vw] h-[80vh]'} bg-zinc-900 shadow-2xl rounded-lg border border-zinc-700 flex flex-col relative`}
+      className={`${isExpanded ? 'w-[98vw] h-[98vh]' : 'w-[95vw] h-[90vh]'} bg-zinc-900 shadow-2xl rounded-lg border border-zinc-700 flex flex-col relative`}
     >
       {/* Header */}
       <div className="flex items-center justify-between p-4 bg-zinc-800 rounded-t-lg border-b border-zinc-700">

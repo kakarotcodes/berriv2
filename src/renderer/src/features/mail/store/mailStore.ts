@@ -1,9 +1,10 @@
 import { create } from 'zustand'
-import { MailItem, MailFilter, MailSettings, GmailFilterType, GMAIL_FILTERS } from '../types'
+import { MailItem, MailFilter, MailSettings, GmailFilterType, GMAIL_FILTERS, Draft } from '../types'
 
 interface MailStore {
   // State
   mails: MailItem[]
+  drafts: Draft[]
   filter: MailFilter
   gmailFilter: GmailFilterType
   searchQuery: string
@@ -36,6 +37,13 @@ interface MailStore {
   toggleEmailSelection: (id: string) => void
   selectAllEmails: () => void
   clearSelection: () => void
+  
+  // Draft actions
+  addDraft: (draft: Draft) => void
+  updateDraft: (id: string, updates: Partial<Draft>) => void
+  deleteDraft: (id: string) => void
+  getDrafts: () => Draft[]
+  loadDraftsFromStorage: () => void
 
   // Computed getters
   getFilteredMails: () => MailItem[]
@@ -45,6 +53,7 @@ interface MailStore {
 export const useMailStore = create<MailStore>((set, get) => ({
   // Initial state
   mails: [],
+  drafts: [],
   filter: {},
   gmailFilter: 'PRIMARY',
   searchQuery: '',
@@ -54,7 +63,8 @@ export const useMailStore = create<MailStore>((set, get) => ({
     UNREAD: [],
     IMPORTANT: [],
     STARRED: [],
-    PERSONAL: []
+    PERSONAL: [],
+    DRAFTS: []
   },
   cacheTimestamps: {
     PRIMARY: 0,
@@ -62,7 +72,8 @@ export const useMailStore = create<MailStore>((set, get) => ({
     UNREAD: 0,
     IMPORTANT: 0,
     STARRED: 0,
-    PERSONAL: 0
+    PERSONAL: 0,
+    DRAFTS: 0
   },
   filterCounts: {
     PRIMARY: 0,
@@ -70,7 +81,8 @@ export const useMailStore = create<MailStore>((set, get) => ({
     UNREAD: 0,
     IMPORTANT: 0,
     STARRED: 0,
-    PERSONAL: 0
+    PERSONAL: 0,
+    DRAFTS: 0
   },
   isLoadingCounts: false,
   settings: {
@@ -133,7 +145,8 @@ export const useMailStore = create<MailStore>((set, get) => ({
       UNREAD: [],
       IMPORTANT: [],
       STARRED: [],
-      PERSONAL: []
+      PERSONAL: [],
+      DRAFTS: []
     },
     cacheTimestamps: {
       PRIMARY: 0,
@@ -141,7 +154,8 @@ export const useMailStore = create<MailStore>((set, get) => ({
       UNREAD: 0,
       IMPORTANT: 0,
       STARRED: 0,
-      PERSONAL: 0
+      PERSONAL: 0,
+      DRAFTS: 0
     }
   }),
   
@@ -158,7 +172,8 @@ export const useMailStore = create<MailStore>((set, get) => ({
         UNREAD: 0,
         IMPORTANT: 0,
         STARRED: 0,
-        PERSONAL: 0
+        PERSONAL: 0,
+        DRAFTS: 0
       }
 
       // Fetch counts for each filter
@@ -202,6 +217,65 @@ export const useMailStore = create<MailStore>((set, get) => ({
     })),
   
   clearSelection: () => set({ selectedEmailIds: [] }),
+
+  // Draft actions
+  addDraft: (draft) =>
+    set((state) => {
+      const newDrafts = [draft, ...state.drafts]
+      localStorage.setItem('emailDrafts', JSON.stringify(newDrafts))
+      return { 
+        drafts: newDrafts,
+        filterCounts: {
+          ...state.filterCounts,
+          DRAFTS: newDrafts.length
+        }
+      }
+    }),
+
+  updateDraft: (id, updates) =>
+    set((state) => {
+      const newDrafts = state.drafts.map((draft) => 
+        draft.id === id ? { ...draft, ...updates } : draft
+      )
+      localStorage.setItem('emailDrafts', JSON.stringify(newDrafts))
+      return { drafts: newDrafts }
+    }),
+
+  deleteDraft: (id) =>
+    set((state) => {
+      const newDrafts = state.drafts.filter((draft) => draft.id !== id)
+      localStorage.setItem('emailDrafts', JSON.stringify(newDrafts))
+      return { 
+        drafts: newDrafts,
+        filterCounts: {
+          ...state.filterCounts,
+          DRAFTS: newDrafts.length
+        }
+      }
+    }),
+
+  getDrafts: () => {
+    const { drafts } = get()
+    return drafts
+  },
+
+  loadDraftsFromStorage: () => {
+    try {
+      const storedDrafts = localStorage.getItem('emailDrafts')
+      if (storedDrafts) {
+        const drafts = JSON.parse(storedDrafts)
+        set((state) => ({ 
+          drafts,
+          filterCounts: {
+            ...state.filterCounts,
+            DRAFTS: drafts.length
+          }
+        }))
+      }
+    } catch (error) {
+      console.error('Failed to load drafts from storage:', error)
+    }
+  },
 
   // Computed getters
   getFilteredMails: () => {

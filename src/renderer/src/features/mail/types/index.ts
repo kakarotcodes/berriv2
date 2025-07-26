@@ -44,7 +44,8 @@ export const GMAIL_FILTERS = {
   IMPORTANT: 'in:inbox is:important',
   STARRED: 'in:inbox is:starred',
   PERSONAL:
-    'category:primary -from:noreply -from:no-reply -from:newsletter -from:donotreply -from:notifications -subject:unsubscribe'
+    'category:primary -from:noreply -from:no-reply -from:newsletter -from:donotreply -from:notifications -subject:unsubscribe',
+  DRAFTS: 'in:draft'
 } as const
 
 export type GmailFilterType = keyof typeof GMAIL_FILTERS
@@ -55,5 +56,18 @@ export const FILTER_LABELS: Record<GmailFilterType, string> = {
   UNREAD: 'Unread',
   IMPORTANT: 'Important',
   STARRED: 'Starred',
-  PERSONAL: 'Personal'
+  PERSONAL: 'Personal',
+  DRAFTS: 'Drafts'
+}
+
+// Draft interface for local drafts
+export interface Draft {
+  id: string
+  to: string[]
+  cc?: string[]
+  bcc?: string[]
+  subject: string
+  body: string
+  timestamp: number
+  isDraft: true
 } 

@@ -11,7 +11,7 @@ const MailAuthorized: React.FC = () => {
   const handleComposeClick = () => {
     openModal(<ComposeModal />, {
       shouldCloseOnOverlayClick: false,
-      shouldCloseOnEsc: false,
+      shouldCloseOnEsc: false, // Disabled - ComposeModal handles ESC internally
       className: 'modal-compose',
       overlayClassName: 'modal-compose-overlay'
     })

@@ -2,6 +2,7 @@ import React, { useEffect, useCallback } from 'react'
 import { EnvelopeIcon } from '@heroicons/react/24/outline'
 import { useAuth } from '../../../hooks/useAuth'
 import { useMailStore } from '../store'
+import { Draft } from '../types'
 import { GMAIL_FILTERS, FILTER_LABELS, GmailFilterType } from '../types'
 import MailItem from './MailItem'
 
@@ -19,7 +20,9 @@ const MailList: React.FC = () => {
     searchQuery,
     getCachedEmails,
     updateCache,
-    clearCache
+    clearCache,
+    getDrafts,
+    loadDraftsFromStorage
   } = useMailStore()
 
   const debouncedFetch = useCallback(
@@ -36,8 +39,11 @@ const MailList: React.FC = () => {
   )
 
   useEffect(() => {
-    if (isAuthenticated) fetchEmails(gmailFilter, searchQuery)
-  }, [isAuthenticated, gmailFilter])
+    if (isAuthenticated) {
+      loadDraftsFromStorage() // Load drafts on mount
+      fetchEmails(gmailFilter, searchQuery)
+    }
+  }, [isAuthenticated, gmailFilter, loadDraftsFromStorage])
 
   useEffect(() => {
     if (!isAuthenticated) return
@@ -58,6 +64,87 @@ const MailList: React.FC = () => {
     forceRefresh = false
   ) => {
     if (!isAuthenticated) return
+
+    // Handle DRAFTS filter - fetch Gmail drafts AND combine with local drafts
+    if (filterType === 'DRAFTS') {
+      setLoading(true)
+      setError(null)
+      
+      try {
+        // Fetch Gmail drafts
+        let combinedQuery = GMAIL_FILTERS[filterType]
+        if (search.trim()) combinedQuery = `${combinedQuery} ${search.trim()}`
+
+        const result = await window.electronAPI.gmail.getEmails({
+          maxResults: 20,
+          query: combinedQuery
+        })
+
+        let gmailDrafts = []
+        if (result.success && result.emails) {
+          gmailDrafts = result.emails.map((email, index) => ({
+            id: email.id,
+            threadId: email.threadId || email.id,
+            subject: email.subject,
+            sender: email.sender,
+            senderName: email.senderName || email.sender.split('@')[0] || `Sender ${index}`,
+            recipient: email.recipient,
+            snippet: email.snippet || 'No preview available',
+            timestamp: new Date(email.timestamp),
+            isRead: email.isRead,
+            isStarred: email.isStarred,
+            isImportant: email.isImportant || false,
+            labels: email.labels,
+            hasAttachments: email.hasAttachments,
+            attachments: email.attachments || []
+          }))
+        }
+
+        // Get local drafts
+        const localDrafts = getDrafts()
+        
+        // Convert local drafts to mail items
+        const localDraftMails = localDrafts
+          .filter((draft) => {
+            if (!search.trim()) return true
+            return (
+              draft.subject.toLowerCase().includes(search.toLowerCase()) ||
+              draft.to.some(email => email.toLowerCase().includes(search.toLowerCase())) ||
+              draft.body.toLowerCase().includes(search.toLowerCase())
+            )
+          })
+          .map((draft) => ({
+            id: draft.id,
+            threadId: draft.id,
+            subject: draft.subject,
+            sender: 'draft@local',
+            senderName: 'Local Draft',
+            recipient: draft.to.join(', '),
+            snippet: draft.body.replace(/<[^>]*>/g, '').substring(0, 100) + '...',
+            timestamp: new Date(draft.timestamp),
+            isRead: true,
+            isStarred: false,
+            isImportant: false,
+            labels: ['LOCAL_DRAFT'],
+            hasAttachments: false,
+            attachments: []
+          }))
+
+        // Combine and sort by timestamp (newest first)
+        const allDrafts = [...gmailDrafts, ...localDraftMails].sort((a, b) => 
+          b.timestamp.getTime() - a.timestamp.getTime()
+        )
+        
+        setMails(allDrafts)
+        if (!search.trim()) updateCache(filterType, allDrafts)
+      } catch (err) {
+        console.error('[MAIL] draft fetch error', err)
+        setError('Failed to load drafts')
+      } finally {
+        setLoading(false)
+      }
+      return
+    }
 
     if (!search.trim() && !forceRefresh) {
       const cached = getCachedEmails(filterType)
