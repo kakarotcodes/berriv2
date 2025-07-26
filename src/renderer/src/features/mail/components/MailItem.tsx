@@ -150,17 +150,17 @@ const MailItem: React.FC<MailItemProps> = ({ mail }) => {
 
   const handleMailClick = async () => {
     if (isExpanded) return setIsExpanded(false)
-    
+
     // Expand immediately
     setIsExpanded(true)
-    
+
     // Mark as read when expanded
     if (!mail.isRead) {
       updateMail(mail.id, { isRead: true })
     }
-    
+
     setTimeout(() => ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80)
-    
+
     if (!expandedData) {
       setIsLoading(true)
       try {
