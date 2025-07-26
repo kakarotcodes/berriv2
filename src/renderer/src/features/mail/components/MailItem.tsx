@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import DOMPurify from 'dompurify'
 import { StarIcon } from '@heroicons/react/24/outline'
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid'
-import { ChevronDownIcon, ChevronUpIcon, TrashIcon } from '@heroicons/react/24/outline'
+import { ChevronDownIcon, ChevronUpIcon, TrashIcon, ArrowUturnLeftIcon, ArrowUturnRightIcon } from '@heroicons/react/24/outline'
 import { MailItem as MailItemType } from '../types'
 import { useMailStore } from '../store'
 import { toast } from 'react-toastify'
@@ -390,7 +390,7 @@ const MailItem: React.FC<MailItemProps> = ({ mail }) => {
               </div>
             ) : (
               <div className="flex justify-center">
-                <div className="border border-gray-600 rounded-lg bg-white shadow-sm w-full max-w-[480px] overflow-visible">
+                <div className="border border-gray-600 rounded-lg bg-white shadow-sm w-full max-w-[480px] max-h-[600px] overflow-y-auto hide-scrollbar">
                   {expandedData.body.includes('<') ? (
                     <div dangerouslySetInnerHTML={{ __html: wrapEmailHtml(expandedData.body) }} />
                   ) : (
@@ -404,6 +404,34 @@ const MailItem: React.FC<MailItemProps> = ({ mail }) => {
                 </div>
               </div>
             )}
+          </div>
+        )}
+        
+        {/* Reply and Forward Buttons - Show when expanded regardless of body content */}
+        {isExpanded && (
+          <div className="flex gap-3 mt-6 justify-center" onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                // TODO: Implement reply functionality
+                console.log('Reply clicked')
+              }}
+              className="flex items-center gap-2 px-4 py-2 border border-gray-400 text-gray-300 rounded-full text-sm font-medium hover:bg-gray-700 hover:border-gray-300 transition-colors"
+            >
+              <ArrowUturnLeftIcon className="w-4 h-4" />
+              Reply
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                // TODO: Implement forward functionality
+                console.log('Forward clicked')
+              }}
+              className="flex items-center gap-2 px-4 py-2 border border-gray-400 text-gray-300 rounded-full text-sm font-medium hover:bg-gray-700 hover:border-gray-300 transition-colors"
+            >
+              <ArrowUturnRightIcon className="w-4 h-4" />
+              Forward
+            </button>
           </div>
         )}
       </div>
