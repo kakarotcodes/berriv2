@@ -150,18 +150,23 @@ const MailItem: React.FC<MailItemProps> = ({ mail }) => {
 
   const handleMailClick = async () => {
     if (isExpanded) return setIsExpanded(false)
+    
+    // Expand immediately
+    setIsExpanded(true)
+    
+    // Mark as read when expanded
+    if (!mail.isRead) {
+      updateMail(mail.id, { isRead: true })
+    }
+    
+    setTimeout(() => ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80)
+    
     if (!expandedData) {
       setIsLoading(true)
       try {
         const res = await window.electronAPI.gmail.getFullEmail(mail.id)
         if (res.success && res.email) {
           setExpandedData(res.email)
-          setIsExpanded(true)
-          // Mark as read when expanded
-          if (!mail.isRead) {
-            updateMail(mail.id, { isRead: true })
-          }
-          setTimeout(() => ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80)
         } else toast.error('Failed to load email content')
       } catch (e) {
         console.error(e)
@@ -169,13 +174,6 @@ const MailItem: React.FC<MailItemProps> = ({ mail }) => {
       } finally {
         setIsLoading(false)
       }
-    } else {
-      setIsExpanded(true)
-      // Mark as read when expanded
-      if (!mail.isRead) {
-        updateMail(mail.id, { isRead: true })
-      }
-      setTimeout(() => ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80)
     }
   }
 
@@ -303,9 +301,6 @@ const MailItem: React.FC<MailItemProps> = ({ mail }) => {
 
           <div className="flex items-center gap-1 justify-end text-xs text-gray-400">
             <span>{formatTime(mail.timestamp)}</span>
-            {isLoading && (
-              <div className="animate-spin rounded-full h-3 w-3 border border-gray-400 border-t-transparent ml-2" />
-            )}
             {isExpanded ? (
               <ChevronUpIcon className="w-4 h-4 ml-2" />
             ) : (
@@ -326,6 +321,12 @@ const MailItem: React.FC<MailItemProps> = ({ mail }) => {
       <div
         className={`overflow-hidden transition-all duration-300 ${isExpanded ? 'max-h-screen opacity-100' : 'max-h-0 opacity-0'}`}
       >
+        {isLoading && !expandedData && (
+          <div className="flex justify-center items-center py-8">
+            <div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-400 border-t-transparent" />
+            <span className="ml-3 text-gray-400 text-sm">Loading email content...</span>
+          </div>
+        )}
         {expandedData && (
           <div onClick={(e) => e.stopPropagation()}>
             {/* Headers */}
