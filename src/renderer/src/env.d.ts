@@ -170,6 +170,14 @@ interface ElectronAPI {
       draftId?: string
       error?: string
     }>
+    deleteDraft: (draftId: string) => Promise<{
+      success: boolean
+      error?: string
+    }>
+    deleteMessage: (messageId: string) => Promise<{
+      success: boolean
+      error?: string
+    }>
   }
 
   // Vertical Drag

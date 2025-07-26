@@ -509,6 +509,54 @@ export class GmailAPI {
     }
   }
 
+  async deleteDraft(accessToken: string, refreshToken: string | undefined, draftId: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      this.setCredentials(accessToken, refreshToken)
+      const gmail = google.gmail({ version: 'v1', auth: this.oauth2Client })
+
+      await gmail.users.drafts.delete({
+        userId: 'me',
+        id: draftId
+      })
+
+      console.log('[GMAIL_API] ✅ Draft deleted successfully:', draftId)
+
+      return {
+        success: true
+      }
+    } catch (error) {
+      console.error('[GMAIL_API] ❌ Error deleting draft:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to delete draft'
+      }
+    }
+  }
+
+  async deleteMessage(accessToken: string, refreshToken: string | undefined, messageId: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      this.setCredentials(accessToken, refreshToken)
+      const gmail = google.gmail({ version: 'v1', auth: this.oauth2Client })
+
+      await gmail.users.messages.delete({
+        userId: 'me',
+        id: messageId
+      })
+
+      console.log('[GMAIL_API] ✅ Message deleted successfully:', messageId)
+
+      return {
+        success: true
+      }
+    } catch (error) {
+      console.error('[GMAIL_API] ❌ Error deleting message:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to delete message'
+      }
+    }
+  }
+
   async saveDraft(accessToken: string, refreshToken: string | undefined, options: SaveDraftOptions): Promise<{ success: boolean; draftId?: string; error?: string }> {
     try {
       this.setCredentials(accessToken, refreshToken)

@@ -85,7 +85,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getFullEmail: (messageId: string) =>
       ipcRenderer.invoke('gmail:get-full-email', { messageId }),
     sendEmail: (options) => ipcRenderer.invoke('gmail:send-email', options),
-    saveDraft: (options) => ipcRenderer.invoke('gmail:save-draft', options)
+    saveDraft: (options) => ipcRenderer.invoke('gmail:save-draft', options),
+    deleteDraft: (draftId: string) => ipcRenderer.invoke('gmail:delete-draft', draftId),
+    deleteMessage: (messageId: string) => ipcRenderer.invoke('gmail:delete-message', messageId)
   },
 
   // ------------------------------------------------------------

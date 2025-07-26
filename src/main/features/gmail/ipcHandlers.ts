@@ -245,5 +245,79 @@ export function registerGmailHandlers(): void {
     }
   })
 
+  // Handle deleting Gmail draft
+  ipcMain.handle('gmail:delete-draft', async (_event, draftId: string): Promise<{ success: boolean; error?: string }> => {
+    console.log('[IPC] gmail:delete-draft handler called with:', { draftId })
+
+    try {
+      // Get the current auth tokens from global state
+      const authTokens = (global as { authTokens?: { access: string; refresh?: string } })
+        .authTokens
+
+      if (!authTokens?.access) {
+        return {
+          success: false,
+          error: 'No authentication tokens available. Please authenticate first.'
+        }
+      }
+
+      console.log('[IPC] Deleting Gmail draft')
+      const result = await gmailAPI.deleteDraft(authTokens.access, authTokens.refresh, draftId)
+
+      if (result.success) {
+        console.log('[IPC] Gmail draft deleted successfully')
+        return result
+      } else {
+        return {
+          success: false,
+          error: result.error || 'Failed to delete draft'
+        }
+      }
+    } catch (error) {
+      console.error('[IPC] Failed to delete Gmail draft:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to delete Gmail draft'
+      }
+    }
+  })
+
+  // Handle deleting Gmail message
+  ipcMain.handle('gmail:delete-message', async (_event, messageId: string): Promise<{ success: boolean; error?: string }> => {
+    console.log('[IPC] gmail:delete-message handler called with:', { messageId })
+
+    try {
+      // Get the current auth tokens from global state
+      const authTokens = (global as { authTokens?: { access: string; refresh?: string } })
+        .authTokens
+
+      if (!authTokens?.access) {
+        return {
+          success: false,
+          error: 'No authentication tokens available. Please authenticate first.'
+        }
+      }
+
+      console.log('[IPC] Deleting Gmail message')
+      const result = await gmailAPI.deleteMessage(authTokens.access, authTokens.refresh, messageId)
+
+      if (result.success) {
+        console.log('[IPC] Gmail message deleted successfully')
+        return result
+      } else {
+        return {
+          success: false,
+          error: result.error || 'Failed to delete message'
+        }
+      }
+    } catch (error) {
+      console.error('[IPC] Failed to delete Gmail message:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to delete Gmail message'
+      }
+    }
+  })
+
   console.log('[IPC] Gmail handlers registered')
 } 

@@ -106,55 +106,62 @@ const ComposeModal: React.FC<ComposeModalProps> = ({ replyTo, forward, draft }) 
     }
   }, [replyTo, forward, draft, editor])
 
-  const handleSaveDraft = useCallback(() => {
-    // Only save if there's actual content
-    const hasContent =
-      to.trim() ||
-      cc.trim() ||
-      bcc.trim() ||
-      subject.trim() ||
-      (editor?.getHTML() && editor.getHTML() !== '<p></p>')
-
-    if (!hasContent) return
-
-    const draftData = {
-      id: `draft_${Date.now()}`,
-      to: to
-        .split(',')
-        .map((email) => email.trim())
-        .filter(Boolean),
-      cc: cc
-        .split(',')
-        .map((email) => email.trim())
-        .filter(Boolean),
-      bcc: bcc
-        .split(',')
-        .map((email) => email.trim())
-        .filter(Boolean),
-      subject: subject || '(no subject)',
-      body: editor?.getHTML() || '',
-      timestamp: Date.now(),
-      isDraft: true as const
-    }
-
-    console.log('Saving draft:', draftData)
-    addDraft(draftData)
-  }, [to, cc, bcc, subject, editor, addDraft])
-
-  // Handle escape key to minimize and save draft
+  // Handle escape key to save draft and close
   useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
+    const handleEscape = async (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.preventDefault()
         e.stopPropagation()
-        handleSaveDraft()
+
+        // Check if there's content to save
+        const hasContent =
+          to.trim() ||
+          cc.trim() ||
+          bcc.trim() ||
+          subject.trim() ||
+          (editor?.getHTML() && editor.getHTML() !== '<p></p>')
+
+        if (hasContent) {
+          try {
+            // Prepare draft data
+            const draftData = {
+              to: to
+                .split(',')
+                .map((email) => email.trim())
+                .filter(Boolean),
+              cc: cc
+                .split(',')
+                .map((email) => email.trim())
+                .filter(Boolean),
+              bcc: bcc
+                .split(',')
+                .map((email) => email.trim())
+                .filter(Boolean),
+              subject: subject || '(no subject)',
+              body: editor?.getHTML() || ''
+            }
+
+            // Save draft to Gmail
+            const result = await window.electronAPI.gmail.saveDraft(draftData)
+
+            if (result.success) {
+              toast.success('Saved to drafts')
+            } else {
+              toast.error('Failed to save draft')
+            }
+          } catch (error) {
+            console.error('Failed to save draft:', error)
+            toast.error('Failed to save draft')
+          }
+        }
+
         closeModal()
       }
     }
 
     document.addEventListener('keydown', handleEscape, true)
     return () => document.removeEventListener('keydown', handleEscape, true)
-  }, [to, cc, bcc, subject, editor, closeModal, handleSaveDraft])
+  }, [to, cc, bcc, subject, editor, closeModal])
 
   const handleSend = async () => {
     if (!to.trim() || !editor) {
