@@ -72,7 +72,7 @@ const isEmptyBody = (body?: string) => {
 /** Inject CSS to neuter overflowing inline styles from newsletters */
 const wrapEmailHtml = (raw: string) => {
   const safe = DOMPurify.sanitize(raw, {
-    ADD_ATTR: ['target', 'style', 'width', 'height', 'align'],
+    ADD_ATTR: ['style', 'width', 'height', 'align'],
     ALLOWED_URI_REGEXP: /^(https?:|data:|mailto:)/i
   })
 
@@ -121,6 +121,31 @@ const MailItem: React.FC<MailItemProps> = ({ mail }) => {
 
   const handleToggleStar = () => updateMail(mail.id, { isStarred: !mail.isStarred })
   const handleCheckboxChange = () => toggleEmailSelection(mail.id)
+
+  useEffect(() => {
+    const handleLinkClick = (e: Event) => {
+      const target = e.target as HTMLElement
+      if (target.tagName === 'A') {
+        e.preventDefault()
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+        const href = (target as HTMLAnchorElement).href
+        if (href && (href.startsWith('http://') || href.startsWith('https://'))) {
+          window.electronAPI.openExternal(href)
+        }
+      }
+    }
+
+    if (ref.current && isExpanded) {
+      ref.current.addEventListener('click', handleLinkClick, true)
+    }
+
+    return () => {
+      if (ref.current) {
+        ref.current.removeEventListener('click', handleLinkClick, true)
+      }
+    }
+  }, [isExpanded])
 
   const handleMailClick = async () => {
     if (isExpanded) return setIsExpanded(false)
