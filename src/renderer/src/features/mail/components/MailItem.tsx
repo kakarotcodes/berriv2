@@ -323,8 +323,9 @@ const MailItem: React.FC<MailItemProps> = ({ mail }) => {
       )}
 
       {/* Expanded area */}
-      {isExpanded && expandedData && (
-        <div onClick={(e) => e.stopPropagation()}>
+      <div className={`overflow-hidden transition-all duration-300 ${isExpanded ? 'max-h-screen opacity-100' : 'max-h-0 opacity-0'}`}>
+        {expandedData && (
+          <div onClick={(e) => e.stopPropagation()}>
           {/* Headers */}
           <div className="mb-4 text-sm">
             <div className="flex items-center justify-between mb-2 cursor-pointer" onClick={() => setIsExpanded(false)}>
@@ -392,8 +393,9 @@ const MailItem: React.FC<MailItemProps> = ({ mail }) => {
               </div>
             </div>
           )}
-        </div>
-      )}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
