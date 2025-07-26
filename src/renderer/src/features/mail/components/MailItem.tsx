@@ -4,10 +4,11 @@ import React, { useState, useEffect, useRef } from 'react'
 import DOMPurify from 'dompurify'
 import { StarIcon } from '@heroicons/react/24/outline'
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid'
-import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline'
+import { ChevronDownIcon, ChevronUpIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { MailItem as MailItemType } from '../types'
 import { useMailStore } from '../store'
 import { toast } from 'react-toastify'
+import { DateTime } from 'luxon'
 
 import Pdf from '@/assets/mail/mail-pdf.png'
 import ImageIcon from '@/assets/mail/mail-img.png'
@@ -233,7 +234,8 @@ const MailItem: React.FC<MailItemProps> = ({ mail }) => {
       onClick={handleMailClick}
     >
       {/* Row */}
-      <div className="grid grid-cols-[auto_auto_12rem_minmax(0,1fr)_auto] items-start gap-2">
+      {!isExpanded && (
+        <div className="grid grid-cols-[auto_auto_12rem_minmax(0,1fr)_auto] items-start gap-2">
         <input
           type="checkbox"
           checked={isSelected}
@@ -310,18 +312,50 @@ const MailItem: React.FC<MailItemProps> = ({ mail }) => {
             <ChevronDownIcon className="w-4 h-4 ml-2" />
           )}
         </div>
-      </div>
+        </div>
+      )}
+
+      {/* Chevron for expanded state */}
+      {isExpanded && (
+        <div className="flex justify-end">
+          <ChevronUpIcon className="w-4 h-4 text-gray-400" />
+        </div>
+      )}
 
       {/* Expanded area */}
       {isExpanded && expandedData && (
-        <div className="mt-4 pt-4" onClick={(e) => e.stopPropagation()}>
+        <div onClick={(e) => e.stopPropagation()}>
           {/* Headers */}
           <div className="mb-4 text-sm">
-            <div className="flex items-center gap-4 mb-2">
-              <div className="font-medium text-white">{mail.senderName}</div>
-              <div className="text-gray-400">&lt;{mail.sender}&gt;</div>
-              <div className="text-gray-500 text-xs">{expandedData.date}</div>
+            <div className="flex items-center justify-between mb-2 cursor-pointer" onClick={() => setIsExpanded(false)}>
+              <div className="font-medium text-white">{mail.subject}</div>
+              <div className="text-gray-500 text-xs">{DateTime.fromJSDate(mail.timestamp).toFormat('ccc, dd LLL yyyy, HH:mm')}</div>
             </div>
+            <div className="flex justify-end gap-3 mb-2">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleToggleStar()
+                }}
+                className="text-gray-400 hover:text-yellow-400 transition-colors"
+              >
+                {mail.isStarred ? (
+                  <StarIconSolid className="size-4 text-yellow-400" />
+                ) : (
+                  <StarIcon className="size-4" />
+                )}
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  // TODO: Add delete functionality
+                }}
+                className="text-gray-400 hover:text-red-400 transition-colors"
+              >
+                <TrashIcon className="size-4" />
+              </button>
+            </div>
+            <div className="text-gray-400 text-sm mb-2">{mail.senderName} &lt;{mail.sender}&gt;</div>
 
             {expandedData.to.length > 0 && (
               <div className="flex gap-2 mb-1">
