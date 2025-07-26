@@ -43,6 +43,11 @@ interface SendEmailOptions {
   bcc?: string[]
   subject: string
   body: string
+  attachments?: Array<{
+    filename: string
+    content: string // base64 encoded content
+    mimeType: string
+  }>
   replyToMessageId?: string
   inReplyTo?: string
   references?: string
@@ -411,24 +416,67 @@ export class GmailAPI {
       this.setCredentials(accessToken, refreshToken)
       const gmail = google.gmail({ version: 'v1', auth: this.oauth2Client })
 
-      // Build email headers
-      const headers = [
-        `To: ${options.to.join(', ')}`,
-        ...(options.cc && options.cc.length > 0 ? [`Cc: ${options.cc.join(', ')}`] : []),
-        ...(options.bcc && options.bcc.length > 0 ? [`Bcc: ${options.bcc.join(', ')}`] : []),
-        `Subject: ${options.subject}`,
-        `Content-Type: text/html; charset=UTF-8`,
-        `MIME-Version: 1.0`,
-        ...(options.inReplyTo ? [`In-Reply-To: ${options.inReplyTo}`] : []),
-        ...(options.references ? [`References: ${options.references}`] : [])
-      ]
+      let emailBody: string
 
-      // Build raw email message
-      const emailBody = [
-        ...headers,
-        '', // Empty line separates headers from body
-        options.body
-      ].join('\r\n')
+      if (options.attachments && options.attachments.length > 0) {
+        // Create multipart email with attachments
+        const boundary = 'boundary_' + Math.random().toString(36).substring(2, 15)
+        
+        const headers = [
+          `To: ${options.to.join(', ')}`,
+          ...(options.cc && options.cc.length > 0 ? [`Cc: ${options.cc.join(', ')}`] : []),
+          ...(options.bcc && options.bcc.length > 0 ? [`Bcc: ${options.bcc.join(', ')}`] : []),
+          `Subject: ${options.subject}`,
+          `MIME-Version: 1.0`,
+          `Content-Type: multipart/mixed; boundary="${boundary}"`,
+          ...(options.inReplyTo ? [`In-Reply-To: ${options.inReplyTo}`] : []),
+          ...(options.references ? [`References: ${options.references}`] : [])
+        ]
+
+        // Build multipart body
+        const parts = [
+          ...headers,
+          '',
+          `--${boundary}`,
+          'Content-Type: text/html; charset=UTF-8',
+          'Content-Transfer-Encoding: 7bit',
+          '',
+          options.body
+        ]
+
+        // Add attachments
+        for (const attachment of options.attachments) {
+          parts.push(
+            `--${boundary}`,
+            `Content-Type: ${attachment.mimeType}`,
+            `Content-Disposition: attachment; filename="${attachment.filename}"`,
+            'Content-Transfer-Encoding: base64',
+            '',
+            attachment.content
+          )
+        }
+
+        parts.push(`--${boundary}--`)
+        emailBody = parts.join('\r\n')
+      } else {
+        // Simple email without attachments
+        const headers = [
+          `To: ${options.to.join(', ')}`,
+          ...(options.cc && options.cc.length > 0 ? [`Cc: ${options.cc.join(', ')}`] : []),
+          ...(options.bcc && options.bcc.length > 0 ? [`Bcc: ${options.bcc.join(', ')}`] : []),
+          `Subject: ${options.subject}`,
+          `Content-Type: text/html; charset=UTF-8`,
+          `MIME-Version: 1.0`,
+          ...(options.inReplyTo ? [`In-Reply-To: ${options.inReplyTo}`] : []),
+          ...(options.references ? [`References: ${options.references}`] : [])
+        ]
+
+        emailBody = [
+          ...headers,
+          '', // Empty line separates headers from body
+          options.body
+        ].join('\r\n')
+      }
 
       // Encode to base64url (Gmail API requirement)
       const encodedMessage = Buffer.from(emailBody)

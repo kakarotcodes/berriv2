@@ -1,6 +1,7 @@
 // stores/viewStore.ts
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { toast } from 'react-toastify'
 
 // constants
 import { WIDTH, HEIGHT } from './../../../constants/constants'
@@ -40,6 +41,11 @@ export const useViewStore = create<ViewState>()(
       setView: async (view) => {
         try {
           const state = get()
+
+          // Dismiss all toasts when switching to pill view to prevent visual issues
+          if (view === 'pill') {
+            toast.dismiss()
+          }
 
           // 1️⃣ Start transition immediately - no forced delays
           set({

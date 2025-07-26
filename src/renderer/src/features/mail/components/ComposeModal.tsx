@@ -10,7 +10,6 @@ import {
   XMarkIcon,
   ArrowsPointingOutIcon,
   PaperClipIcon,
-  FaceSmileIcon,
   PaintBrushIcon,
   TrashIcon
 } from '@heroicons/react/24/outline'
@@ -60,6 +59,7 @@ const ComposeModal: React.FC<ComposeModalProps> = ({ replyTo, forward, draft }) 
   const [bcc, setBcc] = useState('')
   const [subject, setSubject] = useState('')
   const [isSending, setIsSending] = useState(false)
+  const [attachments, setAttachments] = useState<File[]>([])
 
   // Rich text editor
   const editor = useEditor({
@@ -73,7 +73,7 @@ const ComposeModal: React.FC<ComposeModalProps> = ({ replyTo, forward, draft }) 
     content: '',
     editorProps: {
       attributes: {
-        class: 'prose prose-sm max-w-none focus:outline-none min-h-[200px] p-3 text-white prose-invert'
+        class: 'focus:outline-none min-h-[200px] p-3 text-white'
       }
     }
   })
@@ -108,8 +108,13 @@ const ComposeModal: React.FC<ComposeModalProps> = ({ replyTo, forward, draft }) 
 
   const handleSaveDraft = useCallback(() => {
     // Only save if there's actual content
-    const hasContent = to.trim() || cc.trim() || bcc.trim() || subject.trim() || (editor?.getHTML() && editor.getHTML() !== '<p></p>')
-    
+    const hasContent =
+      to.trim() ||
+      cc.trim() ||
+      bcc.trim() ||
+      subject.trim() ||
+      (editor?.getHTML() && editor.getHTML() !== '<p></p>')
+
     if (!hasContent) return
 
     const draftData = {
@@ -159,6 +164,15 @@ const ComposeModal: React.FC<ComposeModalProps> = ({ replyTo, forward, draft }) 
 
     setIsSending(true)
     try {
+      // Process attachments
+      const processedAttachments = await Promise.all(
+        attachments.map(async (file) => ({
+          filename: file.name,
+          content: await fileToBase64(file),
+          mimeType: file.type || 'application/octet-stream'
+        }))
+      )
+
       const emailData = {
         to: to.split(',').map((email) => email.trim()),
         cc: cc
@@ -171,16 +185,17 @@ const ComposeModal: React.FC<ComposeModalProps> = ({ replyTo, forward, draft }) 
           .filter(Boolean),
         subject: subject || '(no subject)',
         body: editor.getHTML(),
+        ...(processedAttachments.length > 0 ? { attachments: processedAttachments } : {}),
         ...(replyTo ? { replyToMessageId: replyTo.messageId } : {})
       }
 
-      console.log('Sending email:', emailData)
+      console.log('Sending email:', { ...emailData, attachments: processedAttachments.length })
 
       const result = await window.electronAPI.gmail.sendEmail(emailData)
 
       if (result.success) {
         closeModal()
-        alert('Email sent successfully!') // Replace with toast
+        toast.success('Email sent')
       } else {
         throw new Error(result.error || 'Failed to send email')
       }
@@ -202,7 +217,6 @@ const ComposeModal: React.FC<ComposeModalProps> = ({ replyTo, forward, draft }) 
       (editor?.getHTML() && editor.getHTML() !== '<p></p>')
 
     if (hasContent) {
-      setIsSending(true)
       try {
         // Prepare draft data
         const draftData = {
@@ -234,17 +248,54 @@ const ComposeModal: React.FC<ComposeModalProps> = ({ replyTo, forward, draft }) 
       } catch (error) {
         console.error('Failed to save draft:', error)
         toast.error('Failed to save draft')
-      } finally {
-        setIsSending(false)
       }
     } else {
       closeModal()
     }
   }
 
+  const handleFileAttachment = () => {
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.multiple = true
+    input.accept = '*/*'
+    input.onchange = (e) => {
+      const files = Array.from((e.target as HTMLInputElement).files || [])
+      if (files.length > 0) {
+        setAttachments((prev) => [...prev, ...files])
+        // Scroll to bottom to show attached files
+        setTimeout(() => {
+          const editorContainer = document.querySelector('.editor-container')
+          if (editorContainer) {
+            editorContainer.scrollTop = editorContainer.scrollHeight
+          }
+        }, 100)
+      }
+    }
+    input.click()
+  }
+
+  const removeAttachment = (index: number) => {
+    setAttachments((prev) => prev.filter((_, i) => i !== index))
+  }
+
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.readAsDataURL(file)
+      reader.onload = () => {
+        const result = reader.result as string
+        // Remove the data:mime/type;base64, prefix
+        const base64 = result.split(',')[1]
+        resolve(base64)
+      }
+      reader.onerror = reject
+    })
+  }
+
   return (
     <div
-      className={`${isExpanded ? 'w-[98vw] h-[98vh]' : 'w-[95vw] h-[90vh]'} bg-zinc-900 shadow-2xl rounded-lg border border-zinc-700 flex flex-col relative`}
+      className={`${isExpanded ? 'w-[98vw] h-[98vh]' : 'w-[90vw] h-[85vh]'} max-w-4xl bg-zinc-900 shadow-2xl rounded-lg border border-zinc-700 flex flex-col relative mx-auto`}
     >
       {/* Header */}
       <div className="flex items-center justify-between p-4 bg-zinc-800 rounded-t-lg border-b border-zinc-700">
@@ -419,8 +470,35 @@ const ComposeModal: React.FC<ComposeModalProps> = ({ replyTo, forward, draft }) 
       )}
 
       {/* Editor Content */}
-      <div className="flex-1 overflow-y-auto bg-zinc-900">
+      <div
+        className="editor-container flex-1 overflow-y-auto bg-zinc-900"
+        onClick={() => editor?.commands.focus()}
+      >
         {editor && <EditorContent editor={editor} className="h-full bg-zinc-900" />}
+
+        {/* Attachments Display - Gmail style */}
+        {attachments.length > 0 && (
+          <div className="p-3">
+            <div className="flex flex-wrap gap-2">
+              {attachments.map((file, index) => (
+                <div
+                  key={index}
+                  className="flex items-center gap-2 bg-zinc-700 px-3 py-2 rounded-lg text-sm border border-zinc-600"
+                >
+                  <PaperClipIcon className="w-4 h-4 text-gray-300" />
+                  <span className="text-white text-sm">{file.name}</span>
+                  <button
+                    onClick={() => removeAttachment(index)}
+                    className="text-gray-400 hover:text-red-400 ml-1 text-lg leading-none"
+                    title="Remove attachment"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Footer Actions */}
@@ -435,11 +513,12 @@ const ComposeModal: React.FC<ComposeModalProps> = ({ replyTo, forward, draft }) 
           </button>
 
           <div className="flex items-center gap-2">
-            <button className="p-2 hover:bg-zinc-700 rounded" title="Attach files">
+            <button
+              onClick={handleFileAttachment}
+              className="p-2 hover:bg-zinc-700 rounded"
+              title="Attach files"
+            >
               <PaperClipIcon className="w-4 h-4 text-gray-400" />
-            </button>
-            <button className="p-2 hover:bg-zinc-700 rounded" title="Insert emoji">
-              <FaceSmileIcon className="w-4 h-4 text-gray-400" />
             </button>
             <button className="p-2 hover:bg-zinc-700 rounded" title="Formatting options">
               <PaintBrushIcon className="w-4 h-4 text-gray-400" />
@@ -467,6 +546,14 @@ const ComposeModal: React.FC<ComposeModalProps> = ({ replyTo, forward, draft }) 
             min-height: 200px;
             padding: 12px;
             caret-color: #ffffff;
+            border: none;
+            width: 100%;
+            box-sizing: border-box;
+          }
+          
+          .ProseMirror:focus {
+            outline: none;
+            border: none;
           }
           
           .ProseMirror p {
@@ -484,7 +571,7 @@ const ComposeModal: React.FC<ComposeModalProps> = ({ replyTo, forward, draft }) 
           
           .ProseMirror strong {
             font-weight: bold;
-            color: #fbbf24;
+            color: #ffffff;
           }
           
           .ProseMirror em {
@@ -492,14 +579,57 @@ const ComposeModal: React.FC<ComposeModalProps> = ({ replyTo, forward, draft }) 
             color: #d1d5db;
           }
           
+          .ProseMirror u {
+            text-decoration: underline;
+            color: #ffffff;
+          }
+          
           .ProseMirror ul, .ProseMirror ol {
             padding-left: 1.5rem;
             margin: 0.5em 0;
             color: #ffffff;
+            list-style-position: outside;
+          }
+          
+          .ProseMirror ul {
+            list-style-type: disc;
+          }
+          
+          .ProseMirror ul ul {
+            list-style-type: circle;
+          }
+          
+          .ProseMirror ul ul ul {
+            list-style-type: square;
+          }
+          
+          .ProseMirror ul ul ul ul {
+            list-style-type: disc;
+          }
+          
+          .ProseMirror ol {
+            list-style-type: decimal;
+          }
+          
+          .ProseMirror ol ol {
+            list-style-type: lower-alpha;
+          }
+          
+          .ProseMirror ol ol ol {
+            list-style-type: lower-roman;
+          }
+          
+          .ProseMirror ol ol ol ol {
+            list-style-type: decimal;
           }
           
           .ProseMirror li {
             margin: 0.25em 0;
+            color: #ffffff;
+            display: list-item;
+          }
+          
+          .ProseMirror li::marker {
             color: #ffffff;
           }
           

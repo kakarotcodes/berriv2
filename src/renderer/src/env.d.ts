@@ -146,6 +146,11 @@ interface ElectronAPI {
       bcc?: string[]
       subject: string
       body: string
+      attachments?: Array<{
+        filename: string
+        content: string
+        mimeType: string
+      }>
       replyToMessageId?: string
       inReplyTo?: string
       references?: string
