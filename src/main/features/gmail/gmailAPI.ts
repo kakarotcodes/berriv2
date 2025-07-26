@@ -37,6 +37,17 @@ interface GetEmailsOptions {
   pageToken?: string
 }
 
+interface SendEmailOptions {
+  to: string[]
+  cc?: string[]
+  bcc?: string[]
+  subject: string
+  body: string
+  replyToMessageId?: string
+  inReplyTo?: string
+  references?: string
+}
+
 // Optimized Gmail filter queries
 export const GMAIL_FILTERS = {
   INBOX: 'in:inbox',
@@ -384,6 +395,61 @@ export class GmailAPI {
     } catch (error) {
       console.error('[GMAIL_API] Error getting full email:', error)
       return { success: false, error: error instanceof Error ? error.message : 'Failed to get full email' }
+    }
+  }
+
+  async sendEmail(accessToken: string, refreshToken: string | undefined, options: SendEmailOptions): Promise<{ success: boolean; messageId?: string; error?: string }> {
+    try {
+      this.setCredentials(accessToken, refreshToken)
+      const gmail = google.gmail({ version: 'v1', auth: this.oauth2Client })
+
+      // Build email headers
+      const headers = [
+        `To: ${options.to.join(', ')}`,
+        ...(options.cc && options.cc.length > 0 ? [`Cc: ${options.cc.join(', ')}`] : []),
+        ...(options.bcc && options.bcc.length > 0 ? [`Bcc: ${options.bcc.join(', ')}`] : []),
+        `Subject: ${options.subject}`,
+        `Content-Type: text/html; charset=UTF-8`,
+        `MIME-Version: 1.0`,
+        ...(options.inReplyTo ? [`In-Reply-To: ${options.inReplyTo}`] : []),
+        ...(options.references ? [`References: ${options.references}`] : [])
+      ]
+
+      // Build raw email message
+      const emailBody = [
+        ...headers,
+        '', // Empty line separates headers from body
+        options.body
+      ].join('\r\n')
+
+      // Encode to base64url (Gmail API requirement)
+      const encodedMessage = Buffer.from(emailBody)
+        .toString('base64')
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '') // Remove padding
+
+      // Send the email
+      const response = await gmail.users.messages.send({
+        userId: 'me',
+        requestBody: {
+          raw: encodedMessage,
+          ...(options.replyToMessageId ? { threadId: options.replyToMessageId } : {})
+        }
+      })
+
+      console.log('[GMAIL_API] ✅ Email sent successfully:', response.data.id)
+
+      return {
+        success: true,
+        messageId: response.data.id || undefined
+      }
+    } catch (error) {
+      console.error('[GMAIL_API] ❌ Error sending email:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to send email'
+      }
     }
   }
 }

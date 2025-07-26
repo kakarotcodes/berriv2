@@ -7,6 +7,8 @@ import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid'
 import { ChevronDownIcon, ChevronUpIcon, TrashIcon, ArrowUturnLeftIcon, ArrowUturnRightIcon } from '@heroicons/react/24/outline'
 import { MailItem as MailItemType } from '../types'
 import { useMailStore } from '../store'
+import { useModalStore } from '../../../globalStore/useModalStore'
+import ComposeModal from './ComposeModal'
 import { toast } from 'react-toastify'
 import { DateTime } from 'luxon'
 
@@ -113,6 +115,7 @@ const wrapEmailHtml = (raw: string) => {
 
 const MailItem: React.FC<MailItemProps> = ({ mail }) => {
   const { updateMail, selectedEmailIds, toggleEmailSelection } = useMailStore()
+  const { openModal } = useModalStore()
   const isSelected = selectedEmailIds.includes(mail.id)
 
   const [isExpanded, setIsExpanded] = useState(false)
@@ -413,8 +416,14 @@ const MailItem: React.FC<MailItemProps> = ({ mail }) => {
             <button
               onClick={(e) => {
                 e.stopPropagation()
-                // TODO: Implement reply functionality
-                console.log('Reply clicked')
+                openModal(<ComposeModal replyTo={{ 
+                  messageId: mail.id, 
+                  subject: mail.subject, 
+                  sender: mail.sender 
+                }} />, {
+                  shouldCloseOnOverlayClick: false,
+                  shouldCloseOnEsc: false
+                })
               }}
               className="flex items-center gap-2 px-4 py-2 border border-gray-400 text-gray-300 rounded-full text-sm font-medium hover:bg-gray-700 hover:border-gray-300 transition-colors"
             >
@@ -424,8 +433,14 @@ const MailItem: React.FC<MailItemProps> = ({ mail }) => {
             <button
               onClick={(e) => {
                 e.stopPropagation()
-                // TODO: Implement forward functionality
-                console.log('Forward clicked')
+                openModal(<ComposeModal forward={{ 
+                  messageId: mail.id, 
+                  subject: mail.subject, 
+                  body: expandedData?.body || mail.snippet 
+                }} />, {
+                  shouldCloseOnOverlayClick: false,
+                  shouldCloseOnEsc: false
+                })
               }}
               className="flex items-center gap-2 px-4 py-2 border border-gray-400 text-gray-300 rounded-full text-sm font-medium hover:bg-gray-700 hover:border-gray-300 transition-colors"
             >

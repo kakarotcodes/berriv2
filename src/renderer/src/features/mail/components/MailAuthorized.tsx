@@ -1,12 +1,20 @@
 import React from 'react'
 import MailList from './MailList'
 import MailHeader from './MailHeader'
+import ComposeModal from './ComposeModal'
 import { PencilIcon } from '@heroicons/react/24/outline'
+import { useModalStore } from '../../../globalStore/useModalStore'
 
 const MailAuthorized: React.FC = () => {
+  const { openModal } = useModalStore()
+
   const handleComposeClick = () => {
-    // TODO: Implement compose functionality
-    console.log('Compose email clicked')
+    openModal(<ComposeModal />, {
+      shouldCloseOnOverlayClick: false,
+      shouldCloseOnEsc: false,
+      className: 'modal-compose',
+      overlayClassName: 'modal-compose-overlay'
+    })
   }
 
   return (

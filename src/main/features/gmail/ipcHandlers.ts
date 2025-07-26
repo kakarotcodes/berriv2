@@ -1,4 +1,4 @@
-import { ipcMain, shell } from 'electron'
+import { ipcMain } from 'electron'
 import { gmailAPI } from './gmailAPI'
 import * as fs from 'fs'
 import * as path from 'path'
@@ -159,6 +159,47 @@ export function registerGmailHandlers(): void {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to fetch full Gmail email'
+      }
+    }
+  })
+
+  // Handle sending Gmail email
+  ipcMain.handle('gmail:send-email', async (_event, options): Promise<{ success: boolean; messageId?: string; error?: string }> => {
+    console.log('[IPC] gmail:send-email handler called with:', { 
+      to: options.to, 
+      subject: options.subject, 
+      hasBody: !!options.body 
+    })
+
+    try {
+      // Get the current auth tokens from global state
+      const authTokens = (global as { authTokens?: { access: string; refresh?: string } })
+        .authTokens
+
+      if (!authTokens?.access) {
+        return {
+          success: false,
+          error: 'No authentication tokens available. Please authenticate first.'
+        }
+      }
+
+      console.log('[IPC] Sending Gmail email')
+      const result = await gmailAPI.sendEmail(authTokens.access, authTokens.refresh, options)
+
+      if (result.success) {
+        console.log('[IPC] Gmail email sent successfully:', result.messageId)
+        return result
+      } else {
+        return {
+          success: false,
+          error: result.error || 'Failed to send email'
+        }
+      }
+    } catch (error) {
+      console.error('[IPC] Failed to send Gmail email:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to send Gmail email'
       }
     }
   })

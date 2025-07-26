@@ -140,6 +140,20 @@ interface ElectronAPI {
       }
       error?: string
     }>
+    sendEmail: (options: {
+      to: string[]
+      cc?: string[]
+      bcc?: string[]
+      subject: string
+      body: string
+      replyToMessageId?: string
+      inReplyTo?: string
+      references?: string
+    }) => Promise<{
+      success: boolean
+      messageId?: string
+      error?: string
+    }>
   }
 
   // Vertical Drag
