@@ -48,6 +48,14 @@ interface SendEmailOptions {
   references?: string
 }
 
+interface SaveDraftOptions {
+  to: string[]
+  cc?: string[]
+  bcc?: string[]
+  subject: string
+  body: string
+}
+
 // Optimized Gmail filter queries
 export const GMAIL_FILTERS = {
   INBOX: 'in:inbox',
@@ -449,6 +457,60 @@ export class GmailAPI {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to send email'
+      }
+    }
+  }
+
+  async saveDraft(accessToken: string, refreshToken: string | undefined, options: SaveDraftOptions): Promise<{ success: boolean; draftId?: string; error?: string }> {
+    try {
+      this.setCredentials(accessToken, refreshToken)
+      const gmail = google.gmail({ version: 'v1', auth: this.oauth2Client })
+
+      // Build email headers for draft
+      const headers = [
+        `To: ${options.to.join(', ')}`,
+        ...(options.cc && options.cc.length > 0 ? [`Cc: ${options.cc.join(', ')}`] : []),
+        ...(options.bcc && options.bcc.length > 0 ? [`Bcc: ${options.bcc.join(', ')}`] : []),
+        `Subject: ${options.subject}`,
+        `Content-Type: text/html; charset=UTF-8`,
+        `MIME-Version: 1.0`
+      ]
+
+      // Build raw email message for draft
+      const emailBody = [
+        ...headers,
+        '', // Empty line separates headers from body
+        options.body
+      ].join('\r\n')
+
+      // Encode to base64url (Gmail API requirement)
+      const encodedMessage = Buffer.from(emailBody)
+        .toString('base64')
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '') // Remove padding
+
+      // Create the draft
+      const response = await gmail.users.drafts.create({
+        userId: 'me',
+        requestBody: {
+          message: {
+            raw: encodedMessage
+          }
+        }
+      })
+
+      console.log('[GMAIL_API] ✅ Draft saved successfully:', response.data.id)
+
+      return {
+        success: true,
+        draftId: response.data.id || undefined
+      }
+    } catch (error) {
+      console.error('[GMAIL_API] ❌ Error saving draft:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to save draft'
       }
     }
   }

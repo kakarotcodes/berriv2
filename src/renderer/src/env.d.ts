@@ -154,6 +154,17 @@ interface ElectronAPI {
       messageId?: string
       error?: string
     }>
+    saveDraft: (options: {
+      to: string[]
+      cc?: string[]
+      bcc?: string[]
+      subject: string
+      body: string
+    }) => Promise<{
+      success: boolean
+      draftId?: string
+      error?: string
+    }>
   }
 
   // Vertical Drag

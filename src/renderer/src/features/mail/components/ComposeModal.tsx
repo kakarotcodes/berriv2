@@ -38,9 +38,16 @@ interface ComposeModalProps {
     subject: string
     body: string
   }
+  draft?: {
+    to: string[]
+    cc?: string[]
+    bcc?: string[]
+    subject: string
+    body: string
+  }
 }
 
-const ComposeModal: React.FC<ComposeModalProps> = ({ replyTo, forward }) => {
+const ComposeModal: React.FC<ComposeModalProps> = ({ replyTo, forward, draft }) => {
   const { closeModal } = useModalStore()
   const { addDraft } = useMailStore()
   const [isExpanded, setIsExpanded] = useState(false)
@@ -71,7 +78,7 @@ const ComposeModal: React.FC<ComposeModalProps> = ({ replyTo, forward }) => {
     }
   })
 
-  // Initialize form for reply/forward
+  // Initialize form for reply/forward/draft
   useEffect(() => {
     if (replyTo) {
       setTo(replyTo.sender)
@@ -85,8 +92,19 @@ const ComposeModal: React.FC<ComposeModalProps> = ({ replyTo, forward }) => {
           ${forward.body}
         `)
       }
+    } else if (draft) {
+      setTo(draft.to.join(', '))
+      setCc(draft.cc?.join(', ') || '')
+      setBcc(draft.bcc?.join(', ') || '')
+      setSubject(draft.subject)
+      if (editor) {
+        editor.commands.setContent(draft.body)
+      }
+      // Show CC/BCC fields if they have content
+      if (draft.cc && draft.cc.length > 0) setShowCc(true)
+      if (draft.bcc && draft.bcc.length > 0) setShowBcc(true)
     }
-  }, [replyTo, forward, editor])
+  }, [replyTo, forward, draft, editor])
 
   const handleSaveDraft = useCallback(() => {
     // Only save if there's actual content
@@ -204,19 +222,14 @@ const ComposeModal: React.FC<ComposeModalProps> = ({ replyTo, forward }) => {
           body: editor?.getHTML() || ''
         }
 
-        // TODO: Add Gmail draft API call here when implemented
-        // await window.electronAPI.gmail.saveDraft(draftData)
+        // Save draft to Gmail
+        const result = await window.electronAPI.gmail.saveDraft(draftData)
 
-        // For now, save locally
-        const localDraft = {
-          id: `draft_${Date.now()}`,
-          ...draftData,
-          timestamp: Date.now(),
-          isDraft: true as const
+        if (result.success) {
+          toast.success('Saved to drafts')
+        } else {
+          throw new Error(result.error || 'Failed to save draft to Gmail')
         }
-
-        addDraft(localDraft)
-        toast.success('Saved to drafts')
         closeModal()
       } catch (error) {
         console.error('Failed to save draft:', error)
@@ -236,7 +249,7 @@ const ComposeModal: React.FC<ComposeModalProps> = ({ replyTo, forward }) => {
       {/* Header */}
       <div className="flex items-center justify-between p-4 bg-zinc-800 rounded-t-lg border-b border-zinc-700">
         <h3 className="text-lg font-medium text-white">
-          {replyTo ? 'Reply' : forward ? 'Forward' : 'New Message'}
+          {replyTo ? 'Reply' : forward ? 'Forward' : draft ? 'Edit Draft' : 'New Message'}
         </h3>
         <div className="flex items-center gap-2">
           <button

@@ -204,5 +204,46 @@ export function registerGmailHandlers(): void {
     }
   })
 
+  // Handle saving Gmail draft
+  ipcMain.handle('gmail:save-draft', async (_event, options): Promise<{ success: boolean; draftId?: string; error?: string }> => {
+    console.log('[IPC] gmail:save-draft handler called with:', { 
+      to: options.to, 
+      subject: options.subject, 
+      hasBody: !!options.body 
+    })
+
+    try {
+      // Get the current auth tokens from global state
+      const authTokens = (global as { authTokens?: { access: string; refresh?: string } })
+        .authTokens
+
+      if (!authTokens?.access) {
+        return {
+          success: false,
+          error: 'No authentication tokens available. Please authenticate first.'
+        }
+      }
+
+      console.log('[IPC] Saving Gmail draft')
+      const result = await gmailAPI.saveDraft(authTokens.access, authTokens.refresh, options)
+
+      if (result.success) {
+        console.log('[IPC] Gmail draft saved successfully:', result.draftId)
+        return result
+      } else {
+        return {
+          success: false,
+          error: result.error || 'Failed to save draft'
+        }
+      }
+    } catch (error) {
+      console.error('[IPC] Failed to save Gmail draft:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to save Gmail draft'
+      }
+    }
+  })
+
   console.log('[IPC] Gmail handlers registered')
 } 

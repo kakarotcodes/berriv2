@@ -114,7 +114,7 @@ const wrapEmailHtml = (raw: string) => {
 }
 
 const MailItem: React.FC<MailItemProps> = ({ mail }) => {
-  const { updateMail, selectedEmailIds, toggleEmailSelection } = useMailStore()
+  const { updateMail, selectedEmailIds, toggleEmailSelection, gmailFilter } = useMailStore()
   const { openModal } = useModalStore()
   const isSelected = selectedEmailIds.includes(mail.id)
 
@@ -152,6 +152,53 @@ const MailItem: React.FC<MailItemProps> = ({ mail }) => {
   }, [isExpanded])
 
   const handleMailClick = async () => {
+    // Check if this is a draft and we're in the drafts filter
+    const isDraft = gmailFilter === 'DRAFTS' || mail.labels.includes('LOCAL_DRAFT') || mail.labels.includes('DRAFT')
+    
+    if (isDraft) {
+      // Open draft in compose modal
+      if (mail.labels.includes('LOCAL_DRAFT')) {
+        // This is a local draft, get the draft data from the store
+        // For now, open with basic info from the mail item
+        openModal(<ComposeModal 
+          draft={{
+            to: mail.recipient ? mail.recipient.split(', ') : [],
+            subject: mail.subject,
+            body: mail.snippet // This is not ideal, but we'll improve it later
+          }}
+        />, {
+          shouldCloseOnOverlayClick: false,
+          shouldCloseOnEsc: false
+        })
+      } else {
+        // This is a Gmail draft, fetch full content and open in compose modal
+        try {
+          const res = await window.electronAPI.gmail.getFullEmail(mail.id)
+          if (res.success && res.email) {
+            openModal(<ComposeModal 
+              draft={{
+                to: res.email.to || [],
+                cc: res.email.cc || [],
+                bcc: res.email.bcc || [],
+                subject: mail.subject,
+                body: res.email.body || ''
+              }}
+            />, {
+              shouldCloseOnOverlayClick: false,
+              shouldCloseOnEsc: false
+            })
+          } else {
+            toast.error('Failed to load draft content')
+          }
+        } catch (e) {
+          console.error(e)
+          toast.error('Error loading draft')
+        }
+      }
+      return
+    }
+
+    // Regular email handling
     if (isExpanded) return setIsExpanded(false)
 
     // Expand immediately
